@@ -24,12 +24,11 @@ Unlike cloud-hosted LLM tools, Gipity runs **entirely on your machine**, giving 
 
 ---
 
-## 🦣 About the Bubba LLM
+## 🦣 About Bubba 
 
-Gipity is powered by **Bubba**, a large-scale reasoning model hosted on Hugging Face:
+Gipity runs on **Bubba**, a fine-tuned reasoning model based on ChatGPT hosted on Hugging Face:
 
-🔗 **Bubba on Hugging Face**
-[https://huggingface.co/leeroy-jankins/bubba](https://huggingface.co/leeroy-jankins/bubba)
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/bubba)
 
 **Bubba highlights:**
 
@@ -42,7 +41,7 @@ Gipity is powered by **Bubba**, a large-scale reasoning model hosted on Hugging 
   * Policy, finance, and technical domains
 * Designed for **llama.cpp**-based local inference
 
-⚠️ Bubba is **text-only**. Image and audio tabs in Gipity are present as placeholders and intentionally disabled.
+
 
 ---
 
@@ -117,7 +116,9 @@ pip install -r requirements.txt
 ## 📥 Download the Bubba Model
 
 1. Visit the Bubba Hugging Face page:
-   👉 [https://huggingface.co/leeroy-jankins/bubba](https://huggingface.co/leeroy-jankins/bubba)
+   👉 
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/bubba)
+
 
 2. Download the GGUF file:
 
@@ -128,7 +129,7 @@ pip install -r requirements.txt
 3. Place it anywhere on your system, for example:
 
    ```
-   C:\Users\<you>\source\llm\lmstudio\lmstudio-community\leeroy-jankins\bubba-20b-Q4_K_XL.gguf
+   C:\Users\<you>\source\random\file\path\leeroy-jankins\bubba-20b-Q4_K_XL.gguf
    ```
 
 ---
