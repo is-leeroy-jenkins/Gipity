@@ -4,7 +4,7 @@
 
 **A Local-First, Reasoning-Heavy LLM Application Powered by Bubba (20B)**
 
-Gipity is a **local-only, privacy-preserving Streamlit application** designed for deep reasoning, structured analysis, and long-context workflows. It is powered by **Bubba**, a fine-tuned 20-billion-parameter GGUF model optimized for advanced reasoning, instruction following, and domain-specific analysis.
+Gipity is a python application designed to run a fined-tuned version of ChatGPT-5 locally  for deep reasoning, structured analysis, and long-context workflows. It is powered by **Bubba**, a fine-tuned 20-billion-parameter GGUF model optimized for advanced reasoning, instruction following, and domain-specific analysis.
 
 Unlike cloud-hosted LLM tools, Gipity runs **entirely on your machine**, giving you full control over data, models, and execution.
 
