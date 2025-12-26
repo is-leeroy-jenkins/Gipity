@@ -215,13 +215,7 @@ This is especially important with a **large 20B model**.
 * No cloud dependencies
 * All data remains local (SQLite + filesystem)
 
----
 
-## 🧬 Related Projects
-
-* **Leeroy** — lightweight instruction-following assistant
-* **Bro** — compact reasoning assistant (Gemma-based)
-* **Gipity** — heavyweight reasoning & analysis (Bubba 20B)
 
 ---
 
