@@ -21,6 +21,7 @@ Unlike cloud-hosted LLM tools, Gipity runs **entirely on your machine**, giving 
 * 🖥️ **CPU-only compatible (GPU optional via llama.cpp)**
 
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://gipity-py.streamlit.app/)
+---
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/Gipity-streamlit.gif)
 
 
