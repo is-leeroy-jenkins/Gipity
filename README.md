@@ -27,7 +27,7 @@ Unlike cloud-hosted LLM tools, Gipity runs **entirely on your machine**, giving 
 
 ## 🦣 About Bubba 
 
-Gipity runs on **Bubba**, a fine-tuned reasoning model based on ChatGPT hosted on Hugging Face:
+Gipity runs on **Bubba**, a fine-tuned reasoning model based on ChatGPT-5 hosted on Hugging Face:
 
 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/bubba)
 
