@@ -1,6 +1,6 @@
 
 ###### Gipity
-![]()
+![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity_project.png)
 
 **A Local-First, Reasoning-Heavy LLM Application Powered by Bubba (20B)**
 
@@ -22,6 +22,7 @@ Unlike cloud-hosted LLM tools, Gipity runs **entirely on your machine**, giving 
 * 📝 **Export conversations to Markdown or PDF**
 * 🖥️ **CPU-only compatible (GPU optional via llama.cpp)**
 
+![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/Gipity-streamlit.gif)
 ---
 
 ## 🦣 About Bubba 
