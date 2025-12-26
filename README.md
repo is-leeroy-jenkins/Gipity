@@ -200,7 +200,7 @@ The footer displays:
   * Max generation tokens
     if performance becomes an issue
 
----
+
 
 ## 🔒 Privacy & Security
 
@@ -211,14 +211,14 @@ The footer displays:
 
 
 
----
+
 
 ## 📜 License
 
 This project is released for **personal and research use**.
 Refer to the Bubba Hugging Face page for model-specific licensing terms.
 
----
+
 
 ## 🙌 Acknowledgements
 
