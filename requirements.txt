@@ -1,0 +1,4 @@
+llama-cpp-python
+sentence-transformers
+numpy
+reportlab
