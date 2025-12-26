@@ -8,7 +8,7 @@ Gipity is a **local-only, privacy-preserving Streamlit application** designed fo
 
 Unlike cloud-hosted LLM tools, Gipity runs **entirely on your machine**, giving you full control over data, models, and execution.
 
----
+
 
 ## ✨ Key Features
 
@@ -23,7 +23,7 @@ Unlike cloud-hosted LLM tools, Gipity runs **entirely on your machine**, giving 
 * 🖥️ **CPU-only compatible (GPU optional via llama.cpp)**
 
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/Gipity-streamlit.gif)
----
+
 
 ## 🦣 About Bubba 
 
@@ -44,7 +44,6 @@ Gipity runs on **Bubba**, a fine-tuned reasoning model based on ChatGPT hosted o
 
 
 
----
 
 ## 🗂 Repository Structure
 
@@ -62,7 +61,7 @@ gipity/
 └─ README.md
 ```
 
----
+
 
 ## ⚙️ System Requirements
 
@@ -76,7 +75,6 @@ gipity/
 
 > ⚠️ Bubba is a **20B model**. Expect higher memory and CPU usage than Leeroy or Bro.
 
----
 
 ## 🚀 Installation & Setup
 
@@ -112,7 +110,7 @@ You should see:
 pip install -r requirements.txt
 ```
 
----
+
 
 ## 📥 Download the Bubba Model
 
@@ -133,7 +131,7 @@ pip install -r requirements.txt
    C:\Users\<you>\source\random\file\path\leeroy-jankins\bubba-20b-Q4_K_XL.gguf
    ```
 
----
+
 
 ## 🔑 Environment Variable Configuration
 
@@ -155,7 +153,6 @@ GIPITY_LLM_PATH=C:\Users\terry\source\llm\lmstudio\lmstudio-community\leeroy-jan
 
 ⚠️ **Restart your terminal / IDE (PyCharm) after setting this.**
 
----
 
 ## ▶️ Running Gipity
 
@@ -167,7 +164,7 @@ python -m streamlit run app.py
 
 If everything is configured correctly, you’ll see the Gipity UI load in your browser.
 
----
+
 
 ## 🧭 Application Tabs Overview
 
@@ -181,7 +178,6 @@ If everything is configured correctly, you’ll see the Gipity UI load in your b
 | Image                  | Not supported (placeholder)                  |
 | Audio                  | Not supported (placeholder)                  |
 
----
 
 ## 📊 Token & Context Monitoring
 
@@ -192,13 +188,10 @@ The footer displays:
 * Percentage of context window used
 * Active generation parameters
 
-This is especially important with a **large 20B model**.
 
----
 
 ## 🧪 Notes on Performance
 
-* Bubba will be **significantly slower** than Leeroy or Bro on CPU-only systems
 * Large context windows increase latency
 * Consider lowering:
 
