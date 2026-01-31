@@ -59,10 +59,9 @@ from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 
 # ==============================================================================
-# Model Path Resolution (ENV-FIRST, NO FALLBACK)
+# Model Path Resolution
 # ==============================================================================
 HF_MODEL_URL = "https://huggingface.co/leeroy-jankins/bubba"
-
 MODEL_PATH = cfg.GIPITY_LLM_PATH
 
 if not MODEL_PATH:
@@ -85,8 +84,11 @@ if not MODEL_PATH_OBJ.exists():
     st.stop()
 
 # ==============================================================================
-# Constants (20B MODEL AWARE)
+# Constants (20G MODEL AWARE)
 # ==============================================================================
+LOGO = r'resources/images/Gipity.png'
+FAVICON = r'resources/images/favicon.png'
+LOGO_OBJ = Path(LOGO)
 DB_PATH = "stores/sqlite/gipity.db"
 DEFAULT_CTX = 6144          # Bubba benefits from larger context
 CPU_CORES = multiprocessing.cpu_count()
@@ -94,10 +96,11 @@ CPU_CORES = multiprocessing.cpu_count()
 # ==============================================================================
 # Streamlit Config
 # ==============================================================================
+st.logo( LOGO, size='large' )
 st.set_page_config(
     page_title="Gipity",
     layout="wide",
-    page_icon="resources/images/favicon.ico"
+    page_icon=FAVICON
 )
 
 # ==============================================================================
@@ -170,22 +173,10 @@ def load_embedder() -> SentenceTransformer:
 
 
 # ==============================================================================
-# Sidebar (Branding + Parameters ONLY)
+# Sidebar
 # ==============================================================================
 with st.sidebar:
-	logo_b64 = image_to_base64( "resources/images/Gipity.png" )
-
-	st.markdown(
-		f"""
-	        <div style="display:flex; justify-content:center; margin: 4px 0 10px 0;">
-	            <img src="data:image/png;base64,{logo_b64}"
-	                 style="width:60px; height:60px; display:block; align:left;" />
-	        </div>
-	        """,
-		unsafe_allow_html=True
-	)
-
-	st.header( "⚙️ Mind Controls" )
+	st.subheader( "⚙️ Mind Controls" )
 	ctx = st.slider( "Context Window", 4096, 8192, DEFAULT_CTX, 512 )
 	threads = st.slider( "CPU Threads", 1, CPU_CORES, max( 4, CPU_CORES // 2 ) )
 	temperature = st.slider( "Temperature", 0.1, 1.5, 0.7, 0.05 )

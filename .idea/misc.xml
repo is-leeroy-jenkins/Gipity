@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.13 (Gipity)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="conda ( gipity )" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Gipity-Py" project-jdk-type="Python SDK" />
 </project>
