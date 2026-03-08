@@ -51,6 +51,7 @@ from pathlib import Path
 OPENAI_API_KEY = os.getenv( 'OPENAI_API_KEY' )
 GOOGLEMAPS_API_KEY = os.getenv( 'GOOGLEMAPS_API_KEY' )
 MODELS = [ 'gpt-5-nano-2025-08-07', 'gpt-4.1-nano-2025-04-14', 'gpt-4o-mini', ]
+GIPITY_LLM_PATH = r''
 DB_PATH = r'stores/sqlite/gipity.db'
 BASE_DIR = Path( __file__ ).resolve( ).parent
 FAVICON = r'resources/images/favicon.ico'
@@ -67,7 +68,9 @@ XML_BLOCK_PATTERN = re.compile( r'<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>',
 AUDIO_TEST_FILE = r'resources/audio/conditions.mp3'
 ANALYST = '❓'
 GIPITY = '🧠'
+
 # ----------------- GPT CONFIG -------------------
+
 MODE_CLASS_MAP = {
 		'Chat': None,
 		'Text': [ 'Chat' ],
