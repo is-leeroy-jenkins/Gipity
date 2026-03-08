@@ -51,6 +51,7 @@ from pathlib import Path
 OPENAI_API_KEY = os.getenv( 'OPENAI_API_KEY' )
 GOOGLEMAPS_API_KEY = os.getenv( 'GOOGLEMAPS_API_KEY' )
 GOOGLE_API_KEY = os.getenv( 'GOOGLE_API_KEY' )
+GEOCODING_API_KEY = os.getenv( 'GEOCODING_API_KEY' )
 MODELS = [ 'gpt-5-nano-2025-08-07', 'gpt-4.1-nano-2025-04-14', 'gpt-4o-mini', ]
 MODEL_PATH = r'models/gipity-3-270m-it-Q4_K_M.gguf'
 DB_PATH = r'stores/sqlite/gipity.db'
