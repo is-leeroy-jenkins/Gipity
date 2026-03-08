@@ -1,6 +1,8 @@
 # Prerequisites
 *.d
 
+models
+
 # Object files
 *.o
 *.ko
