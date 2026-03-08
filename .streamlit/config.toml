@@ -1,8 +1,11 @@
 [theme]
 base = 'dark'
-primaryColor = "#0078FC"
-backgroundColor = "#141414"
-secondaryBackgroundColor = "#3C3C3C"
-textColor = "#FAFAFA"
-font = "Roboto"
-showSidebarBorder = true
+backgroundColor = '#141414'
+secondaryBackgroundColor = '#414141'
+textColor = '#FFFFFF'
+dataframeBorderColor = '#00254C'
+primaryColor = '#0078FC'
+borderColor = '#565557'
+dataframeHeaderBackgroundColor = '#023770'
+font = 'Roboto'
+baseFontSize = 13

@@ -40,7 +40,7 @@ Gipity runs on **Bubba**, a fine-tuned reasoning model based on ChatGPT-5 hosted
   * Deep reasoning
   * Long-form analysis
   * Policy, finance, and technical domains
-* Designed for **llama.cpp**-based local inference
+  * Designed for **llama.cpp**-based local inference
 
 
 

@@ -83,24 +83,16 @@ if not MODEL_PATH_OBJ.exists():
     )
     st.stop()
 
-# ==============================================================================
-# Constants (20G MODEL AWARE)
-# ==============================================================================
-LOGO = r'resources/images/Gipity.png'
-FAVICON = r'resources/images/favicon.png'
-LOGO_OBJ = Path(LOGO)
-DB_PATH = "stores/sqlite/gipity.db"
-DEFAULT_CTX = 6144          # Bubba benefits from larger context
-CPU_CORES = multiprocessing.cpu_count()
+
 
 # ==============================================================================
 # Streamlit Config
 # ==============================================================================
-st.logo( LOGO, size='large' )
+st.logo( cfg.LOGO_PATH, size='large' )
 st.set_page_config(
     page_title="Gipity",
     layout="wide",
-    page_icon=FAVICON
+    page_icon=cfg.FAVICON
 )
 
 # ==============================================================================
@@ -125,7 +117,7 @@ def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
 # ==============================================================================
 def ensure_db():
     Path("stores/sqlite").mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(cfg.DB_PATH) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS chat_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,14 +134,14 @@ def ensure_db():
         """)
 
 def save_message(role: str, content: str):
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(cfg.DB_PATH) as conn:
         conn.execute(
             "INSERT INTO chat_history (role, content) VALUES (?, ?)",
             (role, content)
         )
 
 def load_history():
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(cfg.DB_PATH) as conn:
         return conn.execute(
             "SELECT role, content FROM chat_history ORDER BY id"
         ).fetchall()
