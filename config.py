@@ -50,8 +50,9 @@ from pathlib import Path
 # -------- CONSTANTS -------------------
 OPENAI_API_KEY = os.getenv( 'OPENAI_API_KEY' )
 GOOGLEMAPS_API_KEY = os.getenv( 'GOOGLEMAPS_API_KEY' )
+GOOGLE_API_KEY = os.getenv( 'GOOGLE_API_KEY' )
 MODELS = [ 'gpt-5-nano-2025-08-07', 'gpt-4.1-nano-2025-04-14', 'gpt-4o-mini', ]
-GIPITY_LLM_PATH = r''
+MODEL_PATH = r'models/gipity-3-270m-it-Q4_K_M.gguf'
 DB_PATH = r'stores/sqlite/gipity.db'
 BASE_DIR = Path( __file__ ).resolve( ).parent
 FAVICON = r'resources/images/favicon.ico'
