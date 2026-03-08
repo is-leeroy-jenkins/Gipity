@@ -58,6 +58,15 @@ from sentence_transformers import SentenceTransformer
 from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
 
+from gpt import (
+	Chat,
+	Images,
+	Embeddings,
+	Transcription,
+	Translation,
+	TTS,
+	Files,
+	VectorStores)
 # ======================================================================================
 # SESSION STATE INITIALIZATION
 # ======================================================================================
@@ -234,9 +243,6 @@ if 'chat_number' not in st.session_state:
 
 if 'chat_max_calls' not in st.session_state:
 	st.session_state[ 'chat_max_calls' ] = 0
-
-if 'chat_top_k' not in st.session_state:
-	st.session_state[ 'chat_top_k' ] = 0
 
 if 'chat_max_searches' not in st.session_state:
 	st.session_state[ 'chat_max_searches' ] = 0
