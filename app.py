@@ -4989,6 +4989,9 @@ elif mode == 'Embeddings':
 elif mode == 'Vector Stores':
 	stores_model = st.session_state.get( 'stores_model', '' )
 	stores_format = st.session_state.get( 'stores_response_format', '' )
+	stores_input = st.session_state.get( 'stores_input', '' )
+	stores_reasoning = st.session_state.get( 'stores_reasoning', '' )
+	stores_tool_choice = st.session_state.get( 'stores_tool_choice', '' )
 	stores_top_percent = st.session_state.get( 'stores_top_percent', 0.0 )
 	stores_frequency = st.session_state.get( 'stores_frequency_penalty', 0.0 )
 	stores_presence = st.session_state.get( 'stores_presence_penalty', 0.0 )
@@ -4996,9 +4999,6 @@ elif mode == 'Vector Stores':
 	stores_temperature = st.session_state.get( 'stores_temperature', 0.0 )
 	stores_stream = st.session_state.get( 'stores_stream', False )
 	stores_store = st.session_state.get( 'stores_store', False )
-	stores_input = st.session_state.get( 'stores_input', '' )
-	stores_reasoning = st.session_state.get( 'stores_reasoning', '' )
-	stores_tool_choice = st.session_state.get( 'stores_tool_choice', '' )
 	stores_messages = st.session_state.get( 'stores_messages', [ ] )
 	stores_background = st.session_state.get( 'stores_background', False )
 	searcher = None
