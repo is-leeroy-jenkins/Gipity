@@ -5419,7 +5419,7 @@ elif mode == 'Files':
 		if uploaded_file:
 			tmp_path = save_temp( uploaded_file )
 			upload_fn = None
-			for name in ('upload_file', 'upload', 'files_upload'):
+			for name in ( 'upload_file', 'upload', 'files_upload' ):
 				if hasattr( files, name ):
 					upload_fn = getattr( files, name )
 					break
