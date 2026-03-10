@@ -3457,8 +3457,6 @@ elif mode == 'Text':
 	st.divider( )
 	text_model = st.session_state.get( 'text_model', '' )
 	text_reasoning = st.session_state.get( 'text_reasoning', '' )
-	text_resolution = st.session_state.get( 'text_resolution', '' )
-	text_media_resolution = st.session_state.get( 'text_media_resolution', '' )
 	text_response_format = st.session_state.get( 'text_response_format', '' )
 	text_tool_choice = st.session_state.get( 'text_tool_choice', '' )
 	text_content = st.session_state.get( 'text_content', '' )
@@ -3559,7 +3557,6 @@ elif mode == 'Text':
 				# ---------- Top-P ------------
 				with prm_c1:
 					set_text_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
-						value=float( st.session_state.get( 'text_top_percent' ) ),
 						step=0.01, help=cfg.TOP_P, key='text_top_percent' )
 					
 					text_top_percent = st.session_state[ 'text_top_percent' ]
@@ -3567,7 +3564,6 @@ elif mode == 'Text':
 				# ---------- Frequency ------------
 				with prm_c2:
 					set_text_freq = st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
-						value=float( st.session_state.get( 'text_frequency_penalty', 0.0 ) ),
 						step=0.01, help=cfg.FREQUENCY_PENALTY, key='text_frequency_penalty' )
 					
 					text_fequency = st.session_state[ 'text_frequency_penalty' ]
@@ -3575,7 +3571,6 @@ elif mode == 'Text':
 				# ---------- Presense ------------
 				with prm_c3:
 					set_text_presence = st.slider( label='Presense Penalty', min_value=-2.0, max_value=2.0,
-						value=float( st.session_state.get( 'text_presence_penalty', 0.0 ) ),
 						step=0.01, help=cfg.PRESENCE_PENALTY, key='text_presence_penalty' )
 					
 					text_presence = st.session_state[ 'text_presence_penalty' ]
@@ -3583,7 +3578,7 @@ elif mode == 'Text':
 				# ---------- Temperature ------------
 				with prm_c4:
 					set_text_temperature = st.slider( label='Temperature', min_value=-2.0, max_value=2.0,
-						value=float( st.session_state.get( 'text_temperature', 0.0 ) ), step=0.01,
+						step=0.01,
 						help=cfg.TEMPERATURE, key='text_temperature' )
 					
 					text_temperature = st.session_state[ 'text_temperature' ]
@@ -3813,6 +3808,7 @@ elif mode == "Images":
 	image_tool_choice = st.session_state.get( 'image_tool_choice', '' )
 	image_style = st.session_state.get( 'image_style', '' )
 	image_backcolor = st.session_state.get( 'image_backcolor', '' )
+	image_content = st.session_state.get( 'image_content', '' )
 	image_number = st.session_state.get( 'image_number', 0 )
 	image_max_calls = st.session_state.get( 'image_max_calls', 0 )
 	image_max_searches = st.session_state.get( 'image_max_searches', 0 )
@@ -3825,7 +3821,6 @@ elif mode == "Images":
 	image_store = st.session_state.get( 'image_store', False )
 	image_parallel_calls = st.session_state.get( 'image_parallel_calls', False )
 	image_background = st.session_state.get( 'image_background', False )
-	image_content = st.session_state.get( 'image_content', '' )
 	image_stops = st.session_state.get( 'image_stops', [ ] )
 	image_modalities = st.session_state.get( 'image_modalities', [ ] )
 	image_domains = st.session_state.get( 'image_domains', [ ] )
@@ -3860,7 +3855,7 @@ elif mode == "Images":
 	with center:
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
+			with st.expander( label='LLM Settings', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5 = st.columns(
 					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
 				
@@ -4437,7 +4432,7 @@ elif mode == 'Audio':
 	with center:
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( 'Model Options', expanded=False, width='stretch' ):
+			with st.expander( 'LLM Options', expanded=False, width='stretch' ):
 				aud_c1, aud_c2, aud_c3, aud_c4, aud_c5 = st.columns(
 					[ 0.2, 0.2, 0.2, 0.2, 0.2 ], gap='xxsmall', border=True )
 				
@@ -5112,7 +5107,7 @@ elif mode == 'Document Q&A':
 	with center:
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
+			with st.expander( label='LLM Settings', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
 					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
