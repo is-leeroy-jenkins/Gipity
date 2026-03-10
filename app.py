@@ -5001,7 +5001,7 @@ elif mode == 'Vector Stores':
 	stores_store = st.session_state.get( 'stores_store', False )
 	stores_messages = st.session_state.get( 'stores_messages', [ ] )
 	stores_background = st.session_state.get( 'stores_background', False )
-	searcher = None
+	vector = None
 	
 	# ------------------------------------------------------------------
 	# Main Chat UI
@@ -5075,7 +5075,7 @@ elif mode == 'Vector Stores':
 								st.warning( 'No File Search Store Selected.' )
 							else:
 								try:
-									vs = searcher.delete( store_id=sel_id )
+									vs = vector.delete( store_id=sel_id )
 								except Exception as exc:
 									st.error( f'Delete failed: {exc}' )
 
