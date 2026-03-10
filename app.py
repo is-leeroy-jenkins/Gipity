@@ -6260,9 +6260,7 @@ st.markdown(
 		padding-bottom: 3rem;
 	}
 	</style>
-	""",
-	unsafe_allow_html=True,
-)
+	""", unsafe_allow_html=True )
 
 # ---- Fixed Container
 st.markdown(
