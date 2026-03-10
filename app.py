@@ -449,19 +449,19 @@ if 'image_response_format' not in st.session_state:
 	st.session_state[ 'image_response_format' ] = ''
 
 if 'image_input' not in st.session_state:
-	st.session_state[ 'image_input' ] = List[ str ] | ''
+	st.session_state[ 'image_input' ] = List[ str ]
 
 if 'image_include' not in st.session_state:
 	st.session_state[ 'image_include' ] = [ ]
 
 if 'image_tools' not in st.session_state:
-	st.session_state.[ 'image_tools' ]: List[ Dict[ str, Any ] ] = [ ]
+	st.session_state[ 'image_tools' ]: List[ Dict[ str, Any ] ] = [ ]
 
 if 'image_modalities' not in st.session_state:
 	st.session_state[ 'image_modalities' ] = [ ]
 
 if 'image_context' not in st.session_state:
-	st.session_state.[ 'image_context' ]: List[ Dict[ str, Any ] ] = [ ]
+	st.session_state[ 'image_context' ]: List[ Dict[ str, Any ] ] = [ ]
 
 if 'image_domains' not in st.session_state:
 	st.session_state[ 'image_domains' ] = [ ]
@@ -3497,9 +3497,9 @@ elif mode == 'Text':
 			st.session_state[ 'instructions_last_loaded' ] = ''
 			st.session_state[ 'clear_instructions' ] = False
 		
-		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
+		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
+			with st.expander( label='LLM Settings', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
 					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
 				
@@ -3818,7 +3818,6 @@ elif mode == "Images":
 	image_max_searches = st.session_state.get( 'image_max_searches', 0 )
 	image_max_tokens = st.session_state.get( 'image_max_tokens', 0 )
 	image_top_percent = st.session_state.get( 'image_top_percent', 0.0 )
-	image_top_k = st.session_state.get( 'image_top_k', 0.0 )
 	image_frequency = st.session_state.get( 'image_frequency_penalty', 0.0 )
 	image_presence = st.session_state.get( 'image_presence_penalty', 0.0 )
 	image_temperature = st.session_state.get( 'image_temperature', 0.0 )
@@ -3859,7 +3858,7 @@ elif mode == "Images":
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
-		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
+		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
 			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5 = st.columns(
@@ -4436,7 +4435,7 @@ elif mode == 'Audio':
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
-		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
+		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
 			with st.expander( 'Model Options', expanded=False, width='stretch' ):
 				aud_c1, aud_c2, aud_c3, aud_c4, aud_c5 = st.columns(
@@ -5111,7 +5110,7 @@ elif mode == 'Document Q&A':
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
-		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
+		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
 			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
