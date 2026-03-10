@@ -43,20 +43,29 @@
 '''
 import config as cfg
 import os
-import sqlite3
 import multiprocessing
 import base64
 import io
-from pathlib import Path
-from typing import List
+from boogr import Error
+import fitz  # pymupdf
 
-import streamlit as st
-from streamlit.components.v1 import html
-import numpy as np
 from llama_cpp import Llama
-from sentence_transformers import SentenceTransformer
+from openai import OpenAI
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from pathlib import Path
+import re
 from reportlab.lib.pagesizes import LETTER
 from reportlab.pdfgen import canvas
+import sqlite3
+import sqlite_vec
+import streamlit as st
+from streamlit.components.v1 import html
+from sentence_transformers import SentenceTransformer
+import tiktoken
+import tempfile
+from typing import List, Dict, Any, Optional, Tuple
 
 from gpt import (
 	Chat,
@@ -116,8 +125,11 @@ if st.session_state.geocoding_api_key == '':
 		st.session_state.geocoding_api_key = default
 		os.environ[ 'GEOCODING_API_KEY' ] = default
 
+if 'provider' not in st.session_state or st.session_state[ 'provider' ] is None:
+	st.session_state[ 'provider' ] = 'GPT'
+
 if 'mode' not in st.session_state or st.session_state[ 'mode' ] is None:
-	st.session_state[ 'mode' ] = 'Text'
+	st.session_state[ 'mode' ] = 'Chat'
 
 if 'messages' not in st.session_state:
 	st.session_state.messages: List[ Dict[ str, Any ] ] = [ ]
@@ -320,9 +332,6 @@ if 'text_number' not in st.session_state:
 
 if 'text_max_calls' not in st.session_state:
 	st.session_state[ 'text_max_calls' ] = 0
-
-if 'text_top_k' not in st.session_state:
-	st.session_state[ 'text_top_k' ] = 0
 
 if 'text_max_searches' not in st.session_state:
 	st.session_state[ 'text_max_searches' ] = 0
@@ -3322,15 +3331,7 @@ with st.sidebar:
 		if google_key:
 			st.session_state.google_api_key = google_key
 			os.environ[ 'GOOGLE_API_KEY' ] = google_key
-		
-		gemini_key = st.text_input( 'Gemini API Key', type='password',
-			value=st.session_state.gemini_api_key or '',
-			help='Overrides GEMINI_API_KEY from config.py for this session only.' )
-		
-		if gemini_key:
-			st.session_state.gemini_key = gemini_key
-			os.environ[ 'GEMINI_KEY' ] = gemini_key
-		
+	
 		googlemaps_key = st.text_input( 'Google Maps API Key', type='password',
 			value=st.session_state.googlemaps_api_key or '',
 			help='Overrides GOOGLEMAPS_API_KEY from config.py for this session only.' )
@@ -3362,10 +3363,119 @@ with st.sidebar:
 	st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0 )
 
+# =============================================================================
+# CHAT MODE
+# =============================================================================
+if mode == 'Chat':
+	st.subheader( "💬 Chat Completions", help=cfg.CHAT_COMPLETIONS )
+	st.divider( )
+	chat_number = st.session_state.get( 'number', 0 )
+	chat_top_p = st.session_state.get( 'top_percent', 0.0 )
+	chat_freq = st.session_state.get( 'frequency_penalty', 0.0 )
+	chat_presense = st.session_state.get( 'presense_penalty', 0.0 )
+	chat_temperature = st.session_state.get( 'temperature', 0.0 )
+	chat_background = st.session_state.get( 'background', False )
+	chat_stream = st.session_state.get( 'stream', False )
+	chat_store = st.session_state.get( 'store', False )
+	chat_model = st.session_state.get( 'chat_model', '' )
+	chat_format = st.session_state.get( 'response_format', '' )
+	chat_input = st.session_state.get( 'input', [ ] )
+	chat_reasoning = st.session_state.get( 'reasoning', '' )
+	chat_choice = st.session_state.get( 'tool_choice', '' )
+	chat_messages = st.session_state.get( 'messages', [ ] )
+	execution_mode = st.session_state.get( 'execution_mode', '' )
+	chat_history = st.session_state.get( 'chat_history', [ ] )
+	
+	# ------------------------------------------------------------------
+	# Sidebar — Text Settings
+	# ------------------------------------------------------------------
+	with st.sidebar:
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		st.text( '⚙️  Chat Settings' )
+		st.radio( 'Execution Mode', options=[ 'Standard', 'Guidance Only', 'Analysis Only' ],
+			index=[ 'Standard', 'Guidance Only',
+			        'Analysis Only' ].index( st.session_state.execution_mode ),
+			key='execution_mode', )
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
+	left, center, right = st.columns( [ 0.25, 3.5, 0.25 ] )
+	with center:
+		user_input = st.chat_input( 'Have a Planning, Programming, or Budget Execution question?' )
+		if user_input:
+			# -------------------------------
+			# Render user message
+			# -------------------------------
+			with st.chat_message( 'user', avatar=cfg.ANALYST ):
+				st.markdown( user_input )
+			
+			# -------------------------------
+			# Run prompt
+			# -------------------------------
+			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
+				try:
+					chat = OpenAI( api_key=cfg.OPENAI_API_KEY )
+					with st.spinner( 'Running prompt...' ):
+						response = chat.responses.create(
+							prompt={ 'id': cfg.PROMPT_ID, 'version': cfg.PROMPT_VERSION, },
+							input=[ { 'role': 'user', 'content': [ { 'type': 'input_text',
+							                                         'text': user_input, } ], } ],
+							tools=[ { 'type': 'file_search',
+							          'vector_store_ids': cfg.GPT_VECTORSTORES, },
+							        { 'type': 'web_search',
+							          'filters': { 'allowed_domains': cfg.GPT_DOMAINS, },
+							          'search_context_size': 'medium',
+							          'user_location': { 'type': 'approximate' },
+							          },
+							        { 'type': 'code_interpreter',
+							          'container': { 'type': 'auto', 'file_ids': cfg.GPT_FILES, },
+							          }, ],
+							include=[ 'web_search_call.action.sources',
+							          'code_interpreter_call.outputs', ], store=True, )
+					sources = st.session_state.get( "last_sources", [ ] )
+					if sources:
+						st.markdown( '#### Sources' )
+						for i, src in enumerate( sources, 1 ):
+							url = src.get( 'url' )
+							title = src.get( 'title' ) or src.get( 'file_name' ) or f'Source {i}'
+							
+							if url:
+								st.markdown( f'- [{title}]({url})' )
+							elif src.get( 'file_id' ):
+								st.markdown( f"- {title} _(Vector Store File: `{src[ 'files_id' ]}`)_" )
+					
+					# -------------------------------
+					# Extract and render text output
+					# -------------------------------
+					output_text = ""
+					for item in response.output:
+						if item.type == 'message':
+							for part in item.content:
+								if part.type == 'output_text':
+									output_text += part.text
+					
+					if output_text.strip( ):
+						st.markdown( output_text )
+					else:
+						st.warning( 'No text response returned by the prompt.' )
+					
+					# -------------------------------
+					# Persist minimal chat history
+					# -------------------------------
+					st.session_state.chat_history.append( { 'role': 'user',
+					                                        'content': user_input } )
+					st.session_state.chat_history.append( { 'role': 'assistant',
+					                                        'content': output_text } )
+				except Exception as e:
+					st.error( 'An error occurred while running the prompt.' )
+					st.exception( e )
+
+
 # ======================================================================================
 # TEXT MODE
 # ======================================================================================
-if mode == 'Text':
+elif mode == 'Text':
 	st.subheader( "💬 Text Generation", help=cfg.TEXT_GENERATION )
 	st.divider( )
 	text_model = st.session_state.get( 'text_model', '' )
@@ -3413,8 +3523,8 @@ if mode == 'Text':
 		
 		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
 			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
 				
 				# ---------- Model ------------
 				with llm_c1:
@@ -3456,27 +3566,18 @@ if mode == 'Text':
 					
 					text_reasoning = st.session_state[ 'text_reasoning' ]
 				
-				# ---------- Media Resolution ------------
-				with llm_c5:
-					media_options = list( text.media_options )
-					set_media_resolution = st.selectbox( label='Media Resolution',
-						options=media_options, key='text_media_resolution',
-						help=cfg.MEDIA_RESOLUTION, index=None, placeholder='Options' )
-					
-					media_resolution = st.session_state[ 'text_media_resolution' ]
-				
 				# ---------- Reset Settings ------------
 				if st.button( label='Reset', key='text_model_reset', width='stretch' ):
 					for key in [ 'text_model', 'text_include', 'text_domains',
-					             'text_reasoning', 'text_media_resolution' ]:
+					             'text_reasoning', ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
 					st.rerun( )
 			
 			with st.expander( label='Inference Settings', expanded=False, width='stretch' ):
-				prm_c1, prm_c2, prm_c3, prm_c4, prm_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				prm_c1, prm_c2, prm_c3, prm_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
 				
 				# ---------- Top-P ------------
 				with prm_c1:
@@ -3510,19 +3611,10 @@ if mode == 'Text':
 					
 					text_temperature = st.session_state[ 'text_temperature' ]
 				
-				# ---------- Top-K ------------
-				with prm_c5:
-					set_text_topk = st.slider( label='Top K', min_value=0, max_value=20,
-						value=int( st.session_state.get( 'text_top_k', 0 ) ), step=1,
-						help=cfg.TOP_K,
-						key='text_top_k' )
-					
-					text_number = st.session_state[ 'text_top_k' ]
-				
 				# ---------- Reset Settings ------------
 				if st.button( label='Reset', key='text_inference_reset', width='stretch' ):
 					for key in [ 'text_top_percent', 'text_frequency_penalty',
-					             'text_presence_penalty', 'text_temperature', 'text_top_k', ]:
+					             'text_presence_penalty', 'text_temperature' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
@@ -3873,8 +3965,8 @@ elif mode == "Images":
 					st.rerun( )
 			
 			with st.expander( label='Inference Settings', expanded=False, width='stretch' ):
-				inf_c1, inf_c2, inf_c3, inf_c4, inf_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				inf_c1, inf_c2, inf_c3, inf_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
 				
 				# ---------  Top-P --------
 				with inf_c1:
@@ -3910,18 +4002,9 @@ elif mode == "Images":
 					
 					image_temperature = st.session_state[ 'image_temperature' ]
 				
-				# ---------- Top-K ------------
-				with inf_c5:
-					set_image_topK = st.slider( label='Top-K',
-						key='image_top_k', min_value=0, max_value=20,
-						value=int( st.session_state.get( 'image_top_k', 0 ) ),
-						step=1, help=cfg.TOP_K )
-					
-					image_top_k = st.session_state[ 'image_top_k' ]
-				
 				# --------- Reset Settings --------
 				if st.button( label='Reset', key='image_inference_reset', width='stretch' ):
-					for key in [ 'image_top_percent', 'image_frequency_penalty', 'image_top_k',
+					for key in [ 'image_top_percent', 'image_frequency_penalty',
 					             'image_presence_penalty', 'image_temperature', ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
@@ -3933,7 +4016,7 @@ elif mode == "Images":
 			
 			with st.expander( label='Tool Settings', expanded=False, width='stretch' ):
 				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
 				
 				# ---------  Allow Parallel --------
 				with tool_c1:
@@ -3953,7 +4036,7 @@ elif mode == "Images":
 				# ---------  Choice/Call Mode --------
 				with tool_c3:
 					choice_options = list( image.choice_options )
-					set_image_choice = st.multiselect( label='Calling Mode',
+					set_image_choice = st.multiselect( label='Choice',
 						options=choice_options, key='image_tool_choice',
 						help=cfg.INCLUDE, placeholder='Options' )
 					
@@ -3966,15 +4049,6 @@ elif mode == "Images":
 						key='image_tools', help=cfg.TOOLS, placeholder='Options' )
 					
 					image_tools = st.session_state[ 'image_tools' ]
-				
-				# ---------- Media Resolution ------------
-				with tool_c5:
-					resolution_options = list( image.media_options )
-					set_media_options = st.selectbox( label='Media Resolution',
-						options=resolution_options, key='image_media_resolution',
-						help=cfg.REASONING, index=None, placeholder='Options' )
-					
-					media_resolution = st.session_state[ 'image_media_resolution' ]
 				
 				# --------- Reset Settings --------
 				if st.button( label='Reset', key='image_tools_reset', width='stretch' ):
@@ -4040,8 +4114,8 @@ elif mode == "Images":
 					st.rerun( )
 			
 			with st.expander( label='Visual Settings', expanded=False, width='stretch' ):
-				img_c1, img_c2, img_c3, img_c4, img_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				img_c1, img_c2, img_c3, img_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
 				
 				# ------------ Image Resolution -------
 				with img_c1:
@@ -4061,17 +4135,8 @@ elif mode == "Images":
 					
 					image_mime_type = st.session_state[ 'image_mime_type' ]
 				
-				# ------------ Image Aspect Ratio -------
-				with img_c3:
-					ratios = list( image.aspect_options )
-					set_image_aspect = st.selectbox( label='Aspect Ratio',
-						options=ratios, help=cfg.IMAGE_BACKGROUND,
-						key='image_aspect_ratio', placeholder='Options', index=None )
-					
-					image_aspect_ratio = st.session_state[ 'image_aspect_ratio' ]
-				
 				# ---------  Number/Candidates --------
-				with img_c4:
+				with img_c3:
 					set_image_number = st.slider( label='Candidates Count', min_value=0, max_value=100,
 						value=int( st.session_state.get( 'image_number', 0 ) ),
 						step=1, help='Optional. A response candidate generated from the model',
@@ -4080,7 +4145,7 @@ elif mode == "Images":
 					image_number = st.session_state[ 'image_number' ]
 				
 				# ---------  Image Size --------
-				with img_c5:
+				with img_c4:
 					size_options = list( image.size_options )
 					set_image_size = st.selectbox( label='Image Size',
 						options=size_options, help='Optional. Image sizes',
@@ -6160,17 +6225,18 @@ st.markdown(
 # FOOTER RENDERING
 # ======================================================================================
 _mode_to_model_key = \
-	{
-			'Text': 'text_model',
-			'Images': 'image_model',
-			'Audio': 'audio_model',
-			'Embedding': 'embedding_model',
-			'Document Q&A': 'docqna_model',
-			'Files': 'files_model',
-			'Vector Stores': 'stores_model',
-			'Prompt Engineering': 'text_model',
-			'Data Management': 'text_model'
-	}
+{
+	'Chat': 'chat_model',
+	'Text': 'text_model',
+	'Images': 'image_model',
+	'Audio': 'audio_model',
+	'Embedding': 'embedding_model',
+	'Document Q&A': 'docqna_model',
+	'Files': 'files_model',
+	'Vector Stores': 'stores_model',
+	'Prompt Engineering': 'text_model',
+	'Data Management': 'text_model'
+}
 
 provider_val = st.session_state.get( 'provider', '—' )
 mode_val = mode or '—'
@@ -6181,6 +6247,61 @@ if active_model is not None:
 
 # ---- Rendered Variables
 if mode == 'Text':
+	temperature = st.session_state.get( 'text_temperature' )
+	top_p = st.session_state.get( 'text_top_percent' )
+	freq = st.session_state.get( 'text_frequency_penalty' )
+	presence = st.session_state.get( 'text_presence_penalty' )
+	number = st.session_state.get( 'text_number' )
+	stream = st.session_state.get( 'text_stream' )
+	parallel_tools = st.session_state.get( 'text_parallel_tools' )
+	max_calls = st.session_state.get( 'text_max_tools' )
+	store = st.session_state.get( 'text_store' )
+	tools = st.session_state.get( 'text_tools' )
+	include = st.session_state.get( 'text_include' )
+	domains = st.session_state.get( 'text_domains' )
+	input_mode = st.session_state.get( 'text_input' )
+	tool_choice = st.session_state.get( 'text_tool_choice' )
+	background = st.session_state.get( 'text_background' )
+	messages = st.session_state.get( 'text_messages' )
+	max_tokens = st.session_state.get( 'text_max_tokens' )
+	
+	if temperature is not None:
+		right_parts.append( f'Temp: {temperature:.1%}' )
+	if top_p is not None:
+		right_parts.append( f'Top-P: {top_p:.1%}' )
+	if freq is not None:
+		right_parts.append( f'Freq: {freq:.2f}' )
+	if presence is not None:
+		right_parts.append( f'Presence: {presence:.2f}' )
+	if number is not None:
+		right_parts.append( f'N: {number}' )
+	if max_tokens is not None:
+		right_parts.append( f'Max Tokens: {max_tokens}' )
+	
+	if stream:
+		right_parts.append( 'Stream: On' )
+	if parallel_tools:
+		right_parts.append( 'Parallel Tools: On' )
+	if max_calls is not None:
+		right_parts.append( f'Max Calls: {max_calls}' )
+	if store:
+		right_parts.append( 'Store: On' )
+	if tools:
+		right_parts.append( f'Tools: {len( tools )}' )
+	if include:
+		right_parts.append( 'Include: On' )
+	if domains:
+		right_parts.append( 'Domains: Set' )
+	if input_mode:
+		right_parts.append( 'Input: Set' )
+	if tool_choice:
+		right_parts.append( f'Tool Choice: On' )
+	if background:
+		right_parts.append( 'Background: On' )
+	if messages:
+		right_parts.append( 'Messages: Set' )
+
+elif mode == 'Text':
 	temperature = st.session_state.get( 'text_temperature' )
 	top_p = st.session_state.get( 'text_top_percent' )
 	freq = st.session_state.get( 'text_frequency_penalty' )

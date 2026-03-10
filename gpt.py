@@ -372,6 +372,17 @@ class Chat( GPT ):
 		         'minimal',
 		         'xhigh' ]
 	
+	@property
+	def modality_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'text', 'auto', 'image', 'audio' ]
+	
 	def generate_text( self, prompt: str, model: str, temperature: float=None,
 			format: Dict[ str, str ]=None, top_p: float=None, frequency: float=None,
 			max_tools: int=None, presence: float=None, max_tokens: int=None, store: bool=None,
