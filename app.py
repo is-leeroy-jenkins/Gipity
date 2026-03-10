@@ -1368,9 +1368,9 @@ def build_intent_prefix( mode: str ) -> str:
 def format_results( results ):
 	formatted_results = ''
 	for result in results.data:
-		formatted_result = f'<li> '{result.name}''
-		formatted_results += formatted_result + "</li>"
-	return f"<p>{formatted_results}</p>"
+		formatted_result = f'<li> "{result.name}" '
+		formatted_results += formatted_result + '</li>'
+	return f'<p>{formatted_results}</p>'
 
 def count_tokens( text: str ) -> int:
 	"""
@@ -1573,7 +1573,9 @@ def clear_history( ) -> None:
 
 def extract_text_from_bytes( file_bytes: bytes ) -> str:
 	"""
+	
 		Extracts text from PDF or text-based documents.
+		
 	"""
 	try:	
 		doc = fitz.open( stream=file_bytes, filetype='pdf' )
@@ -1782,7 +1784,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 		None
 		
 	'''
-	active_docs: List[ str ] = st.session_state.get( 'active_docs', [ ] )
+	active_docs: List[ str ] = st.session_state.get( 'docqna_active_docs', [ ] )
 	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'docqna_bytes', { } )
 	fp = _docqna_compute_fingerprint( active_docs, doc_bytes )
 	if fp and fp == st.session_state.get( 'docqna_fingerprint', '' ):
@@ -6308,7 +6310,7 @@ _mode_to_model_key = \
 
 provider_val = st.session_state.get( 'provider', '—' )
 mode_val = mode or '—'
-active_model = st.session_state.get( _mode_to_model_key.get( mode, "" ), None )
+active_model = st.session_state.get( _mode_to_model_key.get( mode, '' ), None )
 right_parts = [ ]
 if active_model is not None:
 	right_parts.append( f'Model: {active_model}' )
