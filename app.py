@@ -63,6 +63,7 @@ import sqlite_vec
 import streamlit as st
 from streamlit.components.v1 import html
 from sentence_transformers import SentenceTransformer
+import time
 import tiktoken
 import tempfile
 from typing import List, Dict, Any, Optional, Tuple
@@ -76,6 +77,7 @@ from gpt import (
 	TTS,
 	Files,
 	VectorStores)
+
 # ======================================================================================
 # SESSION STATE INITIALIZATION
 # ======================================================================================
@@ -815,6 +817,9 @@ if 'files_url' not in st.session_state:
 if 'files_table' not in st.session_state:
 	st.session_state[ 'files_table' ] = ''
 
+if 'files_messages' not in st.session_state:
+	st.session_state.files_messages: List[ Dict[ str, Any ] ] = [ ]
+
 # -------- VECTORSTORES-GENERATION PARAMETERS --------------------
 
 if 'stores_temperature' not in st.session_state:
@@ -1067,7 +1072,7 @@ def normalize_text( text: str ) -> str:
 	
 	return text
 
-def chunk_text( text: str, max_tokens: int = 400 ) -> list[ str ]:
+def chunk_text( text: str, max_tokens: int=400 ) -> list[ str ]:
 	"""
 		
 		Purpose
@@ -3315,7 +3320,7 @@ with st.sidebar:
 	st.divider( )
 	
 	# -----API KEY Expander------------------------------
-	with st.expander( label='Keys:', icon='🔑', expanded=False ):
+	with st.expander( label='Keys', icon='🔑', expanded=False ):
 		openai_key = st.text_input( 'Open API Key', type='password',
 			value=st.session_state.openai_api_key or '',
 			help='Overrides OPENAI_API_KEY from config.py for this session only.' )
@@ -3355,10 +3360,6 @@ with st.sidebar:
 		if google_cse_id:
 			st.session_state.google_cse_id = google_cse_id
 			os.environ[ 'GOOGLE_CSE_ID' ] = google_cse_id
-	
-	if st.button( 'Clear Chat' ):
-		reset_state( )
-		st.rerun( )
 	
 	st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0 )
@@ -3402,17 +3403,14 @@ if mode == 'Chat':
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.25, 3.5, 0.25 ] )
 	with center:
-		user_input = st.chat_input( 'Have a Planning, Programming, or Budget Execution question?' )
+		user_input = st.chat_input( 'Chat with Gipity' )
 		if user_input:
-			# -------------------------------
-			# Render user message
-			# -------------------------------
+			
+			# -------- Enter User Message
 			with st.chat_message( 'user', avatar=cfg.ANALYST ):
 				st.markdown( user_input )
 			
-			# -------------------------------
-			# Run prompt
-			# -------------------------------
+			# --------  Run prompt
 			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
 				try:
 					chat = OpenAI( api_key=cfg.OPENAI_API_KEY )
@@ -3470,7 +3468,11 @@ if mode == 'Chat':
 				except Exception as e:
 					st.error( 'An error occurred while running the prompt.' )
 					st.exception( e )
-
+			
+		# --------  Reset Button
+		if st.button( 'Clear Chat' ):
+			reset_state( )
+			st.rerun( )
 
 # ======================================================================================
 # TEXT MODE
@@ -3479,19 +3481,6 @@ elif mode == 'Text':
 	st.subheader( "💬 Text Generation", help=cfg.TEXT_GENERATION )
 	st.divider( )
 	text_model = st.session_state.get( 'text_model', '' )
-	text_number = st.session_state.get( 'text_number', 0 )
-	text_max_calls = st.session_state.get( 'text_max_calls', 0 )
-	text_max_searches = st.session_state.get( 'text_max_searches', 0 )
-	text_max_tokens = st.session_state.get( 'text_max_tokens', 0 )
-	text_top_percent = st.session_state.get( 'text_top_percent', 0.0 )
-	text_top_k = st.session_state.get( 'text_top_k', 0 )
-	text_freq = st.session_state.get( 'text_frequency_penalty', 0.0 )
-	text_presence = st.session_state.get( 'text_presence_penalty', 0.0 )
-	text_temperature = st.session_state.get( 'text_temperature', 0.0 )
-	text_stream = st.session_state.get( 'text_stream', False )
-	text_parallel_tools = st.session_state.get( 'text_parallel_tools', False )
-	text_store = st.session_state.get( 'text_store', False )
-	text_background = st.session_state.get( 'text_background', False )
 	text_reasoning = st.session_state.get( 'text_reasoning', '' )
 	text_resolution = st.session_state.get( 'text_resolution', '' )
 	text_media_resolution = st.session_state.get( 'text_media_resolution', '' )
@@ -3499,6 +3488,18 @@ elif mode == 'Text':
 	text_tool_choice = st.session_state.get( 'text_tool_choice', '' )
 	text_content = st.session_state.get( 'text_content', '' )
 	text_input = st.session_state.get( 'text_input', '' )
+	text_number = st.session_state.get( 'text_number', 0 )
+	text_max_calls = st.session_state.get( 'text_max_calls', 0 )
+	text_max_searches = st.session_state.get( 'text_max_searches', 0 )
+	text_max_tokens = st.session_state.get( 'text_max_tokens', 0 )
+	text_top_percent = st.session_state.get( 'text_top_percent', 0.0 )
+	text_freq = st.session_state.get( 'text_frequency_penalty', 0.0 )
+	text_presence = st.session_state.get( 'text_presence_penalty', 0.0 )
+	text_temperature = st.session_state.get( 'text_temperature', 0.0 )
+	text_stream = st.session_state.get( 'text_stream', False )
+	text_parallel_tools = st.session_state.get( 'text_parallel_tools', False )
+	text_store = st.session_state.get( 'text_store', False )
+	text_background = st.session_state.get( 'text_background', False )
 	text_tools = st.session_state.get( 'text_tools', [ ] )
 	text_modalities = st.session_state.get( 'text_modalities', [ ] )
 	text_context = st.session_state.get( 'text_context', [ ] )
@@ -3522,6 +3523,7 @@ elif mode == 'Text':
 			st.session_state[ 'clear_instructions' ] = False
 		
 		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
+			
 			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
 					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
@@ -3560,7 +3562,7 @@ elif mode == 'Text':
 				# ---------- Reasoning ------------
 				with llm_c4:
 					reasoning_options = list( text.reasoning_options )
-					set_text_reasoning = st.selectbox( label='Thinking Level:',
+					set_text_reasoning = st.selectbox( label='Reasoning',
 						options=reasoning_options, key='text_reasoning',
 						help=cfg.REASONING, index=None, placeholder='Options' )
 					
@@ -3626,7 +3628,7 @@ elif mode == 'Text':
 				
 				# ---------- Number ------------
 				with tool_c1:
-					set_text_number = st.slider( label='Candidates', min_value=0, max_value=50,
+					set_text_number = st.slider( label='Number', min_value=0, max_value=50,
 						value=int( st.session_state.get( 'text_number', 0 ) ), step=1,
 						help='Optional. Upper limit on the responses returned by the model',
 						key='text_number' )
@@ -3732,7 +3734,7 @@ elif mode == 'Text':
 						del st.session_state[ 'text_stops_input' ]
 					
 					st.rerun( )
-		
+			
 		# ------------------------------------------------------------------
 		# Expander — Text System Instructions
 		# ------------------------------------------------------------------
@@ -3763,16 +3765,20 @@ elif mode == 'Text':
 			
 			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
 		
-		# ----------- MESSAGES ---------------------------------
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ---------------------------------------------------
+		#                   MESSAGES
+		# ---------------------------------------------------
 		if st.session_state[ 'text_input' ] is not None:
 			for msg in st.session_state.text_input:
 				with st.chat_message( msg[ 'role' ], avatar='' ):
 					st.markdown( msg[ 'content' ] )
 		
-		prompt = st.chat_input( 'Ask Gemini…' )
+		prompt = st.chat_input( 'Gipity Generate …' )
 		if prompt is not None:
 			st.session_state.text_messages.append( { 'role': 'user', 'content': prompt } )
-			with st.chat_message( 'assistant', avatar="" ):
+			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
 				gen_kwargs = { }
 				
 				with st.spinner( 'Thinking…' ):
@@ -3791,8 +3797,7 @@ elif mode == 'Text':
 					try:
 						mdl = str( gen_kwargs[ 'text_model' ] )
 						if mdl.startswith( 'gpt-5' ):
-							response = text.generate_text( prompt=prompt, model=gen_kwargs[
-								'text_model' ] )
+							response = text.generate_text( prompt=prompt, model=gen_kwargs[ 'text_model' ] )
 						else:
 							response = text.generate_text( )
 					except Exception as exc:
@@ -3810,6 +3815,11 @@ elif mode == 'Text':
 							_update_token_counters( getattr( text, 'response', None ) or response )
 						except Exception:
 							pass
+			
+		# --------  Reset Button
+		if st.button( 'Clear' ):
+			reset_state( )
+			st.rerun( )
 
 # ======================================================================================
 # IMAGES MODE
@@ -3818,6 +3828,16 @@ elif mode == "Images":
 	st.subheader( '📷 Images API', help=cfg.IMAGES_API )
 	st.divider( )
 	image_model = st.session_state.get( 'image_model', '' )
+	image_mode = st.session_state.get( 'image_mode', '' )
+	image_quality = st.session_state.get( 'image_quality', '' )
+	image_size = st.session_state.get( 'image_size', '' )
+	image_response_format = st.session_state.get( 'image_response_format', '' )
+	image_mime_type = st.session_state.get( 'image_mime_type', '' )
+	image_output = st.session_state.get( 'image_output', '' )
+	image_detail = st.session_state.get( 'image_detail', '' )
+	image_tool_choice = st.session_state.get( 'image_tool_choice', '' )
+	image_style = st.session_state.get( 'image_style', '' )
+	image_backcolor = st.session_state.get( 'image_backcolor', '' )
 	image_number = st.session_state.get( 'image_number', 0 )
 	image_max_calls = st.session_state.get( 'image_max_calls', 0 )
 	image_max_searches = st.session_state.get( 'image_max_searches', 0 )
@@ -3831,21 +3851,7 @@ elif mode == "Images":
 	image_store = st.session_state.get( 'image_store', False )
 	image_parallel_calls = st.session_state.get( 'image_parallel_calls', False )
 	image_background = st.session_state.get( 'image_background', False )
-	image_response_format = st.session_state.get( 'image_response_format', '' )
-	image_mime_type = st.session_state.get( 'image_mime_type', '' )
-	image_output = st.session_state.get( 'image_output', '' )
-	image_detail = st.session_state.get( 'image_detail', '' )
-	image_tool_choice = st.session_state.get( 'image_tool_choice', '' )
-	image_style = st.session_state.get( 'image_style', '' )
-	image_backcolor = st.session_state.get( 'image_backcolor', '' )
 	image_content = st.session_state.get( 'image_content', '' )
-	image_input = st.session_state.get( 'image_input', '' )
-	image_mode = st.session_state.get( 'image_mode', '' )
-	image_quality = st.session_state.get( 'image_quality', '' )
-	image_resolution = st.session_state.get( 'image_resolution', '' )
-	image_media_resolution = st.session_state.get( 'image_media_resolution', '' )
-	image_size = st.session_state.get( 'image_size', '' )
-	image_aspect_ratio = st.session_state.get( 'image_aspect_ratio', '' )
 	image_stops = st.session_state.get( 'image_stops', [ ] )
 	image_modalities = st.session_state.get( 'image_modalities', [ ] )
 	image_domains = st.session_state.get( 'image_domains', [ ] )
@@ -3879,6 +3885,7 @@ elif mode == "Images":
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
+			
 			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5 = st.columns(
 					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
@@ -3947,7 +3954,7 @@ elif mode == "Images":
 				# ---------  Reasoning/Thinking Level --------
 				with llm_c5:
 					reasonings = list( image.reasoning_options )
-					set_image_reasoning = st.selectbox( label='Thinking Level:', placeholder='Options',
+					set_image_reasoning = st.selectbox( label='Reasoning', placeholder='Options',
 						options=reasonings, key='image_reasoning', help=cfg.REASONING, index=None )
 					
 					image_reasoning = st.session_state[ 'image_reasoning' ]
@@ -4015,7 +4022,7 @@ elif mode == "Images":
 					st.rerun( )
 			
 			with st.expander( label='Tool Settings', expanded=False, width='stretch' ):
-				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5 = st.columns(
+				tool_c1, tool_c2, tool_c3, tool_c4 = st.columns(
 					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
 				
 				# ---------  Allow Parallel --------
@@ -4114,17 +4121,17 @@ elif mode == "Images":
 					st.rerun( )
 			
 			with st.expander( label='Visual Settings', expanded=False, width='stretch' ):
-				img_c1, img_c2, img_c3, img_c4 = st.columns(
-					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
+				img_c1, img_c2, img_c3, img_c4, img_c5 = st.columns(
+					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='medium' )
 				
-				# ------------ Image Resolution -------
+				# ------------ Image Detail -------
 				with img_c1:
-					resolution_options = list( image.resolution_options )
-					set_image_resolution = st.selectbox( label='Image Resolution',
-						options=resolution_options, help='Optional. Image detail', key='image_resolution',
+					detail_options = list( image.detail_options )
+					set_image_detail = st.selectbox( label='Image Detail',
+						options=detail_options, help='Optional. Image detail', key='image_detail',
 						placeholder='Options', index=None )
 					
-					image_resolution = st.session_state[ 'image_resolution' ]
+					image_detail = st.session_state[ 'image_detail' ]
 				
 				# ------------ MIME Type --------
 				with img_c2:
@@ -4137,7 +4144,7 @@ elif mode == "Images":
 				
 				# ---------  Number/Candidates --------
 				with img_c3:
-					set_image_number = st.slider( label='Candidates Count', min_value=0, max_value=100,
+					set_image_number = st.slider( label='Number', min_value=0, max_value=100,
 						value=int( st.session_state.get( 'image_number', 0 ) ),
 						step=1, help='Optional. A response candidate generated from the model',
 						key='image_number' )
@@ -4153,10 +4160,19 @@ elif mode == "Images":
 					
 					image_size = st.session_state[ 'image_size' ]
 				
+				# ---------  Image Quality --------
+				with img_c5:
+					quality_options = list( image.quality_options )
+					set_image_quality = st.selectbox( label='Image Quality',
+						options=size_options, help='Optional. Image Quality',
+						key='image_quality', placeholder='Options', index=None )
+					
+					image_quality = st.session_state[ 'image_quality' ]
+				
 				# -------- Reset Settings ------------------
 				if st.button( label='Reset', key='image_visual_reset', width='stretch' ):
 					for key in [ 'image_resolution', 'image_mime_type', 'image_size',
-					             'image_number', 'image_aspect_ratio' ]:
+					             'image_number', 'image_quality' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
@@ -4197,41 +4213,42 @@ elif mode == "Images":
 		# ------------------------------------------------------------------
 		tab_gen, tab_analyze, tab_edit = st.tabs( [ 'Generate', 'Analyze', 'Edit' ] )
 		with tab_gen:
-			prompt = st.chat_input( 'Prompt' )
-			if st.button( 'Generate Image' ):
-				with st.spinner( 'Generating…' ):
-					try:
-						kwargs: Dict[ str, Any ] = {
-								'prompt': prompt,
-								'model': image_model,
-						}
-						
-						# Provider-safe optional args
-						if image_size:
-							kwargs[ 'size' ] = st.session_state[ 'image_size' ]
-						if image_quality:
-							kwargs[ 'quality' ] = st.session_state[ 'image_quality' ]
-						if image_output:
-							kwargs[ 'fmt' ] = st.session_state[ 'image_output' ]
-						
-						img_url = image.generate( **kwargs )
-						st.image( img_url )
-						
+			gen_c1, gen_c2 = st.columns( [ 0.5, 0.5 ] )
+			prompt = st.chat_input( 'Prompt', key='image_generate_message' )
+			with gen_c1:
+				if st.button( 'Generate Image' ):
+					with st.spinner( 'Generating…' ):
 						try:
-							_update_token_counters( getattr( image, 'response', None ) )
-						except Exception:
-							pass
-					
-					except Exception as exc:
-						st.error( f'Image generation failed: {exc}' )
-		
+							kwargs = { 'prompt': prompt, 'model': image_model, }
+							if image_size:
+								kwargs[ 'size' ] = st.session_state[ 'image_size' ]
+							if image_quality:
+								kwargs[ 'quality' ] = st.session_state[ 'image_quality' ]
+							if image_output:
+								kwargs[ 'fmt' ] = st.session_state[ 'image_output' ]
+							
+							img_url = image.generate( **kwargs )
+							st.image( img_url )
+							
+							try:
+								_update_token_counters( getattr( image, 'response', None ) )
+							except Exception:
+								pass
+						
+						except Exception as exc:
+							st.error( f'Image generation failed: {exc}' )
+			
+			with gen_c2:
+				if st.button( 'Clear Messages', key='clear_image_generation' ):
+					reset_state( )
+					st.rerun( )
+				
 		with tab_analyze:
 			uploaded_img = st.file_uploader(
 				'Upload an image for analysis',
 				type=[ 'png', 'jpg', 'jpeg', 'webp' ],
 				accept_multiple_files=False,
 				key='images_analyze_uploader', )
-			
 			if uploaded_img:
 				tmp_path = save_temp( uploaded_img )
 				st.image( uploaded_img, caption='Uploaded image preview', use_column_width=True, )
@@ -4253,6 +4270,16 @@ elif mode == "Images":
 				chosen_model = st.selectbox( 'Model (analysis)', [ image_model, None ], index=0, )
 				
 				chosen_model_arg = (image_model if chosen_model is None else chosen_model)
+		
+			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
+			# ---------------------------------------------------
+			#                   MESSAGES
+			# ---------------------------------------------------
+			prompt = st.chat_input( 'Prompt', key='image_analysis_message' )
+			
+			ana_c1, ana_c2 = st.columns( [ 0.5, 0.5 ] )
+			with ana_c1:
 				if st.button( 'Analyze Image' ):
 					with st.spinner( 'Analyzing image…' ):
 						analysis_result = None
@@ -4298,18 +4325,19 @@ elif mode == "Images":
 						
 						except Exception as exc:
 							st.error( f'Analysis Failed: {exc}' )
-		
+	
+			with ana_c2:
+				if st.button( 'Clear Messages', key='clear_analysis_message' ):
+					reset_state( )
+					st.rerun( )
+
 		with tab_edit:
 			uploaded_img = st.file_uploader( 'Upload Image for Edit',
-				type=[ 'png', 'jpg', 'jpeg', 'webp' ],
-				accept_multiple_files=False,
+				type=[ 'png', 'jpg', 'jpeg', 'webp' ], accept_multiple_files=False,
 				key='images_edit_uploader', )
-			
 			if uploaded_img:
 				tmp_path = save_temp( uploaded_img )
-				
 				st.image( uploaded_img, caption='Uploaded image preview', use_column_width=True, )
-				
 				available_methods = [ ]
 				for candidate in ('edit', 'describe_image', 'describe', 'classify',
 				                  'detect_objects', 'caption', 'image_edit',):
@@ -4324,10 +4352,17 @@ elif mode == "Images":
 					         'attempting generic handlers.' )
 				
 				chosen_model = st.selectbox( 'Model (edit)', [ image_model, None ], index=0, )
-				
 				chosen_model_arg = (image_model if chosen_model is None else chosen_model)
-				
-				if st.button( 'Edit Image' ):
+			
+			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
+			# ---------------------------------------------------
+			#                   MESSAGES
+			# ---------------------------------------------------
+			prompt = st.chat_input( 'Prompt', key='image_edit_messgae' )
+			edit_c1, edit_c2 = st.columns( [ 0.5, 0.5 ] )
+			with edit_c1:
+				if st.button( 'Edit Image', key='edit_image' ):
 					with st.spinner( 'Editing image…' ):
 						analysis_result = None
 						try:
@@ -4370,6 +4405,11 @@ elif mode == "Images":
 						
 						except Exception as exc:
 							st.error( f"Analysis Failed: {exc}" )
+		
+			with edit_c2:
+				if st.button( 'Clear Messages' ):
+					reset_state( )
+					st.rerun( )
 
 # ======================================================================================
 # AUDIO MODE
@@ -4378,6 +4418,14 @@ elif mode == 'Audio':
 	st.subheader( '🎧 Audio API', help=cfg.AUDIO_API )
 	st.divider( )
 	audio_model = st.session_state.get( 'audio_model', '' )
+	audio_input = st.session_state.get( 'audio_input', '' )
+	audio_task = st.session_state.get( 'audio_task', '' )
+	audio_language = st.session_state.get( 'audio_language', '' )
+	audio_format = st.session_state.get( 'audio_format', '' )
+	audio_file = st.session_state.get( 'audio_file', '' )
+	audio_reasoning = st.session_state.get( 'audio_reasoning', '' )
+	audio_choice = st.session_state.get( 'audio_tool_choice', '' )
+	audio_voice = st.session_state.get( 'audio_voice', '' )
 	audio_top_percent = st.session_state.get( 'audio_top_percent', 0.0 )
 	audio_freq = st.session_state.get( 'audio_frequency_penalty', 0.0 )
 	audio_presence = st.session_state.get( 'audio_presence_penalty', 0.0 )
@@ -4390,15 +4438,6 @@ elif mode == 'Audio':
 	audio_background = st.session_state.get( 'audio_background', True )
 	audio_loop = st.session_state.get( 'audio_loop', False )
 	audio_autoplay = st.session_state.get( 'audio_autoplay', False )
-	audio_input = st.session_state.get( 'audio_input', '' )
-	audio_task = st.session_state.get( 'audio_task', '' )
-	audio_language = st.session_state.get( 'audio_language', '' )
-	audio_format = st.session_state.get( 'audio_format', '' )
-	audio_file = st.session_state.get( 'audio_file', '' )
-	audio_media_resolution = st.session_state.get( 'audio_media_resolution', '' )
-	audio_reasoning = st.session_state.get( 'audio_reasoning', '' )
-	audio_choice = st.session_state.get( 'audio_tool_choice', '' )
-	audio_voice = st.session_state.get( 'audio_voice', '' )
 	audio_messages = st.session_state.get( 'audio_messages', [ ] )
 	audio_rate = st.session_state.get( 'audio_rate', [ ] )
 	transcriber = Transcription( )
@@ -4423,6 +4462,7 @@ elif mode == 'Audio':
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
+			
 			with st.expander( 'Model Options', expanded=False, width='stretch' ):
 				aud_c1, aud_c2, aud_c3, aud_c4, aud_c5 = st.columns(
 					[ 0.2, 0.2, 0.2, 0.2, 0.2 ], gap='xxsmall', border=True )
@@ -4591,8 +4631,7 @@ elif mode == 'Audio':
 				# ---------  Reset Setting --------
 				if st.button( 'Reset', key='audio_repsonse_reset', width='stretch' ):
 					for key in [ 'audio_autoplay', 'audio_loop', 'audio_start_time',
-					             'audio_end_time',
-					             'audio_rate', 'audio_max_tokens' ]:
+					             'audio_end_time', 'audio_rate', 'audio_max_tokens' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
@@ -4696,15 +4735,70 @@ elif mode == 'Audio':
 					format='wav', width='stretch', loop=audio_loop, autoplay=audio_autoplay )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ---------------------------------------------------
+		#                   MESSAGES
+		# ---------------------------------------------------
+		if st.session_state[ 'audio_input' ] is not None:
+			for msg in st.session_state.text_input:
+				with st.chat_message( msg[ 'role' ], avatar='' ):
+					st.markdown( msg[ 'content' ] )
+		
+		prompt = st.chat_input( 'Gipity Generate …', key='audio_messages' )
+		if prompt is not None:
+			st.session_state.text_messages.append( { 'role': 'user', 'content': prompt } )
+			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
+				gen_kwargs = { }
+				
+				with st.spinner( 'Thinking…' ):
+					gen_kwargs[ 'model' ] = st.session_state[ 'image_model' ]
+					gen_kwargs[ 'top_percent' ] = st.session_state[ 'image_top_percent' ]
+					gen_kwargs[ 'background' ] = st.session_state[ 'image_background' ]
+					gen_kwargs[ 'max_tokens' ] = st.session_state[ 'image_max_tokens' ]
+					gen_kwargs[ 'frequency' ] = st.session_state[ 'image_frequency_penalty' ]
+					gen_kwargs[ 'presence' ] = st.session_state[ 'image_presence_penalty' ]
+					
+					if st.session_state[ 'image_stops' ]:
+						gen_kwargs[ 'stops' ] = st.session_state[ 'image_stops' ]
+					
+					response = None
+					
+					try:
+						mdl = str( gen_kwargs[ 'image_model' ] )
+						if mdl.startswith( 'gpt-5' ):
+							response = text.generate_text( prompt=prompt, model=gen_kwargs[
+								'image_model' ] )
+						else:
+							response = text.generate_text( )
+					except Exception as exc:
+						err = Error( exc )
+						st.error( f'Generation Failed: {err.info}' )
+						response = None
+					
+					if response is not None and str( response ).strip( ):
+						st.markdown( response )
+						st.session_state.text_messages.append( { 'role': 'assistant',
+						                                         'content': response } )
+					else:
+						st.error( 'Generation Failed!.' )
+						try:
+							_update_token_counters( getattr( text, 'response', None ) or response )
+						except Exception:
+							pass
+		
+		# --------  Reset Button
+		if st.button( 'Clear' ):
+			reset_state( )
+			st.rerun( )
 
 # ======================================================================================
 # EMBEDDINGS MODE
 # ======================================================================================
-elif mode == 'Embedding':
+elif mode == 'Embeddings':
 	st.subheader( '🔢 Embeddings', help=cfg.EMBEDDINGS_API )
 	st.divider( )
 	embedding_model = st.session_state.get( 'embedding_model', '' )
-	embeddings_dimensions = st.session_state.get( 'embeddings_dimensions', )
+	embeddings_dimensions = st.session_state.get( 'embeddings_dimensions', 0 )
 	embeddings_chunk_size = st.session_state.get( 'embeddings_chunk_size', 0 )
 	embeddings_overlap_amount = st.session_state.get( 'embeddings_overlap_amount', 0 )
 	embeddings_encoding = st.session_state.get( 'embeddings_encoding_format', '' )
@@ -4779,7 +4873,7 @@ elif mode == 'Embedding':
 		# ------------------------------------------------------------------
 		# Main UI — Embedding execution (unchanged behavior)
 		# ------------------------------------------------------------------
-		embeddings_input = st.text_area( 'Text to embed', key='embeddings_input_text' )
+		embeddings_input = st.text_area( 'Input Text', key='embeddings_input_text' )
 		btn_left, btn_right = st.columns( [ 0.50, 0.50 ] )
 		
 		with btn_left:
@@ -4848,7 +4942,7 @@ elif mode == 'Embedding':
 				
 				st.rerun( )
 		
-		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		st.divider( )
 		
 		# ------------------------------------------------------------------
 		# TEXT METRICS
@@ -4893,20 +4987,20 @@ elif mode == 'Embedding':
 # VECTORSTORES MODE
 # ======================================================================================
 elif mode == 'Vector Stores':
-	stores_model = st.session_state.get( 'stores_model', None )
-	stores_format = st.session_state.get( 'stores_response_format', None )
-	stores_top_percent = st.session_state.get( 'stores_top_percent', None )
-	stores_frequency = st.session_state.get( 'stores_frequency_penalty', None )
-	stores_presence = st.session_state.get( 'stores_presence_penalty', None )
-	stores_number = st.session_state.get( 'stores_number', None )
-	stores_temperature = st.session_state.get( 'stores_temperature', None )
-	stores_stream = st.session_state.get( 'stores_stream', None )
-	stores_store = st.session_state.get( 'stores_store', None )
-	stores_input = st.session_state.get( 'stores_input', None )
-	stores_reasoning = st.session_state.get( 'stores_reasoning', None )
-	stores_tool_choice = st.session_state.get( 'stores_tool_choice', None )
-	stores_messages = st.session_state.get( 'stores_messages', None )
-	stores_background = st.session_state.get( 'stores_background', None )
+	stores_model = st.session_state.get( 'stores_model', '' )
+	stores_format = st.session_state.get( 'stores_response_format', '' )
+	stores_top_percent = st.session_state.get( 'stores_top_percent', 0.0 )
+	stores_frequency = st.session_state.get( 'stores_frequency_penalty', 0.0 )
+	stores_presence = st.session_state.get( 'stores_presence_penalty', 0.0 )
+	stores_number = st.session_state.get( 'stores_number', 0 )
+	stores_temperature = st.session_state.get( 'stores_temperature', 0.0 )
+	stores_stream = st.session_state.get( 'stores_stream', False )
+	stores_store = st.session_state.get( 'stores_store', False )
+	stores_input = st.session_state.get( 'stores_input', '' )
+	stores_reasoning = st.session_state.get( 'stores_reasoning', '' )
+	stores_tool_choice = st.session_state.get( 'stores_tool_choice', '' )
+	stores_messages = st.session_state.get( 'stores_messages', [ ] )
+	stores_background = st.session_state.get( 'stores_background', False )
 	searcher = None
 	
 	# ------------------------------------------------------------------
@@ -4914,13 +5008,13 @@ elif mode == 'Vector Stores':
 	# ------------------------------------------------------------------
 	st.subheader( '🏛️ File Search Stores', help=cfg.VECTORSTORES_API )
 	st.divider( )
-	searcher = VectorStores( )
+	vector = VectorStores( )
 	
 	left, center, right = st.columns( [ 0.025, 0.95, 0.025 ] )
 	with center:
 		st.caption( 'File Search Store Management' )
-		stores_left, stores_right = st.columns( [ 0.50, 0.50 ], border=True )
-		with stores_left:
+		stores_c1, stores_c2 = st.columns( [ 0.50, 0.50 ], border=True )
+		with stores_c1:
 			# --------------------------------------------------------------
 			# Expander - Create File Search Store
 			# --------------------------------------------------------------
@@ -4936,13 +5030,13 @@ elif mode == 'Vector Stores':
 						except Exception as exc:
 							st.error( f'Create store failed: {exc}' )
 		
-		with stores_right:
-			vs_map = getattr( searcher, 'collections', None )
+		with stores_c2:
+			vs_map = getattr( vector, 'collections', None )
 			# --------------------------------------------------------------
 			# Expander - Retreive Files
 			# --------------------------------------------------------------
 			with st.expander( 'Retreive:', expanded=True ):
-				options: List[ tuple ] = [ ]
+				options = [ ]
 				if vs_map and isinstance( vs_map, dict ):
 					options = list( vs_map.items( ) )
 				
@@ -4954,15 +5048,15 @@ elif mode == 'Vector Stores':
 					sel = st.selectbox( 'Select File Search Store', options=names,
 						key='select_filestore' )
 					
-					sel_id: Optional[ str ] = None
+					sel_id = ''
 					for n, i in options:
 						if f'{n} — {i}' == sel:
 							sel_id = i
 							break
 					
-					c1, c2 = st.columns( [ 1, 1 ] )
+					opt_c1, opt_c2 = st.columns( [ 0.5, 0.5 ] )
 					
-					with c1:
+					with opt_c1:
 						if st.button( '📥 Retrieve File Search Store', key='retrieve_filestore' ):
 							if not sel_id:
 								st.warning( 'No File Search Store Selected!' )
@@ -4975,7 +5069,7 @@ elif mode == 'Vector Stores':
 								except Exception as exc:
 									st.error( f'retrieve() failed: {exc}' )
 					
-					with c2:
+					with opt_c2:
 						if st.button( '❌ Delete File Search Store', key='delete_store' ):
 							if not sel_id:
 								st.warning( 'No File Search Store Selected.' )
@@ -4992,6 +5086,13 @@ elif mode == 'Document Q&A':
 	st.subheader( '📚 Document Q & A', help=cfg.DOCUMENT_Q_AND_A )
 	st.divider( )
 	docqna_model = st.session_state.get( 'docqna_model', '' )
+	docqna_reasoning = st.session_state.get( 'docqna_reasoning', '' )
+	docqna_resolution = st.session_state.get( 'docqna_resolution', '' )
+	docqna_media_resolution = st.session_state.get( 'docqna_media_resolution', '' )
+	docqna_response_format = st.session_state.get( 'docqna_response_format', '' )
+	docqna_tool_choice = st.session_state.get( 'docqna_tool_choice', '' )
+	docqna_content = st.session_state.get( 'docqna_content', '' )
+	docqna_input = st.session_state.get( 'docqna_input', '' )
 	docqna_number = st.session_state.get( 'docqna_number', 0 )
 	docqna_max_calls = st.session_state.get( 'docqna_max_calls', 0 )
 	docqna_max_searches = st.session_state.get( 'docqna_max_searches', 0 )
@@ -5005,13 +5106,6 @@ elif mode == 'Document Q&A':
 	docqna_parallel_tools = st.session_state.get( 'docqna_parallel_tools', False )
 	docqna_store = st.session_state.get( 'docqna_store', False )
 	docqna_background = st.session_state.get( 'docqna_background', False )
-	docqna_reasoning = st.session_state.get( 'docqna_reasoning', '' )
-	docqna_resolution = st.session_state.get( 'docqna_resolution', '' )
-	docqna_media_resolution = st.session_state.get( 'docqna_media_resolution', '' )
-	docqna_response_format = st.session_state.get( 'docqna_response_format', '' )
-	docqna_tool_choice = st.session_state.get( 'docqna_tool_choice', '' )
-	docqna_content = st.session_state.get( 'docqna_content', '' )
-	docqna_input = st.session_state.get( 'docqna_input', '' )
 	docqna_tools = st.session_state.get( 'docqna_tools', [ ] )
 	docqna_modalities = st.session_state.get( 'docqna_modalities', [ ] )
 	docqna_context = st.session_state.get( 'docqna_context', [ ] )
@@ -5020,9 +5114,9 @@ elif mode == 'Document Q&A':
 	docqna_stops = st.session_state.get( 'docqna_stops', [ ] )
 	docqna_files = st.session_state.get( 'docqna_files' )
 	docqna_uploaded = st.session_state.get( 'docqna_uploaded' )
-	docqna_messages = st.session_state.get( 'docqna_messages' )
-	docqna_active_docs = st.session_state.get( 'docqna_active_docs' )
-	docqna_source = st.session_state.get( 'docqna_source' )
+	docqna_messages = st.session_state.get( 'docqna_messages', [ ] )
+	docqna_active_docs = st.session_state.get( 'docqna_active_docs', [ ] )
+	docqna_source = st.session_state.get( 'docqna_source', '' )
 	docqna_multi_mode = st.session_state.get( 'docqna_multi_mode' )
 	docqna = Files( )
 	
@@ -5043,9 +5137,10 @@ elif mode == 'Document Q&A':
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		with st.expander( label='LLM Configuration', icon='🧠', expanded=False, width='stretch' ):
+			
 			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
 				# ---------- Model ------------
 				with llm_c1:
@@ -5081,20 +5176,11 @@ elif mode == 'Document Q&A':
 				# ---------- Reasoning/Thinking Level ------------
 				with llm_c4:
 					reasoning_options = list( docqna.reasoning_options )
-					set_docqna_reasoning = st.selectbox( label='Thinking Level:',
+					set_docqna_reasoning = st.selectbox( label='Reasoning',
 						options=reasoning_options, key='docqna_reasoning',
 						help=cfg.REASONING, index=None, placeholder='Options' )
 					
 					docqna_reasoning = st.session_state[ 'docqna_reasoning' ]
-				
-				# ---------- Media Resolution ------------
-				with llm_c5:
-					media_options = list( docqna.media_options )
-					set_media_resolution = st.selectbox( label='Media Resolution',
-						options=media_options, key='docqna_media_resolution',
-						help=cfg.REASONING, index=None, placeholder='Options' )
-					
-					media_resolution = st.session_state[ 'docqna_media_resolution' ]
 				
 				# ---------- Reset Settings ------------
 				if st.button( label='Reset', key='docqna_model_reset', width='stretch' ):
@@ -5106,8 +5192,8 @@ elif mode == 'Document Q&A':
 					st.rerun( )
 			
 			with st.expander( label='Inference Settings', expanded=False, width='stretch' ):
-				prm_c1, prm_c2, prm_c3, prm_c4, prm_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				prm_c1, prm_c2, prm_c3, prm_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
 				# ---------- Top-P ------------
 				with prm_c1:
@@ -5141,15 +5227,6 @@ elif mode == 'Document Q&A':
 					
 					docqna_temperature = st.session_state[ 'docqna_temperature' ]
 				
-				# ---------- Top-K ------------
-				with prm_c5:
-					set_docqna_topk = st.slider( label='Top K', min_value=0, max_value=20,
-						value=int( st.session_state.get( 'docqna_top_k', 0 ) ), step=1,
-						help=cfg.TOP_K,
-						key='docqna_top_k' )
-					
-					docqna_top_k = st.session_state[ 'docqna_top_k' ]
-				
 				# ---------- Reset Settings ------------
 				if st.button( label='Reset', key='docqna_inference_reset', width='stretch' ):
 					for key in [ 'docqna_top_percent', 'docqna_frequency_penalty',
@@ -5161,12 +5238,12 @@ elif mode == 'Document Q&A':
 					st.rerun( )
 			
 			with st.expander( label='Tool Settings', expanded=False, width='stretch' ):
-				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				tool_c1, tool_c2, tool_c3, tool_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
 				# ---------- Number/Candidates ------------
 				with tool_c1:
-					set_docqna_number = st.slider( label='Candidates', min_value=0, max_value=50,
+					set_docqna_number = st.slider( label='Number', min_value=0, max_value=50,
 						value=int( st.session_state.get( 'docqna_number', 0 ) ), step=1,
 						help='Optional. Upper limit on the responses returned by the model',
 						key='docqna_number' )
@@ -5184,7 +5261,7 @@ elif mode == 'Document Q&A':
 				# ---------- Choice/Calling Mode ------------
 				with tool_c3:
 					choice_options = list( docqna.choice_options )
-					set_docqna_choice = st.selectbox( label='Calling Mode', options=choice_options,
+					set_docqna_choice = st.selectbox( label='Choice', options=choice_options,
 						key='docqna_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
 					
 					docqna_tool_choice = st.session_state[ 'docqna_tool_choice' ]
@@ -5200,22 +5277,10 @@ elif mode == 'Document Q&A':
 					
 					docqna_tools = st.session_state[ 'docqna_tools' ]
 				
-				# ---------- Modalities ------------
-				with tool_c5:
-					modality_options = list( docqna.modality_options )
-					set_docqna_modalities = st.multiselect( label='Response Modalities', options=modality_options,
-						key='docqna_modalities', help='Optional. Modality of the response',
-						placeholder='Options' )
-					
-					docqna_modalities = [ d.strip( ) for d in set_docqna_modalities
-					                      if d.strip( ) ]
-					
-					docqna_modalities = st.session_state[ 'docqna_modalities' ]
-				
 				# ---------- Reset Settings ------------
 				if st.button( label='Reset', key='docqna_tools_reset', width='stretch' ):
 					for key in [ 'docqna_parallel_tools', 'docqna_tool_choice', 'docqna_number',
-					             'docqna_tools', 'docqna_max_calls', 'docqna_modalities' ]:
+					             'docqna_tools', 'docqna_max_calls' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
@@ -5264,8 +5329,7 @@ elif mode == 'Document Q&A':
 				# ---------- Reset Settings ------------
 				if st.button( label='Reset', key='docqna_response_reset', width='stretch' ):
 					for key in [ 'docqna_stream', 'docqna_store', 'docqna_background',
-					             'docqna_stops',
-					             'docqna_max_tokens' ]:
+					             'docqna_stops', 'docqna_max_tokens' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					# If using separated UI key for stops
@@ -5275,12 +5339,12 @@ elif mode == 'Document Q&A':
 					st.rerun( )
 		
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
+			ins_c1, ins_c2 = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
 				prompt_names = [ 'No Templates Found' ]
 			
-			with in_left:
+			with ins_c1:
 				st.text_area( 'Enter Text', height=50, width='stretch',
 					help=cfg.SYSTEM_INSTRUCTIONS, key='docqna_system_instructions' )
 			
@@ -5291,7 +5355,7 @@ elif mode == 'Document Q&A':
 					if text is not None:
 						st.session_state[ 'docqna_system_instructions' ] = text
 			
-			with in_right:
+			with ins_c2:
 				st.selectbox( 'Select Template', prompt_names,
 					key='instructions', on_change=_on_template_change, index=None )
 			
@@ -5313,7 +5377,7 @@ elif mode == 'Document Q&A':
 							docqna_uploaded.name: docqna_uploaded.getvalue( ) }
 					st.success( f'{docqna_uploaded.name} has been loaded!' )
 				else:
-					st.info( 'Load a document.' )
+					st.info( 'Load a Document.' )
 				
 				unload = st.button( label='Unload Document', width='stretch' )
 				if unload:
@@ -5329,6 +5393,9 @@ elif mode == 'Document Q&A':
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
+		# ---------------------------------------------------
+		#                   MESSAGES
+		# ---------------------------------------------------
 		for msg in st.session_state.docqna_messages:
 			with st.chat_message( msg[ 'role' ] ):
 				st.markdown( msg[ 'content' ] )
@@ -5337,6 +5404,11 @@ elif mode == 'Document Q&A':
 			st.session_state.docqna_messages.append( { 'role': 'user', 'content': prompt } )
 			response = route_document_query( prompt )
 			st.session_state.docqna_messages.append( { 'role': 'assistant', 'content': response } )
+			st.rerun( )
+			
+		# --------  Reset Button
+		if st.button( 'Clear Messages' ):
+			reset_state( )
 			st.rerun( )
 
 # ======================================================================================
@@ -5352,8 +5424,9 @@ elif mode == 'Files':
 	files_id = st.session_state.get( 'files_id', '' )
 	files_url = st.session_state.get( 'files_url', '' )
 	files_table = st.session_state.get( 'files_table', '' )
+	files_messages = st.session_state.get( 'files_messages', '' )
 	
-	for key in [ 'files_domains', 'files_stops', 'files_includes', 'files_input', ]:
+	for key in [ 'files_domains', 'files_stops', 'files_includes', 'files_messages', ]:
 		if key in st.session_state and isinstance( st.session_state[ key ], list ):
 			del st.session_state[ key ]
 	# ------------------------------------------------------------------
@@ -5422,6 +5495,26 @@ elif mode == 'Files':
 								st.success( f'Delete result: {res}' )
 							except Exception as exc:
 								st.error( f'Delete failed: {exc}' )
+		
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ---------------------------------------------------
+		#                   MESSAGES
+		# ---------------------------------------------------
+		for msg in st.session_state.docqna_messages:
+			with st.chat_message( msg[ 'role' ] ):
+				st.markdown( msg[ 'content' ] )
+		
+		if prompt := st.chat_input( 'Ask a question about the files' ):
+			st.session_state.files_messages.append( { 'role': 'user', 'content': prompt } )
+			response = route_document_query( prompt )
+			st.session_state.files_messages.append( { 'role': 'assistant', 'content': response } )
+			st.rerun( )
+		
+		# --------  Reset Button
+		if st.button( 'Clear' ):
+			reset_state( )
+			st.rerun( )
 
 # ======================================================================================
 # PROMPT ENGINEERING MODE
@@ -6230,7 +6323,7 @@ _mode_to_model_key = \
 	'Text': 'text_model',
 	'Images': 'image_model',
 	'Audio': 'audio_model',
-	'Embedding': 'embedding_model',
+	'Embeddings': 'embedding_model',
 	'Document Q&A': 'docqna_model',
 	'Files': 'files_model',
 	'Vector Stores': 'stores_model',
@@ -6246,24 +6339,24 @@ if active_model is not None:
 	right_parts.append( f'Model: {active_model}' )
 
 # ---- Rendered Variables
-if mode == 'Text':
-	temperature = st.session_state.get( 'text_temperature' )
-	top_p = st.session_state.get( 'text_top_percent' )
-	freq = st.session_state.get( 'text_frequency_penalty' )
-	presence = st.session_state.get( 'text_presence_penalty' )
-	number = st.session_state.get( 'text_number' )
-	stream = st.session_state.get( 'text_stream' )
-	parallel_tools = st.session_state.get( 'text_parallel_tools' )
-	max_calls = st.session_state.get( 'text_max_tools' )
-	store = st.session_state.get( 'text_store' )
-	tools = st.session_state.get( 'text_tools' )
-	include = st.session_state.get( 'text_include' )
-	domains = st.session_state.get( 'text_domains' )
-	input_mode = st.session_state.get( 'text_input' )
-	tool_choice = st.session_state.get( 'text_tool_choice' )
-	background = st.session_state.get( 'text_background' )
-	messages = st.session_state.get( 'text_messages' )
-	max_tokens = st.session_state.get( 'text_max_tokens' )
+if mode == 'Chat':
+	temperature = st.session_state.get( 'chat_temperature' )
+	top_p = st.session_state.get( 'chat_top_percent' )
+	freq = st.session_state.get( 'chat_frequency_penalty' )
+	presence = st.session_state.get( 'chat_presence_penalty' )
+	number = st.session_state.get( 'chat_number' )
+	stream = st.session_state.get( 'chat_stream' )
+	parallel_tools = st.session_state.get( 'chat_parallel_tools' )
+	max_calls = st.session_state.get( 'chat_max_tools' )
+	store = st.session_state.get( 'chat_store' )
+	tools = st.session_state.get( 'chat_tools' )
+	include = st.session_state.get( 'chat_include' )
+	domains = st.session_state.get( 'chat_domains' )
+	input_mode = st.session_state.get( 'chat_input' )
+	tool_choice = st.session_state.get( 'chat_tool_choice' )
+	background = st.session_state.get( 'chat_background' )
+	messages = st.session_state.get( 'chat_messages' )
+	max_tokens = st.session_state.get( 'chat_max_tokens' )
 	
 	if temperature is not None:
 		right_parts.append( f'Temp: {temperature:.1%}' )
@@ -6413,6 +6506,7 @@ elif mode == 'Images':
 		right_parts.append( 'Background: On' )
 
 elif mode == 'Audio':
+	audio_model = st.session_state.get( 'audio_model' )
 	audio_task = st.session_state.get( 'audio_task' )
 	audio_format = st.session_state.get( 'audio_response_format' )
 	audio_top_p = st.session_state.get( 'audio_top_percent' )
@@ -6433,7 +6527,7 @@ elif mode == 'Audio':
 	audio_end = st.session_state.get( 'audio_end' )
 	audio_loop = st.session_state.get( 'audio_loop' )
 	audio_play = st.session_state.get( 'auto_play' )
-	audio_voice = st.session_state.get( 'voice', None )
+	audio_voice = st.session_state.get( 'audio_voice' )
 	
 	if audio_task is not None:
 		right_parts.append( f'Task: {audio_task}' )
@@ -6497,6 +6591,61 @@ elif mode == 'Embeddings':
 	if input_data:
 		right_parts.append( 'Input: Set' )
 
+elif mode == 'Document Q&A':
+	temperature = st.session_state.get( 'docqna_temperature' )
+	top_p = st.session_state.get( 'docqna_top_percent' )
+	freq = st.session_state.get( 'docqna_frequency_penalty' )
+	presence = st.session_state.get( 'docqna_presence_penalty' )
+	number = st.session_state.get( 'docqna_number' )
+	stream = st.session_state.get( 'docqna_stream' )
+	parallel_tools = st.session_state.get( 'docqna_parallel_tools' )
+	max_calls = st.session_state.get( 'docqna_max_tools' )
+	store = st.session_state.get( 'docqna_store' )
+	tools = st.session_state.get( 'docqna_tools' )
+	include = st.session_state.get( 'docqna_include' )
+	domains = st.session_state.get( 'docqna_domains' )
+	input_mode = st.session_state.get( 'docqna_input' )
+	tool_choice = st.session_state.get( 'docqna_tool_choice' )
+	background = st.session_state.get( 'docqna_background' )
+	messages = st.session_state.get( 'docqna_messages' )
+	max_tokens = st.session_state.get( 'docqna_max_tokens' )
+	
+	if temperature is not None:
+		right_parts.append( f'Temp: {temperature:.1%}' )
+	if top_p is not None:
+		right_parts.append( f'Top-P: {top_p:.1%}' )
+	if freq is not None:
+		right_parts.append( f'Freq: {freq:.2f}' )
+	if presence is not None:
+		right_parts.append( f'Presence: {presence:.2f}' )
+	if number is not None:
+		right_parts.append( f'N: {number}' )
+	if max_tokens is not None:
+		right_parts.append( f'Max Tokens: {max_tokens}' )
+	
+	if stream:
+		right_parts.append( 'Stream: On' )
+	if parallel_tools:
+		right_parts.append( 'Parallel Tools: On' )
+	if max_calls is not None:
+		right_parts.append( f'Max Calls: {max_calls}' )
+	if store:
+		right_parts.append( 'Store: On' )
+	if tools:
+		right_parts.append( f'Tools: {len( tools )}' )
+	if include:
+		right_parts.append( 'Include: On' )
+	if domains:
+		right_parts.append( 'Domains: Set' )
+	if input_mode:
+		right_parts.append( 'Input: Set' )
+	if tool_choice:
+		right_parts.append( f'Tool Choice: On' )
+	if background:
+		right_parts.append( 'Background: On' )
+	if messages:
+		right_parts.append( 'Messages: Set' )
+
 elif mode == 'Files':
 	files_purpose = st.session_state.get( 'files_purpose' )
 	files_type = st.session_state.get( 'files_type' )
@@ -6515,7 +6664,7 @@ elif mode == 'Files':
 	if files_url is not None:
 		right_parts.append( 'URL: Set' )
 
-elif mode == 'VectorStores':
+elif mode == 'Vector Stores':
 	model = st.session_state.get( 'stores_model' )
 	fmt = st.session_state.get( 'stores_response_format' )
 	temperature = st.session_state.get( 'stores_temperature' )

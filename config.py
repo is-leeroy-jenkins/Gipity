@@ -53,12 +53,13 @@ GOOGLEMAPS_API_KEY = os.getenv( 'GOOGLEMAPS_API_KEY' )
 GOOGLE_API_KEY = os.getenv( 'GOOGLE_API_KEY' )
 GEOCODING_API_KEY = os.getenv( 'GEOCODING_API_KEY' )
 GOOGLE_CSE_ID = os.getenv( 'GOOGLE_CSE_ID' )
-MODELS = [ 'gpt-5-nano-2025-08-07', 'gpt-4.1-nano-2025-04-14', 'gpt-4o-mini', ]
+MODELS = [ 'gpt-5-nano-2025-08-07', 'gpt-4.1-nano-2025-04-14', 'gpt-5-mini', ]
+DEFAULT_MODEL = MODELS[ 0 ]
 MODEL_PATH = r'models/gipity-3-270m-it-Q4_K_M.gguf'
 DB_PATH = r'stores/sqlite/gipity.db'
 BASE_DIR = Path( __file__ ).resolve( ).parent
 FAVICON = r'resources/images/favicon.ico'
-LOGO_PATH = r'resources/images/Gipity.png'
+LOGO_PATH = r'resources/images/gipity_logo.png'
 BLUE_DIVIDER = "<div style='height:2px;align:left;background:#0078FC;margin:6px 0 10px 0;'></div>"
 APP_TITLE = 'Gipity'
 APP_SUBTITLE = 'Multi-Modal AI'
@@ -80,9 +81,7 @@ MODE_CLASS_MAP = {
 		'Chat': None,
 		'Text': [ 'Chat' ],
 		'Images': [ 'Images' ],
-		'Audio': [ 'TTS',
-		           'Translation',
-		           'Transcription' ],
+		'Audio': [ 'TTS', 'Translation', 'Transcription' ],
 		'Embeddings': [ 'Embeddings' ],
 		'Documents': [ 'Files' ],
 		'Files': [ 'Files' ],

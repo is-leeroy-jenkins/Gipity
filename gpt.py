@@ -741,7 +741,7 @@ class Images( GPT ):
 	style: Optional[ str ]
 	allowed_domains: Optional[ List[ str ] ]
 	response_format: Optional[ str ]
-	output_format: Optional[ str ]
+	mime_format: Optional[ str ]
 	background: Optional[ bool ]
 	backcolor: Optional[ str ]
 	
@@ -788,7 +788,7 @@ class Images( GPT ):
 		self.size = size
 		self.style = style
 		self.response_format = respose_format
-		self.output_format = image_format
+		self.mime_format = image_format
 		self.parallel_tools = is_parallel
 	
 	@property
@@ -865,7 +865,7 @@ class Images( GPT ):
 		return [ 'url', 'b64_json' ]
 	
 	@property
-	def output_options( self ) -> List[ str ]:
+	def mime_options( self ) -> List[ str ]:
 		'''
 	
 	        Purpose:
@@ -973,6 +973,17 @@ class Images( GPT ):
 		         'none',
 		         'minimal',
 		         'xhigh' ]
+	
+	@property
+	def modality_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'text', 'auto', 'image', 'audio' ]
 	
 	def generate( self, prompt: str, number: int=1, model: str='gpt-image-1-mini',
 			size: str='1024x1024', quality: str='standard', fmt: str = '.png' ) -> str | None:
