@@ -77,15 +77,16 @@ GIPITY = '🧠'
 
 # ----------------- GPT CONFIG -------------------
 
-MODE_CLASS_MAP = {
-		'Chat': None,
-		'Text': [ 'Chat' ],
-		'Images': [ 'Images' ],
-		'Audio': [ 'TTS', 'Translation', 'Transcription' ],
-		'Embeddings': [ 'Embeddings' ],
-		'Documents': [ 'Files' ],
-		'Files': [ 'Files' ],
-		'Vector Stores': [ 'VectorStores' ],
+MODE_CLASS_MAP = \
+{
+	'Chat': None,
+	'Text': [ 'Chat' ],
+	'Images': [ 'Images' ],
+	'Audio': [ 'TTS', 'Translation', 'Transcription' ],
+	'Embeddings': [ 'Embeddings' ],
+	'Documents': [ 'Files' ],
+	'Files': [ 'Files' ],
+	'Vector Stores': [ 'VectorStores' ],
 }
 
 GPT_LOGO = r'resources/images/gpt.png'
