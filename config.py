@@ -149,9 +149,7 @@ TEMPERATURE = r'''Optional. A number between 0 and 2. Higher values like 0.8 wil
 
 TOP_P = r'''Optional. The maximum cumulative probability of tokens to consider when sampling.
 		The model uses combined Top-k and Top-p (nucleus) sampling. Tokens are sorted based on
-		their assigned probabilities so that only the most likely tokens are considered.
-		Top-k sampling directly limits the maximum number of tokens to consider,
-		while Nucleus sampling limits the number of tokens based on the cumulative probability.'''
+		their assigned probabilities so that only the most likely tokens are considered.'''
 
 PRESENCE_PENALTY = r'''Optional. A value between -2 and 2. Presence penalty applied to the
 		next token's logprobs if the token has already been seen in the response.
