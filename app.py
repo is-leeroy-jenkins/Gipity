@@ -300,9 +300,6 @@ if 'chat_tool_choice' not in st.session_state:
 if 'chat_resolution' not in st.session_state:
 	st.session_state[ 'chat_resolution' ] = ''
 
-if 'chat_media_resolution' not in st.session_state:
-	st.session_state[ 'chat_media_resolution' ] = ''
-
 if 'chat_reasoning' not in st.session_state:
 	st.session_state[ 'chat_reasoning' ] = ''
 
@@ -374,12 +371,6 @@ if 'text_response_format' not in st.session_state:
 if 'text_tool_choice' not in st.session_state:
 	st.session_state[ 'text_tool_choice' ] = ''
 
-if 'text_resolution' not in st.session_state:
-	st.session_state[ 'text_resolution' ] = ''
-
-if 'text_media_resolution' not in st.session_state:
-	st.session_state[ 'text_media_resolution' ] = ''
-
 if 'text_reasoning' not in st.session_state:
 	st.session_state[ 'text_reasoning' ] = ''
 
@@ -418,9 +409,6 @@ if 'image_max_calls' not in st.session_state:
 if 'image_max_searches' not in st.session_state:
 	st.session_state[ 'image_max_searches' ] = 0
 
-if 'image_top_k' not in st.session_state:
-	st.session_state[ 'image_top_k' ] = 0
-
 if 'image_temperature' not in st.session_state:
 	st.session_state[ 'image_temperature' ] = 0.0
 
@@ -451,17 +439,8 @@ if 'image_stream' not in st.session_state:
 if 'image_tool_choice' not in st.session_state:
 	st.session_state[ 'image_tool_choice' ] = ''
 
-if 'image_media_resolution' not in st.session_state:
-	st.session_state[ 'image_media_resolution' ] = ''
-
 if 'image_reasoning' not in st.session_state:
 	st.session_state[ 'image_reasoning' ] = ''
-
-if 'image_resolution' not in st.session_state:
-	st.session_state[ 'image_resolution' ] = ''
-
-if 'image_aspect_ratio' not in st.session_state:
-	st.session_state[ 'image_aspect_ratio' ] = ''
 
 if 'image_mime_type' not in st.session_state:
 	st.session_state[ 'image_mime_type' ] = ''
@@ -470,19 +449,19 @@ if 'image_response_format' not in st.session_state:
 	st.session_state[ 'image_response_format' ] = ''
 
 if 'image_input' not in st.session_state:
-	st.session_state[ 'image_input' ] = ''
+	st.session_state[ 'image_input' ] = List[ str ] | ''
 
 if 'image_include' not in st.session_state:
 	st.session_state[ 'image_include' ] = [ ]
 
 if 'image_tools' not in st.session_state:
-	st.session_state.image_tools: List[ Dict[ str, Any ] ] = [ ]
+	st.session_state.[ 'image_tools' ]: List[ Dict[ str, Any ] ] = [ ]
 
 if 'image_modalities' not in st.session_state:
 	st.session_state[ 'image_modalities' ] = [ ]
 
 if 'image_context' not in st.session_state:
-	st.session_state.image_context: List[ Dict[ str, Any ] ] = [ ]
+	st.session_state.[ 'image_context' ]: List[ Dict[ str, Any ] ] = [ ]
 
 if 'image_domains' not in st.session_state:
 	st.session_state[ 'image_domains' ] = [ ]
@@ -709,11 +688,11 @@ if 'uploaded' not in st.session_state:
 if 'active_docs' not in st.session_state:
 	st.session_state[ 'active_docs' ] = [ ]
 
-if 'doc_bytes' not in st.session_state:
-	st.session_state[ 'doc_bytes' ] = { }
+if 'docqna_bytes' not in st.session_state:
+	st.session_state[ 'docqna_bytes' ] = { }
 
-if 'doc_source' not in st.session_state:
-	st.session_state[ 'doc_source' ] = 'uploadlocal'
+if 'docqna_source' not in st.session_state:
+	st.session_state[ 'docqna_source' ] = 'uploadlocal'
 
 if 'docqna_vec_ready' not in st.session_state:
 	st.session_state[ 'docqna_vec_ready' ] = False
@@ -896,33 +875,32 @@ if 'stores_id' not in st.session_state:
 
 def _extract_usage_from_response( resp: Any ) -> Dict[ str, int ]:
 	"""
+	
 		Extract token usage from a response object/dict.
 		Returns dict with prompt_tokens, completion_tokens, total_tokens.
 		Defensive: returns zeros if not present.
+		
 	"""
-	usage = {
-			"prompt_tokens": 0,
-			"completion_tokens": 0,
-			"total_tokens": 0 }
+	usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0 }
 	if not resp:
 		return usage
 	
 	raw = None
 	try:
-		raw = getattr( resp, "usage", None )
+		raw = getattr( resp, 'usage', None )
 	except Exception:
 		raw = None
 	
 	if not raw and isinstance( resp, dict ):
-		raw = resp.get( "usage" )
+		raw = resp.get( 'usage' )
 	
 	# Gemini SDK commonly uses "usage_metadata"
 	if not raw and isinstance( resp, dict ):
-		raw = resp.get( "usage_metadata" )
+		raw = resp.get( 'usage_metadata' )
 	
 	if not raw:
 		try:
-			raw = getattr( resp, "usage_metadata", None )
+			raw = getattr( resp, 'usage_metadata', None )
 		except Exception:
 			raw = None
 	
@@ -932,25 +910,25 @@ def _extract_usage_from_response( resp: Any ) -> Dict[ str, int ]:
 	try:
 		if isinstance( raw, dict ):
 			usage[
-				"prompt_tokens" ] = int( raw.get( "prompt_tokens", raw.get( "input_tokens", 0 ) ) )
-			usage[ "completion_tokens" ] = int(
-				raw.get( "completion_tokens", raw.get( "output_tokens", 0 ) )
+				'prompt_tokens' ] = int( raw.get( 'prompt_tokens', raw.get( 'input_tokens', 0 ) ) )
+			usage[ 'completion_tokens' ] = int(
+				raw.get( 'completion_tokens', raw.get( 'output_tokens', 0 ) )
 			)
-			usage[ "total_tokens" ] = int(
-				raw.get( "total_tokens", usage[ "prompt_tokens" ] + usage[ "completion_tokens" ] )
+			usage[ 'total_tokens' ] = int(
+				raw.get( 'total_tokens', usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] )
 			)
 		else:
 			usage[
-				"prompt_tokens" ] = int( getattr( raw, "prompt_tokens", getattr( raw, "input_tokens", 0 ) ) )
-			usage[ "completion_tokens" ] = int(
-				getattr( raw, "completion_tokens", getattr( raw, "output_tokens", 0 ) )
+				'prompt_tokens' ] = int( getattr( raw, 'prompt_tokens', getattr( raw, 'input_tokens', 0 ) ) )
+			usage[ 'completion_tokens' ] = int(
+				getattr( raw, 'completion_tokens', getattr( raw, 'output_tokens', 0 ) )
 			)
-			usage[ "total_tokens" ] = int(
-				getattr( raw, "total_tokens",
-					usage[ "prompt_tokens" ] + usage[ "completion_tokens" ] )
+			usage[ 'total_tokens' ] = int(
+				getattr( raw, 'total_tokens',
+					usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] )
 			)
 	except Exception:
-		usage[ "total_tokens" ] = usage[ "prompt_tokens" ] + usage[ "completion_tokens" ]
+		usage[ 'total_tokens' ] = usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ]
 	
 	return usage
 
@@ -960,21 +938,23 @@ def _update_token_counters( resp: Any ) -> None:
 	"""
 	usage = _extract_usage_from_response( resp )
 	st.session_state.last_call_usage = usage
-	st.session_state.token_usage[ "prompt_tokens" ] += usage.get( "prompt_tokens", 0 )
-	st.session_state.token_usage[ "completion_tokens" ] += usage.get( "completion_tokens", 0 )
-	st.session_state.token_usage[ "total_tokens" ] += usage.get( "total_tokens", 0 )
+	st.session_state.token_usage[ 'prompt_tokens' ] += usage.get( 'prompt_tokens', 0 )
+	st.session_state.token_usage[ 'completion_tokens' ] += usage.get( 'completion_tokens', 0 )
+	st.session_state.token_usage[ 'total_tokens' ] += usage.get( 'total_tokens', 0 )
 
 def _display_value( val: Any ) -> str:
 	"""
+	
 		Render a friendly display string for header values.
 		None -> em dash; otherwise str(value).
+		
 	"""
 	if val is None:
-		return "—"
+		return '—'
 	try:
 		return str( val )
 	except Exception:
-		return "—"
+		return '—'
 
 # ----------- RESPONSE/CHAT UTILITIES ------------
 
@@ -1177,11 +1157,7 @@ def reset_state( ) -> None:
 	st.session_state.chat_history = [ ]
 	st.session_state.last_answer = ''
 	st.session_state.last_sources = [ ]
-	st.session_state.last_analysis = {
-			'tables': [ ],
-			'files': [ ],
-			'text': [ ],
-	}
+	st.session_state.last_analysis = { 'tables': [ ], 'files': [ ], 'text': [ ], }
 
 def normalize( obj ):
 	if obj is None or isinstance( obj, (str, int, float, bool) ):
@@ -1255,7 +1231,6 @@ def extract_sources( response: Any ) -> List[ Dict[ str, Any ] ]:
 		# ------------------------------------------------
 		elif t == 'file_search_call':
 			raw = getattr( item, 'results', None )
-			
 			if not isinstance( raw, (list, tuple) ):
 				continue
 			
@@ -1272,6 +1247,7 @@ def extract_sources( response: Any ) -> List[ Dict[ str, Any ] ]:
 
 def save_temp( upload ) -> str | None:
 	"""
+	
 		Purpose:
 		--------
 		Save a Streamlit UploadedFile object to a temporary file on disk
@@ -1286,6 +1262,7 @@ def save_temp( upload ) -> str | None:
 		--------
 		str | None
 			Path to the temporary file, or None if invalid input.
+			
 	"""
 	if upload is None:
 		return None
@@ -1317,7 +1294,7 @@ def _extract_usage_from_response( resp: Any ) -> Dict[ str, int ]:
 	
 	raw = None
 	try:
-		raw = getattr( resp, "usage", None )
+		raw = getattr( resp, 'usage', None )
 	except Exception:
 		raw = None
 	
@@ -1334,20 +1311,16 @@ def _extract_usage_from_response( resp: Any ) -> Dict[ str, int ]:
 				raw.get( 'completion_tokens', raw.get( 'output_tokens', 0 ) )
 			)
 			usage[ 'total_tokens' ] = int(
-				raw.get(
-					'total_tokens',
-					usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ],
-				)
-			)
+				raw.get( 'total_tokens', usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] ) )
 		else:
-			usage[ "prompt_tokens" ] = int( getattr( raw, "prompt_tokens", 0 ) )
-			usage[ "completion_tokens" ] = int(
-				getattr( raw, "completion_tokens", getattr( raw, "output_tokens", 0 ) ) )
-			usage[ "total_tokens" ] = int(
-				getattr( raw, "total_tokens",
-					usage[ "prompt_tokens" ] + usage[ "completion_tokens" ], ) )
+			usage[ 'prompt_tokens' ] = int( getattr( raw, 'prompt_tokens', 0 ) )
+			usage[ 'completion_tokens' ] = int(
+				getattr( raw, 'completion_tokens', getattr( raw, 'output_tokens', 0 ) ) )
+			usage[ 'total_tokens' ] = int(
+				getattr( raw, 'total_tokens',
+					usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ], ) )
 	except Exception:
-		usage[ "total_tokens" ] = (usage[ "prompt_tokens" ] + usage[ "completion_tokens" ])
+		usage[ 'total_tokens' ] = (usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ])
 	
 	return usage
 
@@ -1367,35 +1340,35 @@ def _update_token_counters( resp: Any ) -> None:
 
 def _display_value( val: Any ) -> str:
 	"""
+	
 		Render a friendly display string for header values.
 		None -> em dash; otherwise str(value).
+		
 	"""
 	if val is None:
-		return "—"
+		return '—'
 	try:
 		return str( val )
 	except Exception:
-		return "—"
+		return '—'
 
 def build_intent_prefix( mode: str ) -> str:
 	if mode == 'Guidance Only':
 		return (
 				'[ANALYST INTENT]\n'
 				'Respond using authoritative policy and guidance only. '
-				'Do not perform financial computation.\n\n'
-		)
+				'Do not perform financial computation.\n\n' )
 	if mode == 'Analysis Only':
 		return (
 				'[ANALYST INTENT]\n'
 				'Respond using financial analysis and computation only. '
-				'Minimize policy citation.\n\n'
-		)
+				'Minimize policy citation.\n\n' )
 	return ''
 
 def format_results( results ):
 	formatted_results = ''
 	for result in results.data:
-		formatted_result = f"<li> '{result.name}'"
+		formatted_result = f'<li> '{result.name}''
 		formatted_results += formatted_result + "</li>"
 	return f"<p>{formatted_results}</p>"
 
@@ -1452,6 +1425,7 @@ def convert_xml( text: str ) -> str:
 
 def markdown_converter( text: Any ) -> str:
 	"""
+	
 		Purpose:
 		--------
 		Convert between Markdown headings and simple XML-like heading tags.
@@ -1471,13 +1445,13 @@ def markdown_converter( text: Any ) -> str:
 		--------
 		str
 			Converted text.
+			
 	"""
 	if not isinstance( text, str ) or not text.strip( ):
 		return ""
 	
 	# Normalize newlines
-	src = text.replace( "\r\n", "\n" ).replace( "\r", "\n" )
-	
+	src = text.replace( '\r\n', '\n' ).replace( '\r', '\n' )
 	htag_pattern = re.compile( r"<h([1-6])>(.*?)</h\1>", flags=re.IGNORECASE | re.DOTALL )
 	md_heading_pattern = re.compile( r"^(#{1,6})[ \t]+(.+?)[ \t]*$", flags=re.MULTILINE )
 	
@@ -1601,10 +1575,8 @@ def extract_text_from_bytes( file_bytes: bytes ) -> str:
 	"""
 		Extracts text from PDF or text-based documents.
 	"""
-	try:
-		import fitz  # PyMuPDF
-		
-		doc = fitz.open( stream=file_bytes, filetype="pdf" )
+	try:	
+		doc = fitz.open( stream=file_bytes, filetype='pdf' )
 		text = ""
 		for page in doc:
 			text += page.get_text( )
@@ -1612,12 +1584,13 @@ def extract_text_from_bytes( file_bytes: bytes ) -> str:
 	
 	except Exception:
 		try:
-			return file_bytes.decode( errors="ignore" )
+			return file_bytes.decode( errors='ignore' )
 		except Exception:
 			return ""
 
 def route_document_query( prompt: str ) -> str:
 	"""
+	
 		Purpose:
 		--------
 		Route a document question through the unified chat pipeline and return a model-generated answer.
@@ -1631,6 +1604,7 @@ def route_document_query( prompt: str ) -> str:
 		--------
 		str
 			The assistant answer text.
+			
 	"""
 	user_input = build_document_user_input( prompt )
 	if not user_input:
@@ -1648,7 +1622,9 @@ def route_document_query( prompt: str ) -> str:
 
 def summarize_active_document( ) -> str:
 	"""
+	
 		Uses the routing layer to summarize the currently active document.
+		
 	"""
 	system_instructions = st.session_state.get( "system_instructions", "" )
 	summary_prompt = """
@@ -1807,7 +1783,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 		
 	'''
 	active_docs: List[ str ] = st.session_state.get( 'active_docs', [ ] )
-	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'doc_bytes', { } )
+	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'docqna_bytes', { } )
 	
 	fp = _docqna_compute_fingerprint( active_docs, doc_bytes )
 	if fp and fp == st.session_state.get( 'docqna_fingerprint', '' ):
