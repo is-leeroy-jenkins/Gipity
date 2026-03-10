@@ -3317,6 +3317,7 @@ init_state( )
 with st.sidebar:
 	style_subheaders( )
 	st.logo( cfg.LOGO_PATH, size='large' )
+	st.subheader( 'Settings' )
 	st.divider( )
 	
 	# -----API KEY Expander------------------------------
