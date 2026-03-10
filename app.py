@@ -1626,7 +1626,7 @@ def summarize_active_document( ) -> str:
 		Uses the routing layer to summarize the currently active document.
 		
 	"""
-	system_instructions = st.session_state.get( "system_instructions", "" )
+	system_instructions = st.session_state.get( 'system_instructions', '' )
 	summary_prompt = """
 		Provide a clear, structured summary of this document.
 		Include:
@@ -1784,7 +1784,6 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	'''
 	active_docs: List[ str ] = st.session_state.get( 'active_docs', [ ] )
 	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'docqna_bytes', { } )
-	
 	fp = _docqna_compute_fingerprint( active_docs, doc_bytes )
 	if fp and fp == st.session_state.get( 'docqna_fingerprint', '' ):
 		return
@@ -1792,17 +1791,13 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	st.session_state[ 'docqna_fingerprint' ] = fp
 	st.session_state[ 'docqna_chunk_count' ] = 0
 	st.session_state[ 'docqna_fallback_rows' ] = [ ]
-	
 	dim_value = getattr( embedder, 'get_sentence_embedding_dimension', lambda: 384 )( )
 	dim = int( dim_value ) if dim_value else 384
-	
 	vec_ready = _docqna_ensure_vec_schema( dim )
 	st.session_state[ 'docqna_vec_ready' ] = bool( vec_ready )
-	
 	conn = create_connection( )
 	try:
 		cur = conn.cursor( )
-		
 		if vec_ready:
 			try:
 				cur.execute( 'DELETE FROM docqna_vec;' )
@@ -1813,7 +1808,6 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 		
 		total_chunks = 0
 		fallback_rows: List[ Tuple[ str, str, bytes ] ] = [ ]
-		
 		for name in active_docs:
 			b = doc_bytes.get( name )
 			if not b:
@@ -1834,8 +1828,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 				for chunk_text_value, v in zip( chunks, vecs ):
 					cur.execute(
 						'INSERT INTO docqna_vec ( embedding, doc_name, chunk ) VALUES ( ?, ?, ? );',
-						(v.tobytes( ), name, chunk_text_value)
-					)
+						(v.tobytes( ), name, chunk_text_value) )
 			else:
 				for chunk_text_value, v in zip( chunks, vecs ):
 					fallback_rows.append( (name, chunk_text_value, v.tobytes( )) )
@@ -1844,7 +1837,6 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 		
 		conn.commit( )
 		st.session_state[ 'docqna_chunk_count' ] = total_chunks
-		
 		if not vec_ready:
 			st.session_state[ 'docqna_fallback_rows' ] = fallback_rows
 	
