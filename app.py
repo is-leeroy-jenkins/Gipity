@@ -45,6 +45,7 @@ import config as cfg
 import os
 import multiprocessing
 import base64
+import hashlib
 import io
 from boogr import Error
 import fitz  # pymupdf
@@ -134,22 +135,18 @@ if 'mode' not in st.session_state or st.session_state[ 'mode' ] is None:
 	st.session_state[ 'mode' ] = 'Chat'
 
 if 'messages' not in st.session_state:
-	st.session_state.messages: List[ Dict[ str, Any ] ] = [ ]
+	st.session_state.messages = [ ]
 
 if 'last_call_usage' not in st.session_state:
-	st.session_state.last_call_usage = {
-			'prompt_tokens': 0,
-			'completion_tokens': 0,
+	st.session_state.last_call_usage = { 'prompt_tokens': 0, 'completion_tokens': 0,
 			'total_tokens': 0 }
 
 if 'token_usage' not in st.session_state:
-	st.session_state.token_usage = {
-			'prompt_tokens': 0,
-			'completion_tokens': 0,
+	st.session_state.token_usage = { 'prompt_tokens': 0, 'completion_tokens': 0,
 			'total_tokens': 0 }
 
 if 'files' not in st.session_state:
-	st.session_state.files: List[ str ] = [ ]
+	st.session_state.files = [ ]
 
 if 'use_semantic' not in st.session_state:
 	st.session_state[ 'use_semantic' ] = False
@@ -214,6 +211,12 @@ if 'audio_system_instructions' not in st.session_state:
 
 if 'docqna_system_instructions' not in st.session_state:
 	st.session_state[ 'docqna_systems_instructions' ] = ''
+
+if 'docqna_system_instructions' not in st.session_state:
+	st.session_state[ 'docqna_system_instructions' ] = ''
+
+if 'stores_system_instructions' not in st.session_state:
+	st.session_state[ 'stores_system_instructions' ] = ''
 
 # ----------MODEL PARAMETERS --------------------------------
 
@@ -3363,6 +3366,7 @@ with st.sidebar:
 			os.environ[ 'GOOGLE_CSE_ID' ] = google_cse_id
 	
 	st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+	
 	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0 )
 
 # =============================================================================
@@ -3371,6 +3375,11 @@ with st.sidebar:
 if mode == 'Chat':
 	st.subheader( "💬 Chat Completions", help=cfg.CHAT_COMPLETIONS )
 	st.divider( )
+	chat_model = st.session_state.get( 'chat_model', '' )
+	chat_format = st.session_state.get( 'response_format', '' )
+	execution_mode = st.session_state.get( 'execution_mode', '' )
+	chat_reasoning = st.session_state.get( 'reasoning', '' )
+	chat_choice = st.session_state.get( 'tool_choice', '' )
 	chat_number = st.session_state.get( 'number', 0 )
 	chat_top_p = st.session_state.get( 'top_percent', 0.0 )
 	chat_freq = st.session_state.get( 'frequency_penalty', 0.0 )
@@ -3379,13 +3388,8 @@ if mode == 'Chat':
 	chat_background = st.session_state.get( 'background', False )
 	chat_stream = st.session_state.get( 'stream', False )
 	chat_store = st.session_state.get( 'store', False )
-	chat_model = st.session_state.get( 'chat_model', '' )
-	chat_format = st.session_state.get( 'response_format', '' )
 	chat_input = st.session_state.get( 'input', [ ] )
-	chat_reasoning = st.session_state.get( 'reasoning', '' )
-	chat_choice = st.session_state.get( 'tool_choice', '' )
 	chat_messages = st.session_state.get( 'messages', [ ] )
-	execution_mode = st.session_state.get( 'execution_mode', '' )
 	chat_history = st.session_state.get( 'chat_history', [ ] )
 	
 	# ------------------------------------------------------------------
@@ -3471,7 +3475,7 @@ if mode == 'Chat':
 					st.exception( e )
 			
 		# --------  Reset Button
-		if st.button( 'Clear Chat' ):
+		if st.button( 'Clear Messages' ):
 			reset_state( )
 			st.rerun( )
 
@@ -5007,26 +5011,26 @@ elif mode == 'Vector Stores':
 	# ------------------------------------------------------------------
 	# Main Chat UI
 	# ------------------------------------------------------------------
-	st.subheader( '🏛️ File Search Stores', help=cfg.VECTORSTORES_API )
+	st.subheader( '🧊 Vector Stores', help=cfg.VECTORSTORES_API )
 	st.divider( )
 	vector = VectorStores( )
 	
 	left, center, right = st.columns( [ 0.025, 0.95, 0.025 ] )
 	with center:
-		st.caption( 'File Search Store Management' )
+		st.caption( 'Vector Store Management' )
 		stores_c1, stores_c2 = st.columns( [ 0.50, 0.50 ], border=True )
 		with stores_c1:
 			# --------------------------------------------------------------
 			# Expander - Create File Search Store
 			# --------------------------------------------------------------
 			with st.expander( 'Create:', expanded=True ):
-				new_store_name = st.text_input( 'New File Search Store name' )
+				new_store_name = st.text_input( 'Vector Store Name' )
 				if st.button( '➕ Create' ):
 					if not new_store_name:
-						st.warning( 'Enter a File Search Store Name.' )
+						st.warning( 'Enter Name.' )
 					else:
 						try:
-							res = searcher.create( new_store_name )
+							res = vector.create( new_store_name )
 							st.success( f"Create call submitted for '{new_store_name}'." )
 						except Exception as exc:
 							st.error( f'Create store failed: {exc}' )
@@ -5046,8 +5050,8 @@ elif mode == 'Vector Stores':
 				# --------------------------------------------------------------
 				if options:
 					names = [ f'{n} — {i}' for n, i in options ]
-					sel = st.selectbox( 'Select File Search Store', options=names,
-						key='select_filestore' )
+					sel = st.selectbox( 'Select Vector Store', options=names,
+						key='select_stores' )
 					
 					sel_id = ''
 					for n, i in options:
@@ -5058,12 +5062,12 @@ elif mode == 'Vector Stores':
 					opt_c1, opt_c2 = st.columns( [ 0.5, 0.5 ] )
 					
 					with opt_c1:
-						if st.button( '📥 Retrieve File Search Store', key='retrieve_filestore' ):
+						if st.button( '📥 Retrieve Vector Store', key='retrieve_filestore' ):
 							if not sel_id:
-								st.warning( 'No File Search Store Selected!' )
+								st.warning( 'No Vector Store Selected!' )
 							else:
 								try:
-									vs = searcher.retrieve( store_id=sel_id )
+									vs = vector.retrieve( store_id=sel_id )
 									st.write( 'Name:', vs.name )
 									st.write( 'Files:', vs.file_counts )
 									st.write( 'Size (MB):', round( vs.usage_bytes / 1_048_576, 2 ) )
@@ -5071,9 +5075,9 @@ elif mode == 'Vector Stores':
 									st.error( f'retrieve() failed: {exc}' )
 					
 					with opt_c2:
-						if st.button( '❌ Delete File Search Store', key='delete_store' ):
+						if st.button( '❌ Delete Vector Store', key='delete_store' ):
 							if not sel_id:
-								st.warning( 'No File Search Store Selected.' )
+								st.warning( 'No Vector Store Selected.' )
 							else:
 								try:
 									vs = vector.delete( store_id=sel_id )
@@ -5088,10 +5092,9 @@ elif mode == 'Document Q&A':
 	st.divider( )
 	docqna_model = st.session_state.get( 'docqna_model', '' )
 	docqna_reasoning = st.session_state.get( 'docqna_reasoning', '' )
-	docqna_resolution = st.session_state.get( 'docqna_resolution', '' )
-	docqna_media_resolution = st.session_state.get( 'docqna_media_resolution', '' )
 	docqna_response_format = st.session_state.get( 'docqna_response_format', '' )
 	docqna_tool_choice = st.session_state.get( 'docqna_tool_choice', '' )
+	docqna_source = st.session_state.get( 'docqna_source', '' )
 	docqna_content = st.session_state.get( 'docqna_content', '' )
 	docqna_input = st.session_state.get( 'docqna_input', '' )
 	docqna_number = st.session_state.get( 'docqna_number', 0 )
@@ -5099,7 +5102,6 @@ elif mode == 'Document Q&A':
 	docqna_max_searches = st.session_state.get( 'docqna_max_searches', 0 )
 	docqna_max_tokens = st.session_state.get( 'docqna_max_tokens', 0 )
 	docqna_top_percent = st.session_state.get( 'docqna_top_percent', 0.0 )
-	docqna_top_k = st.session_state.get( 'docqna_top_k', 0 )
 	docqna_freq = st.session_state.get( 'docqna_frequency_penalty', 0.0 )
 	docqna_presence = st.session_state.get( 'docqna_presence_penalty', 0.0 )
 	docqna_temperature = st.session_state.get( 'docqna_temperature', 0.0 )
@@ -5113,15 +5115,17 @@ elif mode == 'Document Q&A':
 	docqna_include = st.session_state.get( 'docqna_include', [ ] )
 	docqna_domains = st.session_state.get( 'docqna_domains', [ ] )
 	docqna_stops = st.session_state.get( 'docqna_stops', [ ] )
-	docqna_files = st.session_state.get( 'docqna_files' )
+	docqna_files = st.session_state.get( 'docqna_files', [ ] )
 	docqna_uploaded = st.session_state.get( 'docqna_uploaded' )
 	docqna_messages = st.session_state.get( 'docqna_messages', [ ] )
 	docqna_active_docs = st.session_state.get( 'docqna_active_docs', [ ] )
-	docqna_source = st.session_state.get( 'docqna_source', '' )
 	docqna_multi_mode = st.session_state.get( 'docqna_multi_mode' )
 	docqna = Files( )
 	
-	for key in [ 'docqna_domains', 'docqna_stops', 'docqna_includes', 'docqna_input', ]:
+	for key in [ 'docqna_domains', 'docqna_stops', 'docqna_include',
+	             'docqna_input', 'docqna_tools', 'docqna_modalities',
+	             'docqna_context', 'docqna_messages', 'docqna_active_docs',
+	             'docqna_files' ]:
 		if key in st.session_state and isinstance( st.session_state[ key ], list ):
 			del st.session_state[ key ]
 	# ------------------------------------------------------------------
@@ -5425,7 +5429,7 @@ elif mode == 'Files':
 	files_id = st.session_state.get( 'files_id', '' )
 	files_url = st.session_state.get( 'files_url', '' )
 	files_table = st.session_state.get( 'files_table', '' )
-	files_messages = st.session_state.get( 'files_messages', '' )
+	files_messages = st.session_state.get( 'files_messages', [ ] )
 	
 	for key in [ 'files_domains', 'files_stops', 'files_includes', 'files_messages', ]:
 		if key in st.session_state and isinstance( st.session_state[ key ], list ):
@@ -5441,6 +5445,7 @@ elif mode == 'Files':
 		
 		uploaded_file = st.file_uploader( 'Upload file (server-side via Files API)',
 			type=[ 'pdf', 'txt', 'md', 'docx', 'png', 'jpg', 'jpeg', ], )
+		
 		if uploaded_file:
 			tmp_path = save_temp( uploaded_file )
 			upload_fn = None
@@ -5448,6 +5453,7 @@ elif mode == 'Files':
 				if hasattr( files, name ):
 					upload_fn = getattr( files, name )
 					break
+			
 			if not upload_fn:
 				st.warning( 'No upload function found on chat object.' )
 			else:
