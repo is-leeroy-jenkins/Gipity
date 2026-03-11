@@ -870,6 +870,52 @@ if 'stores_id' not in st.session_state:
 # Utilities
 # ======================================================================================
 
+def extract_usage( resp: Any ) -> Dict[ str, int ]:
+	"""
+	
+		Purpose:
+		_________
+		Extract token usage from a response object/dict.
+		Returns dict with prompt_tokens, completion_tokens, total_tokens.
+		Defensive: returns zeros if not present.
+		
+	"""
+	usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0, }
+	if not resp:
+		return usage
+	
+	raw = None
+	try:
+		raw = getattr( resp, 'usage', None )
+	except Exception:
+		raw = None
+	
+	if not raw and isinstance( resp, dict ):
+		raw = resp.get( 'usage' )
+	
+	if not raw:
+		return usage
+	
+	try:
+		if isinstance( raw, dict ):
+			usage[ 'prompt_tokens' ] = int( raw.get( 'prompt_tokens', 0 ) )
+			usage[ 'completion_tokens' ] = int(
+				raw.get( 'completion_tokens', raw.get( 'output_tokens', 0 ) )
+			)
+			usage[ 'total_tokens' ] = int(
+				raw.get( 'total_tokens', usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] ) )
+		else:
+			usage[ 'prompt_tokens' ] = int( getattr( raw, 'prompt_tokens', 0 ) )
+			usage[ 'completion_tokens' ] = int(
+				getattr( raw, 'completion_tokens', getattr( raw, 'output_tokens', 0 ) ) )
+			usage[ 'total_tokens' ] = int(
+				getattr( raw, 'total_tokens',
+					usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ], ) )
+	except Exception:
+		usage[ 'total_tokens' ] = (usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ])
+	
+	return usage
+
 def update_token_counters( resp: Any ) -> None:
 	"""
 		Update session_state.last_call_usage and accumulate into session_state.token_usage.
@@ -1215,52 +1261,6 @@ def save_temp( upload ) -> str | None:
 		return tmp_path
 	except Exception:
 		return None
-
-def _extract_usage_from_response( resp: Any ) -> Dict[ str, int ]:
-	"""
-	
-		Purpose:
-		_________
-		Extract token usage from a response object/dict.
-		Returns dict with prompt_tokens, completion_tokens, total_tokens.
-		Defensive: returns zeros if not present.
-		
-	"""
-	usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0, }
-	if not resp:
-		return usage
-	
-	raw = None
-	try:
-		raw = getattr( resp, 'usage', None )
-	except Exception:
-		raw = None
-	
-	if not raw and isinstance( resp, dict ):
-		raw = resp.get( 'usage' )
-	
-	if not raw:
-		return usage
-	
-	try:
-		if isinstance( raw, dict ):
-			usage[ 'prompt_tokens' ] = int( raw.get( 'prompt_tokens', 0 ) )
-			usage[ 'completion_tokens' ] = int(
-				raw.get( 'completion_tokens', raw.get( 'output_tokens', 0 ) )
-			)
-			usage[ 'total_tokens' ] = int(
-				raw.get( 'total_tokens', usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] ) )
-		else:
-			usage[ 'prompt_tokens' ] = int( getattr( raw, 'prompt_tokens', 0 ) )
-			usage[ 'completion_tokens' ] = int(
-				getattr( raw, 'completion_tokens', getattr( raw, 'output_tokens', 0 ) ) )
-			usage[ 'total_tokens' ] = int(
-				getattr( raw, 'total_tokens',
-					usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ], ) )
-	except Exception:
-		usage[ 'total_tokens' ] = (usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ])
-	
-	return usage
 
 def display_value( val: Any ) -> str:
 	"""
@@ -1686,7 +1686,7 @@ def ensure_vec_schema( dim: int ) -> bool:
 	finally:
 		conn.close( )
 
-def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
+def rebuild_index( embedder: SentenceTransformer ) -> None:
 	'''
 		
 		Purpose:
@@ -1792,11 +1792,9 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 		return [ ]
 	
 	embedder: SentenceTransformer = load_embedder( )
-	_docqna_rebuild_index_if_needed( embedder )
-	
+	rebuild_index( embedder )
 	qv = embedder.encode( [ query ], show_progress_bar=False )
 	qv = np.asarray( qv, dtype=np.float32 )[ 0 ]
-	
 	if st.session_state.get( 'docqna_vec_ready', False ):
 		conn = create_connection( )
 		try:
@@ -3400,9 +3398,10 @@ elif mode == 'Text':
 	text_stops = st.session_state.get( 'text_stops', [ ] )
 	text = Chat( )
 	
-	for key in [ 'text_domains', 'text_stops', 'text_includes', 'text_input', ]:
+	for key in [ 'text_domains', 'text_stops', 'text_includes',
+	             'text_input', 'text_modalities', 'text_tools' ]:
 		if key in st.session_state and isinstance( st.session_state[ key ], list ):
-			st.session_state[ key ] = [ ]
+			del st.session_state[ key ]
 	
 	# ------------------------------------------------------------------
 	# Main Chat UI
@@ -3535,7 +3534,7 @@ elif mode == 'Text':
 				# ---------- Choice ------------
 				with tool_c3:
 					choice_options = list( text.choice_options )
-					set_text_choice = st.selectbox( label='Calling Mode', options=choice_options,
+					set_text_choice = st.selectbox( label='Choice', options=choice_options,
 						key='text_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
 					
 					text_tool_choice = st.session_state[ 'text_tool_choice' ]
@@ -3543,7 +3542,7 @@ elif mode == 'Text':
 				# ---------- Tools ------------
 				with tool_c4:
 					tool_options = list( text.tool_options )
-					set_text_tools = st.multiselect( label='Available Tools', options=tool_options,
+					set_text_tools = st.multiselect( label='Tools', options=tool_options,
 						key='text_tools', help=cfg.TOOLS, placeholder='Options' )
 					
 					text_tools = [ d.strip( ) for d in set_text_tools
@@ -3614,8 +3613,8 @@ elif mode == 'Text':
 				
 				# ---------- Reset Settings ------------
 				if st.button( label='Reset', key='text_response_reset', width='stretch' ):
-					for key in [ 'text_stream', 'text_store', 'text_background', 'text_stops',
-					             'text_max_tokens' ]:
+					for key in [ 'text_stream', 'text_store', 'text_background',
+					             'text_stops', 'text_max_tokens' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					# If using separated UI key for stops
@@ -3668,25 +3667,25 @@ elif mode == 'Text':
 		if prompt is not None:
 			st.session_state.text_messages.append( { 'role': 'user', 'content': prompt } )
 			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
-				gen_kwargs = { }
+				text_kwargs = { }
 				
 				with st.spinner( 'Thinking…' ):
-					gen_kwargs[ 'model' ] = st.session_state[ 'text_model' ]
-					gen_kwargs[ 'top_percent' ] = st.session_state[ 'text_top_percent' ]
-					gen_kwargs[ 'background' ] = st.session_state[ 'text_background' ]
-					gen_kwargs[ 'max_tokens' ] = st.session_state[ 'text_max_tokens' ]
-					gen_kwargs[ 'frequency' ] = st.session_state[ 'text_frequency_penalty' ]
-					gen_kwargs[ 'presence' ] = st.session_state[ 'text_presence_penalty' ]
+					text_kwargs[ 'model' ] = st.session_state[ 'text_model' ]
+					text_kwargs[ 'top_percent' ] = st.session_state[ 'text_top_percent' ]
+					text_kwargs[ 'background' ] = st.session_state[ 'text_background' ]
+					text_kwargs[ 'max_tokens' ] = st.session_state[ 'text_max_tokens' ]
+					text_kwargs[ 'frequency' ] = st.session_state[ 'text_frequency_penalty' ]
+					text_kwargs[ 'presence' ] = st.session_state[ 'text_presence_penalty' ]
 					
 					if st.session_state[ 'text_stops' ]:
-						gen_kwargs[ 'stops' ] = st.session_state[ 'text_stops' ]
+						text_kwargs[ 'stops' ] = st.session_state[ 'text_stops' ]
 					
 					response = None
 					
 					try:
-						mdl = str( gen_kwargs[ 'text_model' ] )
+						mdl = str( text_kwargs[ 'text_model' ] )
 						if mdl.startswith( 'gpt-5' ):
-							response = text.generate_text( prompt=prompt, model=gen_kwargs[ 'text_model' ] )
+							response = text.generate_text( prompt=prompt, model=text_kwargs[ 'text_model' ] )
 						else:
 							response = text.generate_text( )
 					except Exception as exc:
@@ -4636,25 +4635,25 @@ elif mode == 'Audio':
 		if prompt is not None:
 			st.session_state.text_messages.append( { 'role': 'user', 'content': prompt } )
 			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
-				gen_kwargs = { }
+				audio_kwargs = { }
 				
 				with st.spinner( 'Thinking…' ):
-					gen_kwargs[ 'model' ] = st.session_state[ 'image_model' ]
-					gen_kwargs[ 'top_percent' ] = st.session_state[ 'image_top_percent' ]
-					gen_kwargs[ 'background' ] = st.session_state[ 'image_background' ]
-					gen_kwargs[ 'max_tokens' ] = st.session_state[ 'image_max_tokens' ]
-					gen_kwargs[ 'frequency' ] = st.session_state[ 'image_frequency_penalty' ]
-					gen_kwargs[ 'presence' ] = st.session_state[ 'image_presence_penalty' ]
+					audio_kwargs[ 'model' ] = st.session_state[ 'image_model' ]
+					audio_kwargs[ 'top_percent' ] = st.session_state[ 'image_top_percent' ]
+					audio_kwargs[ 'background' ] = st.session_state[ 'image_background' ]
+					audio_kwargs[ 'max_tokens' ] = st.session_state[ 'image_max_tokens' ]
+					audio_kwargs[ 'frequency' ] = st.session_state[ 'image_frequency_penalty' ]
+					audio_kwargs[ 'presence' ] = st.session_state[ 'image_presence_penalty' ]
 					
 					if st.session_state[ 'image_stops' ]:
-						gen_kwargs[ 'stops' ] = st.session_state[ 'image_stops' ]
+						audio_kwargs[ 'stops' ] = st.session_state[ 'image_stops' ]
 					
 					response = None
 					
 					try:
-						mdl = str( gen_kwargs[ 'image_model' ] )
+						mdl = str( audio_kwargs[ 'image_model' ] )
 						if mdl.startswith( 'gpt-5' ):
-							response = text.generate_text( prompt=prompt, model=gen_kwargs[
+							response = text.generate_text( prompt=prompt, model=audio_kwargs[
 								'image_model' ] )
 						else:
 							response = text.generate_text( )
@@ -4719,7 +4718,7 @@ elif mode == 'Embeddings':
 					help='REQUIRED: The format to return the embeddings in. float or base64',
 					index=None, placeholder='Options' )
 				
-				embeddings_encoding = st.session_state[ 'embeddings_encoding_format' ]
+				embeddings_encoding_format = st.session_state[ 'embeddings_encoding_format' ]
 			
 			# ---------  Dimensions --------
 			with emb_c3:
@@ -4754,7 +4753,7 @@ elif mode == 'Embeddings':
 				             'embeddings_encoding_format', 'embeddings_input_text',
 				             'embeddings_overlap_amount', 'embeddings_chunk_size' ]:
 					if key in st.session_state:
-						st.session_state[ key ] = [ ]
+						del st.session_state[ key ]
 				
 				st.rerun( )
 		
@@ -5009,8 +5008,9 @@ elif mode == 'Document Q&A':
 	             'docqna_input', 'docqna_tools', 'docqna_modalities',
 	             'docqna_context', 'docqna_messages', 'docqna_active_docs',
 	             'docqna_files' ]:
-		if key in st.session_state:
-			st.session_state[ key ] = [ ]
+		if key in st.session_state and isinstance( key, list ):
+			del st.session_state[ key ]
+			
 	# ------------------------------------------------------------------
 	#  DOCQNA SETTINGS
 	# ------------------------------------------------------------------
@@ -5072,10 +5072,10 @@ elif mode == 'Document Q&A':
 				
 				# ---------- Reset Settings ------------
 				if st.button( label='Reset', key='docqna_model_reset', width='stretch' ):
-					for key in [ 'docqna_model', 'docqna_include', 'docqna_domains',
-					             'docqna_reasoning', 'docqna_media_resolution' ]:
+					for key in [ 'docqna_model', 'docqna_include',
+					             'docqna_domains', 'docqna_reasoning' ]:
 						if key in st.session_state:
-							st.session_state[ key ] = [ ]
+							del st.session_state[ key ]
 					
 					st.rerun( )
 			
@@ -5146,7 +5146,7 @@ elif mode == 'Document Q&A':
 					
 					docqna_max_calls = st.session_state[ 'docqna_max_calls' ]
 				
-				# ---------- Choice/Calling Mode ------------
+				# ---------- Tool Choice ------------
 				with tool_c3:
 					choice_options = list( docqna.choice_options )
 					set_docqna_choice = st.selectbox( label='Choice', options=choice_options,
@@ -5170,7 +5170,7 @@ elif mode == 'Document Q&A':
 					for key in [ 'docqna_parallel_tools', 'docqna_tool_choice', 'docqna_number',
 					             'docqna_tools', 'docqna_max_calls' ]:
 						if key in st.session_state:
-							st.session_state[ key ] = [ ]
+							del st.session_state[ key ]
 					
 					st.rerun( )
 			
@@ -5200,11 +5200,14 @@ elif mode == 'Document Q&A':
 				
 				# ---------- Stops ------------
 				with resp_c4:
-					set_docqna_stops = st.text_input( label='Stop Sequences', key='docqna_stops',
+					set_docqna_stops = st.text_input( label='Stop Sequences', key='docqna_stops_input',
+						value=','.join( st.session_state.get( 'docqna_stops', [ ] ) ),
 						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stops' )
 					
 					docqna_stops = [ d.strip( ) for d in set_docqna_stops.split( ',' )
 					                 if d.strip( ) ]
+					
+					st.session_state[ 'docqna_stops' ] = docqna_stops
 				
 				# ---------- Max Tokens ------------
 				with resp_c5:
@@ -5219,10 +5222,10 @@ elif mode == 'Document Q&A':
 					for key in [ 'docqna_stream', 'docqna_store', 'docqna_background',
 					             'docqna_stops', 'docqna_max_tokens' ]:
 						if key in st.session_state:
-							st.session_state[ key ] = [ ]
+							del st.session_state[ key ]
 					# If using separated UI key for stops
 					if 'docqna_stops_input' in st.session_state:
-						st.session_state[ 'docqna_stops_input' ] = [ ]
+						del st.session_state[ 'docqna_stops_input' ]
 					
 					st.rerun( )
 		
