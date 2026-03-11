@@ -3598,7 +3598,7 @@ elif mode == 'Text':
 				# ---------- Stops ------------
 				with resp_c4:
 					set_text_stops = st.text_input( label='Stop Sequences', key='text_stops_input',
-						value=','.join( st.session_state.get( 'docqna_stops', [ ] ) ),
+						value=','.join( st.session_state.get( 'text_stops', [ ] ) ),
 						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stops' )
 					
 					text_stops = [ d.strip( ) for d in set_text_stops.split( ',' )
