@@ -49,6 +49,7 @@ import tiktoken
 from openai import OpenAI
 from typing import Optional, List, Dict, Any
 from openai.types.responses import Response
+import base64
 from openai.types import CreateEmbeddingResponse, VectorStore, FileObject
 from boogr import Error
 import config as cfg
@@ -203,14 +204,14 @@ class Chat( GPT ):
 	
 	def __init__( self, model: str='gpt-5-nano', prompt: str=None, temperature: float=None,
 			top_p: float=None, presense: float=None, store: bool=None, stream: bool=None,
-			stops: List[ str ]=[ ], response_format: Dict[ str, str ]=None, number: int=None,
-			instruct: str=None, context: List[ Dict[ str, str ] ]=[ ], allowed_domains: List[ str ]=[ ],
-			include: List[ Dict[ str, str ] ]=[ ], tools: List[ Dict[ str, str ] ]=[ ],
+			stops: List[ str ]=None, response_format: Dict[ str, str ]=None, number: int=None,
+			instruct: str=None, context: List[ Dict[ str, str ] ]=None, allowed_domains: List[ str ]=None,
+			include: List[ Dict[ str, str ] ]= None, tools: List[ Dict[ str, str ] ]=[ ],
 			max_tools: int=None, tool_choice: str=None, file_path: str=None,
 			background: bool=None, is_parallel: bool=None, max_tokens: int=None, frequency: float=None,
-			input: List[ Dict[ str, str ] ]=[ ], file_ids: List[ str ]=[ ], previous_id: str=None,
-			reasoning: Dict[ str, str ]={}, output_text: str=None, max_search_results: int=None,
-			content: str=None, vector_store_ids: List[ str ]=[ ] ):
+			input: List[ Dict[ str, str ] ]=None, file_ids: List[ str ]=None, previous_id: str=None,
+			reasoning: Dict[ str, str ]=None, output_text: str=None, max_search_results: int=None,
+			content: str=None, vector_store_ids: List[ str ]= None ):
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
@@ -387,8 +388,8 @@ class Chat( GPT ):
 			format: Dict[ str, str ]=None, top_p: float=None, frequency: float=None,
 			max_tools: int=None, presence: float=None, max_tokens: int=None, store: bool=None,
 			stream: bool=None, instruct: str=None, background: bool=False, reasoning: str=None,
-			include: List[ str ]=[ ], tools: List[ Dict[ str, str ] ]=[ ],
-			allowed_domains: List[ str ]=[ ],) -> str | None:
+			include: List[ str ]=None, tools: List[ Dict[ str, str ] ]=None,
+			allowed_domains: List[ str ]=None,) -> str | None:
 		"""
 	
 	        Purpose
@@ -486,9 +487,9 @@ class Chat( GPT ):
 	def analyze_image( self, prompt: str, url: str, temperature: float=None,
 			top_p: float=None, frequency: float=None, presence: float=None, max_tokens: int=None,
 			store: bool=None, stream: bool=None, instruct: str=None, background: bool=None,
-			reasoning: Dict[ str, str ]={ }, include: List[ str ]=[ ],
-			format: Dict[ str, str ]={}, tools: List[ Dict[ str, str ] ]=[ ],
-			allowed_domains: List[ str ]=[ ], ) -> str | None:
+			reasoning: Dict[ str, str ]=None, include: List[ str ]=None,
+			format: Dict[ str, str ]={}, tools: List[ Dict[ str, str ] ]=None,
+			allowed_domains: List[ str ]=None, ) -> str | None:
 		"""
 
 	        Purpose
@@ -749,12 +750,12 @@ class Images( GPT ):
 			top_p: float=None, presence: float=None, frequency: float=None,
 			max_tokens: int=None, store: bool=None, stream: bool=False,  backcolor: str=None,
 			instruct: str=None, background: bool=None, number: int=None,
-			image_format: str=None,  include: List[ Dict[ str, str ] ]=[ ],
-			tools: List[ Dict[ str, str ] ]=[ ], max_tools: int=None,
-			respose_format: Dict[ str, str ]={ }, tool_choice: str=None, image_path: str=None,
-			is_parallel: bool=None, input: List[ Dict[ str, str ] ]=[ ], previous_id: str=None,
-			reasoning: Dict[ str, str ]={ },  input_text: str=None, image_url: str=None,
-			content: List[ Dict[ str, str ] ]=[ ], quality: str=None, size: str=None,
+			image_format: str=None,  include: List[ Dict[ str, str ] ]=None,
+			tools: List[ Dict[ str, str ] ]=None, max_tools: int=None,
+			respose_format: Dict[ str, str ]=None, tool_choice: str=None, image_path: str=None,
+			is_parallel: bool=None, input: List[ Dict[ str, str ] ]=None, previous_id: str=None,
+			reasoning: Dict[ str, str ]=None,  input_text: str=None, image_url: str=None,
+			content: List[ Dict[ str, str ] ]=None, quality: str=None, size: str=None,
 			detail: str=None, style: str=None ):
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
@@ -1396,6 +1397,11 @@ class Transcription( GPT ):
 		self.frequency_penalty = frequency
 		self.presence_penalty = presence
 		self.max_tokens = max_tokens
+		self.stream = stream
+		self.response_format = { 'text': format }
+		self.background = background
+		self.message = messages
+		self.stops = stops
 		self.store = store
 		self.language = language
 		self.instructions = instruct

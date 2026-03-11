@@ -685,9 +685,6 @@ if 'docqna_multi_mode' not in st.session_state:
 if 'uploaded' not in st.session_state:
 	st.session_state[ 'uploaded' ] = [ ]
 
-if 'active_docs' not in st.session_state:
-	st.session_state[ 'active_docs' ] = [ ]
-
 if 'docqna_bytes' not in st.session_state:
 	st.session_state[ 'docqna_bytes' ] = { }
 
@@ -873,76 +870,17 @@ if 'stores_id' not in st.session_state:
 # Utilities
 # ======================================================================================
 
-def _extract_usage_from_response( resp: Any ) -> Dict[ str, int ]:
-	"""
-	
-		Extract token usage from a response object/dict.
-		Returns dict with prompt_tokens, completion_tokens, total_tokens.
-		Defensive: returns zeros if not present.
-		
-	"""
-	usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0 }
-	if not resp:
-		return usage
-	
-	raw = None
-	try:
-		raw = getattr( resp, 'usage', None )
-	except Exception:
-		raw = None
-	
-	if not raw and isinstance( resp, dict ):
-		raw = resp.get( 'usage' )
-	
-	# Gemini SDK commonly uses "usage_metadata"
-	if not raw and isinstance( resp, dict ):
-		raw = resp.get( 'usage_metadata' )
-	
-	if not raw:
-		try:
-			raw = getattr( resp, 'usage_metadata', None )
-		except Exception:
-			raw = None
-	
-	if not raw:
-		return usage
-	
-	try:
-		if isinstance( raw, dict ):
-			usage[
-				'prompt_tokens' ] = int( raw.get( 'prompt_tokens', raw.get( 'input_tokens', 0 ) ) )
-			usage[ 'completion_tokens' ] = int(
-				raw.get( 'completion_tokens', raw.get( 'output_tokens', 0 ) )
-			)
-			usage[ 'total_tokens' ] = int(
-				raw.get( 'total_tokens', usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] )
-			)
-		else:
-			usage[
-				'prompt_tokens' ] = int( getattr( raw, 'prompt_tokens', getattr( raw, 'input_tokens', 0 ) ) )
-			usage[ 'completion_tokens' ] = int(
-				getattr( raw, 'completion_tokens', getattr( raw, 'output_tokens', 0 ) )
-			)
-			usage[ 'total_tokens' ] = int(
-				getattr( raw, 'total_tokens',
-					usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] )
-			)
-	except Exception:
-		usage[ 'total_tokens' ] = usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ]
-	
-	return usage
-
-def _update_token_counters( resp: Any ) -> None:
+def update_token_counters( resp: Any ) -> None:
 	"""
 		Update session_state.last_call_usage and accumulate into session_state.token_usage.
 	"""
-	usage = _extract_usage_from_response( resp )
+	usage = extract_usage( resp )
 	st.session_state.last_call_usage = usage
 	st.session_state.token_usage[ 'prompt_tokens' ] += usage.get( 'prompt_tokens', 0 )
 	st.session_state.token_usage[ 'completion_tokens' ] += usage.get( 'completion_tokens', 0 )
 	st.session_state.token_usage[ 'total_tokens' ] += usage.get( 'total_tokens', 0 )
 
-def _display_value( val: Any ) -> str:
+def display_value( val: Any ) -> str:
 	"""
 	
 		Render a friendly display string for header values.
@@ -1000,7 +938,7 @@ def extract_response_text( response: object ) -> str:
 	
 	return "".join( text_chunks ).strip( )
 
-def encode_image_base64( path: str ) -> str:
+def encode_image( path: str ) -> str:
 	"""
 	
 		Purpose:
@@ -1324,21 +1262,7 @@ def _extract_usage_from_response( resp: Any ) -> Dict[ str, int ]:
 	
 	return usage
 
-def _update_token_counters( resp: Any ) -> None:
-	"""
-	
-		Purpose:
-		_________
-		Update session_state.last_call_usage and accumulate into session_state.token_usage.
-		
-	"""
-	usage = _extract_usage_from_response( resp )
-	st.session_state.last_call_usage = usage
-	st.session_state.token_usage[ 'prompt_tokens' ] += usage.get( 'prompt_tokens', 0 )
-	st.session_state.token_usage[ 'completion_tokens' ] += usage.get( 'completion_tokens', 0 )
-	st.session_state.token_usage[ 'total_tokens' ] += usage.get( 'total_tokens', 0 )
-
-def _display_value( val: Any ) -> str:
+def display_value( val: Any ) -> str:
 	"""
 	
 		Render a friendly display string for header values.
@@ -1571,56 +1495,51 @@ def clear_history( ) -> None:
 
 # ----------  DOCQNA UTILITIES ----------
 
-def extract_text_from_bytes( file_bytes: bytes ) -> str:
-	"""
-	
-		Extracts text from PDF or text-based documents.
-		
-	"""
-	try:	
-		doc = fitz.open( stream=file_bytes, filetype='pdf' )
-		text = ""
-		for page in doc:
-			text += page.get_text( )
-		return text.strip( )
-	
-	except Exception:
-		try:
-			return file_bytes.decode( errors='ignore' )
-		except Exception:
-			return ""
-
 def route_document_query( prompt: str ) -> str:
 	"""
 	
 		Purpose:
 		--------
-		Route a document question through the unified chat pipeline and return a model-generated answer.
-
+		Route a document question through the unified chat pipeline and return a
+		model-generated answer.
+	
 		Parameters:
 		-----------
 		prompt : str
 			The user question to answer about active documents.
-
+	
 		Returns:
 		--------
 		str
 			The assistant answer text.
-			
-	"""
-	user_input = build_document_user_input( prompt )
-	if not user_input:
-		user_input = (prompt or '').strip( )
 	
-	return run_llm_turn(
-		user_input=user_input,
-		temperature=float( st.session_state.get( 'temperature', 0.0 ) ),
-		top_p=float( st.session_state.get( 'top_percent', 0.95 ) ),
-		repeat_penalty=float( st.session_state.get( 'repeat_penalty', 1.1 ) ),
-		max_tokens=int( st.session_state.get( 'max_tokens', 1024 ) ) or 1024,
-		stream=False,
-		output=None
-	)
+	"""
+	prompt = str( prompt or '' ).strip( )
+	if not prompt:
+		return 'Please enter a question about the active document.'
+	
+	try:
+		user_input = build_document_user_input( prompt )
+	except Exception as exc:
+		return f'Document retrieval failed: {exc}'
+	
+	if not user_input:
+		user_input = prompt
+	
+	try:
+		response = run_llm_turn(
+			user_input=user_input,
+			temperature=float( st.session_state.get( 'temperature', 0.0 ) ),
+			top_p=float( st.session_state.get( 'top_percent', 0.95 ) ),
+			repeat_penalty=float( st.session_state.get( 'repeat_penalty', 1.1 ) ),
+			max_tokens=int( st.session_state.get( 'max_tokens', 1024 ) ) or 1024,
+			stream=False,
+			output=None
+		)
+	except Exception as exc:
+		return f'Document question failed: {exc}'
+	
+	return str( response or '' ).strip( )
 
 def summarize_active_document( ) -> str:
 	"""
@@ -1645,7 +1564,7 @@ def summarize_active_document( ) -> str:
 	
 	return route_document_query( summary_prompt.strip( ) )
 
-def _docqna_compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ] ) -> str:
+def compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ] ) -> str:
 	'''
 		
 		Purpose:
@@ -1672,7 +1591,7 @@ def _docqna_compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str,
 		h.update( hashlib.sha256( b ).digest( ) )
 	return h.hexdigest( )
 
-def _docqna_extract_text_from_pdf_bytes( file_bytes: bytes ) -> str:
+def extract_text_from_pdf( file_bytes: bytes ) -> str:
 	'''
 	
 		Purpose:
@@ -1701,7 +1620,7 @@ def _docqna_extract_text_from_pdf_bytes( file_bytes: bytes ) -> str:
 	except Exception:
 		return ''
 
-def _docqna_safe_load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
+def load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
 	'''
 		
 		Purpose:
@@ -1726,7 +1645,7 @@ def _docqna_safe_load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
 	except Exception:
 		return False
 
-def _docqna_ensure_vec_schema( dim: int ) -> bool:
+def ensure_vec_schema( dim: int ) -> bool:
 	'''
 	
 		Purpose:
@@ -1745,7 +1664,7 @@ def _docqna_ensure_vec_schema( dim: int ) -> bool:
 	'''
 	conn = create_connection( )
 	try:
-		ok = _docqna_safe_load_sqlite_vec( conn )
+		ok = load_sqlite_vec( conn )
 		if not ok:
 			return False
 		
@@ -1786,7 +1705,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	'''
 	active_docs: List[ str ] = st.session_state.get( 'docqna_active_docs', [ ] )
 	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'docqna_bytes', { } )
-	fp = _docqna_compute_fingerprint( active_docs, doc_bytes )
+	fp = compute_fingerprint( active_docs, doc_bytes )
 	if fp and fp == st.session_state.get( 'docqna_fingerprint', '' ):
 		return
 	
@@ -1795,7 +1714,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 	st.session_state[ 'docqna_fallback_rows' ] = [ ]
 	dim_value = getattr( embedder, 'get_sentence_embedding_dimension', lambda: 384 )( )
 	dim = int( dim_value ) if dim_value else 384
-	vec_ready = _docqna_ensure_vec_schema( dim )
+	vec_ready = ensure_vec_schema( dim )
 	st.session_state[ 'docqna_vec_ready' ] = bool( vec_ready )
 	conn = create_connection( )
 	try:
@@ -1815,7 +1734,7 @@ def _docqna_rebuild_index_if_needed( embedder: SentenceTransformer ) -> None:
 			if not b:
 				continue
 			
-			text = _docqna_extract_text_from_pdf_bytes( b )
+			text = extract_text_from_pdf( b )
 			if not text:
 				continue
 			
@@ -1881,7 +1800,7 @@ def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, 
 	if st.session_state.get( 'docqna_vec_ready', False ):
 		conn = create_connection( )
 		try:
-			_docqna_safe_load_sqlite_vec( conn )
+			load_sqlite_vec( conn )
 			cur = conn.cursor( )
 			cur.execute(
 				'''
@@ -2464,7 +2383,7 @@ def create_visualization( df: pd.DataFrame ) -> None:
 				y=corr.index.tolist( ) ) ] )
 		st.plotly_chart( fig, use_container_width=True )
 
-def dm_create_table_from_df( table_name: str, df: pd.DataFrame ):
+def convert_dataframe( table_name: str, df: pd.DataFrame ):
 	columns = [ ]
 	for col in df.columns:
 		sql_type = get_sqlite_type( df[ col ].dtype )
@@ -3290,8 +3209,8 @@ init_state( )
 with st.sidebar:
 	style_subheaders( )
 	st.logo( cfg.LOGO_PATH, size='large' )
-	st.text( 'API Settings' )
 	st.divider( )
+	st.text( 'API Settings' )
 	
 	# -----API KEY Expander------------------------------
 	with st.expander( label='Keys', icon='🔑', expanded=False ):
@@ -3483,7 +3402,7 @@ elif mode == 'Text':
 	
 	for key in [ 'text_domains', 'text_stops', 'text_includes', 'text_input', ]:
 		if key in st.session_state and isinstance( st.session_state[ key ], list ):
-			del st.session_state[ key ]
+			st.session_state[ key ] = [ ]
 	
 	# ------------------------------------------------------------------
 	# Main Chat UI
@@ -3782,12 +3701,12 @@ elif mode == 'Text':
 					else:
 						st.error( 'Generation Failed!.' )
 						try:
-							_update_token_counters( getattr( text, 'response', None ) or response )
+							update_token_counters( getattr( text, 'response', None ) or response )
 						except Exception:
 							pass
 			
 		# --------  Reset Button
-		if st.button( 'Clear' ):
+		if st.button( 'Clear Messages' ):
 			reset_state( )
 			st.rerun( )
 
@@ -3936,7 +3855,7 @@ elif mode == "Images":
 					for key in [ 'image_mode', 'image_model', 'image_stops',
 					             'image_domains', 'image_reasoning', ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
@@ -3983,10 +3902,10 @@ elif mode == "Images":
 					for key in [ 'image_top_percent', 'image_frequency_penalty',
 					             'image_presence_penalty', 'image_temperature', ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					if 'image_stops_input' in st.session_state:
-						del st.session_state[ 'image_stops_input' ]
+						st.session_state[ 'image_stops_input' ] = [ ]
 					
 					st.rerun( )
 			
@@ -4031,7 +3950,7 @@ elif mode == "Images":
 					for key in [ 'image_parallel_tools', 'image_max_tools', 'image_tool_choice',
 					             'image_tools', 'image_include' ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
@@ -4085,7 +4004,7 @@ elif mode == "Images":
 					for key in [ 'image_stream', 'image_store', 'image_modalities',
 					             'image_response_format', 'image_max_tokens', ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
@@ -4200,7 +4119,7 @@ elif mode == "Images":
 							st.image( img_url )
 							
 							try:
-								_update_token_counters( getattr( image, 'response', None ) )
+								update_token_counters( getattr( image, 'response', None ) )
 							except Exception:
 								pass
 						
@@ -4285,7 +4204,7 @@ elif mode == "Images":
 									st.write( analysis_result )
 								
 								try:
-									_update_token_counters(
+									update_token_counters(
 										getattr( image, 'response', None )
 										or analysis_result
 									)
@@ -4365,7 +4284,7 @@ elif mode == "Images":
 									st.write( analysis_result )
 								
 								try:
-									_update_token_counters(
+									update_token_counters(
 										getattr( image, 'response', None )
 										or analysis_result
 									)
@@ -4507,7 +4426,7 @@ elif mode == 'Audio':
 					for key in [ 'audio_task', 'audio_model', 'audio_language',
 					             'audio_voice', 'audio_rate', 'audio_format' ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
@@ -4553,7 +4472,7 @@ elif mode == 'Audio':
 					             'audio_presence_penalty',
 					             'audio_frequency_penalty', ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
@@ -4602,7 +4521,7 @@ elif mode == 'Audio':
 					for key in [ 'audio_autoplay', 'audio_loop', 'audio_start_time',
 					             'audio_end_time', 'audio_rate', 'audio_max_tokens' ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 		
@@ -4649,7 +4568,7 @@ elif mode == 'Audio':
 								language=audio_language, )
 							st.text_area( 'Transcript', value=text, height=300 )
 							try:
-								_update_token_counters( getattr( transcriber, 'response', None ) )
+								update_token_counters( getattr( transcriber, 'response', None ) )
 							except Exception:
 								pass
 						except Exception as exc:
@@ -4664,7 +4583,7 @@ elif mode == 'Audio':
 							st.text_area( 'Translation', value=text, height=300 )
 							
 							try:
-								_update_token_counters( getattr( translator, 'response', None ) )
+								update_token_counters( getattr( translator, 'response', None ) )
 							except Exception:
 								pass
 						
@@ -4680,7 +4599,7 @@ elif mode == 'Audio':
 								audio_bytes = tts.create_speech( text, model=audio_model, voice=audio_voice )
 								st.audio( audio_bytes )
 								try:
-									_update_token_counters( getattr( tts, 'response', None ) )
+									update_token_counters( getattr( tts, 'response', None ) )
 								except Exception:
 									pass
 							
@@ -4751,7 +4670,7 @@ elif mode == 'Audio':
 					else:
 						st.error( 'Generation Failed!.' )
 						try:
-							_update_token_counters( getattr( text, 'response', None ) or response )
+							update_token_counters( getattr( text, 'response', None ) or response )
 						except Exception:
 							pass
 		
@@ -4835,7 +4754,7 @@ elif mode == 'Embeddings':
 				             'embeddings_encoding_format', 'embeddings_input_text',
 				             'embeddings_overlap_amount', 'embeddings_chunk_size' ]:
 					if key in st.session_state:
-						del st.session_state[ key ]
+						st.session_state[ key ] = [ ]
 				
 				st.rerun( )
 		
@@ -4892,7 +4811,7 @@ elif mode == 'Embeddings':
 						# Token Counters
 						# ----------------------------------------------------------
 						try:
-							_update_token_counters( getattr( embedding, 'response', None ) )
+							update_token_counters( getattr( embedding, 'response', None ) )
 						except Exception:
 							pass
 					
@@ -5090,8 +5009,8 @@ elif mode == 'Document Q&A':
 	             'docqna_input', 'docqna_tools', 'docqna_modalities',
 	             'docqna_context', 'docqna_messages', 'docqna_active_docs',
 	             'docqna_files' ]:
-		if key in st.session_state and isinstance( st.session_state[ key ], list ):
-			del st.session_state[ key ]
+		if key in st.session_state:
+			st.session_state[ key ] = [ ]
 	# ------------------------------------------------------------------
 	#  DOCQNA SETTINGS
 	# ------------------------------------------------------------------
@@ -5156,7 +5075,7 @@ elif mode == 'Document Q&A':
 					for key in [ 'docqna_model', 'docqna_include', 'docqna_domains',
 					             'docqna_reasoning', 'docqna_media_resolution' ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
@@ -5202,7 +5121,7 @@ elif mode == 'Document Q&A':
 					             'docqna_presence_penalty', 'docqna_temperature',
 					             'docqna_top_k', ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
@@ -5251,7 +5170,7 @@ elif mode == 'Document Q&A':
 					for key in [ 'docqna_parallel_tools', 'docqna_tool_choice', 'docqna_number',
 					             'docqna_tools', 'docqna_max_calls' ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
@@ -5300,10 +5219,10 @@ elif mode == 'Document Q&A':
 					for key in [ 'docqna_stream', 'docqna_store', 'docqna_background',
 					             'docqna_stops', 'docqna_max_tokens' ]:
 						if key in st.session_state:
-							del st.session_state[ key ]
+							st.session_state[ key ] = [ ]
 					# If using separated UI key for stops
 					if 'docqna_stops_input' in st.session_state:
-						del st.session_state[ 'docqna_stops_input' ]
+						st.session_state[ 'docqna_stops_input' ] = [ ]
 					
 					st.rerun( )
 		
@@ -5396,8 +5315,8 @@ elif mode == 'Files':
 	files_messages = st.session_state.get( 'files_messages', [ ] )
 	
 	for key in [ 'files_domains', 'files_stops', 'files_includes', 'files_messages', ]:
-		if key in st.session_state and isinstance( st.session_state[ key ], list ):
-			del st.session_state[ key ]
+		if key in st.session_state:
+			st.session_state[ key ] = [ ]
 	# ------------------------------------------------------------------
 	# Main Chat UI
 	# ------------------------------------------------------------------
