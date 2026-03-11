@@ -3290,7 +3290,7 @@ init_state( )
 with st.sidebar:
 	style_subheaders( )
 	st.logo( cfg.LOGO_PATH, size='large' )
-	st.subheader( 'Settings' )
+	st.text( 'API Settings' )
 	st.divider( )
 	
 	# -----API KEY Expander------------------------------
@@ -3335,9 +3335,10 @@ with st.sidebar:
 			st.session_state.google_cse_id = google_cse_id
 			os.environ[ 'GOOGLE_CSE_ID' ] = google_cse_id
 	
-	st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+	st.divider( )
 	
-	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0 )
+	st.text( 'Select Mode' )
+	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0, label_visibility='collapsed' )
 
 # =============================================================================
 # CHAT MODE
@@ -3366,8 +3367,8 @@ if mode == 'Chat':
 	# Sidebar — Text Settings
 	# ------------------------------------------------------------------
 	with st.sidebar:
-		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
-		st.text( '⚙️  Chat Settings' )
+		st.divider( )
+		st.text( 'Chat Settings' )
 		st.radio( 'Execution Mode', options=[ 'Standard', 'Guidance Only', 'Analysis Only' ],
 			index=[ 'Standard', 'Guidance Only',
 			        'Analysis Only' ].index( st.session_state.execution_mode ),
@@ -5052,7 +5053,7 @@ elif mode == 'Vector Stores':
 # DOCUMENTS MODE
 # ======================================================================================
 elif mode == 'Document Q&A':
-	st.subheader( '📚 Document Q & A', help=cfg.DOCUMENT_Q_AND_A )
+	st.subheader( '📖 Document Q & A', help=cfg.DOCUMENT_Q_AND_A )
 	st.divider( )
 	docqna_model = st.session_state.get( 'docqna_model', '' )
 	docqna_reasoning = st.session_state.get( 'docqna_reasoning', '' )
