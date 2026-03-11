@@ -3370,8 +3370,7 @@ if mode == 'Chat':
 		st.divider( )
 		st.text( 'Chat Settings' )
 		st.radio( 'Execution Mode', options=[ 'Standard', 'Guidance Only', 'Analysis Only' ],
-			index=[ 'Standard', 'Guidance Only',
-			        'Analysis Only' ].index( st.session_state.execution_mode ),
+			index=[ 'Standard', 'Guidance Only', 'Analysis Only' ].index( st.session_state.execution_mode ),
 			key='execution_mode', label_visibility='collapsed' )
 	
 	# ------------------------------------------------------------------
@@ -3407,7 +3406,7 @@ if mode == 'Chat':
 							          }, ],
 							include=[ 'web_search_call.action.sources',
 							          'code_interpreter_call.outputs', ], store=True, )
-					sources = st.session_state.get( "last_sources", [ ] )
+					sources = st.session_state.get( 'last_sources', [ ] )
 					if sources:
 						st.markdown( '#### Sources' )
 						for i, src in enumerate( sources, 1 ):
