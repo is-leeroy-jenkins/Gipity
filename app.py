@@ -3854,7 +3854,7 @@ elif mode == "Images":
 					for key in [ 'image_mode', 'image_model', 'image_stops',
 					             'image_domains', 'image_reasoning', ]:
 						if key in st.session_state:
-							st.session_state[ key ] = [ ]
+							del st.session_state[ key ]
 					
 					st.rerun( )
 			
@@ -3901,10 +3901,10 @@ elif mode == "Images":
 					for key in [ 'image_top_percent', 'image_frequency_penalty',
 					             'image_presence_penalty', 'image_temperature', ]:
 						if key in st.session_state:
-							st.session_state[ key ] = [ ]
+							del st.session_state[ key ]
 					
 					if 'image_stops_input' in st.session_state:
-						st.session_state[ 'image_stops_input' ] = [ ]
+						del st.session_state[ 'image_stops_input' ]
 					
 					st.rerun( )
 			
@@ -3949,7 +3949,7 @@ elif mode == "Images":
 					for key in [ 'image_parallel_tools', 'image_max_tools', 'image_tool_choice',
 					             'image_tools', 'image_include' ]:
 						if key in st.session_state:
-							st.session_state[ key ] = [ ]
+							del st.session_state[ key ]
 					
 					st.rerun( )
 			
@@ -4003,7 +4003,7 @@ elif mode == "Images":
 					for key in [ 'image_stream', 'image_store', 'image_modalities',
 					             'image_response_format', 'image_max_tokens', ]:
 						if key in st.session_state:
-							st.session_state[ key ] = [ ]
+							del st.session_state[ key ]
 					
 					st.rerun( )
 			
