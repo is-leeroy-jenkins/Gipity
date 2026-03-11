@@ -3597,11 +3597,14 @@ elif mode == 'Text':
 				
 				# ---------- Stops ------------
 				with resp_c4:
-					set_text_stops = st.text_input( label='Stop Sequences', key='text_stops',
+					set_text_stops = st.text_input( label='Stop Sequences', key='text_stops_input',
+						value=','.join( st.session_state.get( 'docqna_stops', [ ] ) ),
 						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stops' )
 					
 					text_stops = [ d.strip( ) for d in set_text_stops.split( ',' )
 					               if d.strip( ) ]
+					
+					st.session_state[ 'text_stops' ] = text_stops
 				
 				# ---------- Max Tokens ------------
 				with resp_c5:
