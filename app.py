@@ -3372,7 +3372,7 @@ if mode == 'Chat':
 		st.radio( 'Execution Mode', options=[ 'Standard', 'Guidance Only', 'Analysis Only' ],
 			index=[ 'Standard', 'Guidance Only',
 			        'Analysis Only' ].index( st.session_state.execution_mode ),
-			key='execution_mode', )
+			key='execution_mode', label_visibility='collapsed' )
 	
 	# ------------------------------------------------------------------
 	# Main Chat UI
