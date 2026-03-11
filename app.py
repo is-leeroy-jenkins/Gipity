@@ -3400,7 +3400,7 @@ elif mode == 'Text':
 	
 	for key in [ 'text_domains', 'text_stops', 'text_includes',
 	             'text_input', 'text_modalities', 'text_tools' ]:
-		if key in st.session_state and isinstance( st.session_state[ key ], list ):
+		if key in st.session_state and isinstance( key, list ):
 			del st.session_state[ key ]
 	
 	# ------------------------------------------------------------------
