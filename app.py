@@ -4110,6 +4110,11 @@ elif mode == 'Audio':
 						model_options = list( translator.model_options )
 					elif audio_task == 'Text-to-Speech':
 						model_options = list( tts.model_options )
+					else:
+						model_options = [ 'gpt-4o-mini-tts', 'tts-1', 'tts-1-hd',
+						                  'gpt-4o-transcribe', 'gpt-4o-mini-transcribe',
+						                  'whisper-1', 'gpt-4o-transcribe-diarize',
+						                  'gpt-4o-transcribe-diarize' ]
 					
 					if model_options:
 						audio_model = st.selectbox( label='Model', options=model_options,
@@ -4119,12 +4124,12 @@ elif mode == 'Audio':
 				
 				# ---------- Reasoning ------------
 				with aud_c3:
-					reasoning_options = list( text.reasoning_options )
-					set_text_reasoning = st.selectbox( label='Reasoning',
-						options=reasoning_options, key='text_reasoning',
+					reasoning_options = [ 'low', 'medium', 'high', 'minimal', 'xhigh' ]
+					set_audio_reasoning = st.selectbox( label='Reasoning',
+						options=reasoning_options, key='audio_reasoning',
 						help=cfg.REASONING, index=None, placeholder='Options' )
 					
-					text_reasoning = st.session_state[ 'text_reasoning' ]
+					audio_reasoning = st.session_state[ 'audio_reasoning' ]
 				
 				# ---------- Sample Rate ----------
 				with aud_c4:
@@ -4135,19 +4140,19 @@ elif mode == 'Audio':
 				
 				# -------- MIME type --------
 				with aud_c5:
-					format_options = [ ]
+					mime_options = [ ]
 					if audio_task == 'Transcribe':
-						format_options = list( transcriber.format_options )
+						mime_options = list( transcriber.mime_options )
 					elif audio_task == 'Translate':
-						format_options = list( translator.format_options )
+						mime_options = list( translator.mime_options )
 					elif audio_task == 'Text-to-Speech':
-						format_options = list( tts.format_options )
+						mime_options = list( tts.mime_options )
 					
-					if format_options:
-						audio_format = st.selectbox( label='Format', options=format_options,
-							key='audio_format', placeholder='Options', index=None )
+					if mime_options:
+						audio_mime_type = st.selectbox( label='MIME type', options=mime_options,
+							key='audio_mime_type', placeholder='Options', index=None )
 						
-						audio_format = st.session_state[ 'audio_format' ]
+						audio_mime_type = st.session_state[ 'audio_mime_type' ]
 				
 				# ---------- Background ------------
 				with aud_c6:
@@ -4249,28 +4254,40 @@ elif mode == 'Audio':
 								key='audio_language', placeholder='Options', index=None )
 							
 							audio_language = st.session_state[ 'audio_language' ]
-					
+					else:
+						audio_language = st.selectbox( label='Language', options=[ 'Select Translation Task' ],
+							key='audio_language', placeholder='Options', index=None )
+						
+						audio_language = st.session_state[ 'audio_language' ]
+				
+				# ---------  Language --------
+				with resp_c2:
 					if audio_task == 'Text-to-Speech' and tts:
 						if hasattr( tts, 'voice_options' ):
 							audio_voice = st.selectbox( label='Voice', options=tts.voice_options,
 								key='audio_voice', placeholder='Options', index=None )
 							
 							audio_voice = st.session_state[ 'audio_voice' ]
-				
+					else:
+						audio_voice = st.selectbox( label='Voice', options=[ 'Select Trascription Task'],
+							key='audio_voice', placeholder='Options', index=None )
+						
+						audio_voice = st.session_state[ 'audio_voice' ]
+					
 				# ---------  Loop --------
-				with resp_c2:
+				with resp_c3:
 					set_audio_loop = st.toggle( label='Loop Audio', value=False, key='audio_loop' )
 					
 					audio_loop = st.session_state[ 'audio_loop' ]
 				
 				# --------- Autoplay --------
-				with resp_c3:
+				with resp_c4:
 					set_audio_autoplay = st.toggle( label='Auto Play', value=False, key='audio_autoplay' )
 					
 					audio_autoplay = st.session_state[ 'audio_autoplay' ]
 				
 				# ---------  Start Time --------
-				with resp_c4:
+				with resp_c5:
 					set_start_time = st.slider( label='Start Time:', min_value=0.00, max_value=5.00,
 						value=float( st.session_state.get( 'audio_start_time' ) ), step=0.01,
 						key='audio_start_time' )
@@ -4278,25 +4295,17 @@ elif mode == 'Audio':
 					audio_start_time = st.session_state[ 'audio_start_time' ]
 				
 				# ---------  End Time --------
-				with resp_c5:
+				with resp_c6:
 					set_end_time = st.slider( label='End Time:', min_value=0.00, max_value=5.00,
 						value=float( st.session_state.get( 'audio_end_time' ) ), step=0.01,
 						key='audio_end_time' )
 					
 					audio_end_time = st.session_state[ 'audio_end_time' ]
 				
-				# --------- Max Tokens --------
-				with resp_c6:
-					set_max_tokens = st.slider( label='Max Output Tokens', min_value=1, max_value=100000,
-						value=int( st.session_state.get( 'audio_max_tokens', 0 ) ), step=1000,
-						help=cfg.MAX_OUTPUT_TOKENS, key='audio_max_tokens' )
-					
-					audio_max_tokens = st.session_state[ 'audio_max_tokens' ]
-				
 				# ---------  Reset Setting --------
 				if st.button( 'Reset', key='audio_repsonse_reset', width='stretch' ):
 					for key in [ 'audio_autoplay', 'audio_loop', 'audio_start_time',
-					             'audio_end_time', 'audio_rate', 'audio_max_tokens',
+					             'audio_end_time', 'audio_rate', 'audio_language',
 					             'audio_voice' ]:
 						if key in st.session_state:
 							st.session_state[ key ] = [ ]
@@ -4805,43 +4814,21 @@ elif mode == 'Document Q&A':
 	with center:
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='LLM Settings', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
-					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
+			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
+				llm_c1, llm_c2, llm_c3, llm_c4, lmm_c5, llm_c6 = st.columns(
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# ---------- Model ------------
 				with llm_c1:
 					model_options = list( docqna.model_options )
 					set_docqna_model = st.selectbox( label='Select Model', options=model_options,
 						key='docqna_model', placeholder='Options', index=None,
-						help='REQUIRED. Text Generation model used by the AI', )
+						help='REQUIRED. Large Language Model used by the AI', )
 					
 					docqna_model = st.session_state[ 'docqna_model' ]
 				
-				# ---------- Include ------------
+				# ---------- Reasoning ------------
 				with llm_c2:
-					include_options = list( docqna.include_options )
-					set_docqna_include = st.multiselect( label='Include', options=include_options,
-						key='docqna_include', help=cfg.INCLUDE, placeholder='Options' )
-					
-					docqna_include = [ d.strip( ) for d in set_docqna_include
-					                   if d.strip( ) ]
-					
-					docqna_include = st.session_state[ 'docqna_include' ]
-				
-				# ---------- Allowed Domains ------------
-				with llm_c3:
-					set_docqna_domains = st.text_input( label='Allowed Domains', key='docqna_domains_input',
-						value=','.join( st.session_state.get( 'docqna_domains', [ ] ) ),
-						help=cfg.ALLOWED_DOMAINS, width='stretch', placeholder='Enter Domains' )
-					
-					docqna_domains = [ d.strip( ) for d in set_docqna_domains.split( ',' )
-					                   if d.strip( ) ]
-					
-					st.session_state[ 'docqna_domains' ] = docqna_domains
-				
-				# ---------- Reasoning/Thinking Level ------------
-				with llm_c4:
 					reasoning_options = list( docqna.reasoning_options )
 					set_docqna_reasoning = st.selectbox( label='Reasoning',
 						options=reasoning_options, key='docqna_reasoning',
@@ -4849,10 +4836,40 @@ elif mode == 'Document Q&A':
 					
 					docqna_reasoning = st.session_state[ 'docqna_reasoning' ]
 				
-				# ---------- Reset Settings ------------
-				if st.button( label='Reset', key='docqna_model_reset', width='stretch' ):
-					for key in [ 'docqna_model', 'docqna_include',
-					             'docqna_domains', 'docqna_reasoning' ]:
+				# ---------- Top-P ------------
+				with llm_c3:
+					set_docqna_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
+						step=0.01, help=cfg.TOP_P, key='docqna_top_percent' )
+					
+					docqna_top_percent = st.session_state[ 'docqna_top_percent' ]
+				
+				# ---------- Temperature ------------
+				with llm_c4:
+					set_docqna_temperature = st.slider( label='Temperature', min_value=-2.0, max_value=2.0,
+						step=0.01,
+						help=cfg.TEMPERATURE, key='docqna_temperature' )
+					
+					docqna_temperature = st.session_state[ 'docqna_temperature' ]
+				
+				# ---------- Presense ------------
+				with llm_c5:
+					set_docqna_presence = st.slider( label='Presense Penalty', min_value=-2.0, max_value=2.0,
+						step=0.01, help=cfg.PRESENCE_PENALTY, key='docqna_presence_penalty' )
+					
+					docqna_presence = st.session_state[ 'docqna_presence_penalty' ]
+				
+				# ---------- Frequency ------------
+				with llm_c6:
+					set_docqna_freq = st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
+						step=0.01, help=cfg.FREQUENCY_PENALTY, key='docqna_frequency_penalty' )
+					
+					docqna_fequency = st.session_state[ 'docqna_frequency_penalty' ]
+				
+				# ---------- Reset Model ------------
+				if st.button( label='Reset', key='reset_docqna_model', width='stretch' ):
+					for key in [ 'docqna_model', 'docqna_temperature', 'docqna_presence_penalty',
+					             'docqna_reasoning', 'docqna_top_percent',
+					             'docqna_frequency_penalty' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					

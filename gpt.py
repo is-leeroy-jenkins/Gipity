@@ -1234,6 +1234,17 @@ class TTS(  ):
 		         'tts-1-hd' ]
 	
 	@property
+	def mime_options( self ) -> List[ str ] | None:
+		'''
+
+	        Purpose:
+	        --------
+	        Method that returns a list of image formats
+
+        '''
+		return [ 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
+	
+	@property
 	def voice_options( self ) -> List[ str ] | None:
 		'''
 
@@ -1252,7 +1263,7 @@ class TTS(  ):
 		         'sage', ]
 	
 	@property
-	def format_options( self ) -> List[ str ] | None:
+	def mime_options( self ) -> List[ str ] | None:
 		'''
 
 	        Purpose:
@@ -1273,6 +1284,103 @@ class TTS(  ):
 
         '''
 		return [ 0.25, 1.0, 4.0 ]
+	
+	@property
+	def include_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of the includeable options
+
+		'''
+		return [ 'file_search_call.results',
+		         'web_search_call.results',
+		         'web_search_call.action.sources',
+		         'message.input_image.image_url',
+		         'computer_call_output.output.image_url',
+		         'code_interpreter_call.outputs',
+		         'reasoning.encrypted_content',
+		         'message.output_text.logprobs' ]
+	
+	@property
+	def tool_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of available tools options
+
+		'''
+		return [ 'web_search',
+		         'image_generation',
+		         'file_search',
+		         'code_interpreter',
+		         'computer_use_preview' ]
+	
+	@property
+	def choice_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of available tools options
+
+		'''
+		return [ 'auto', 'required', 'none' ]
+	
+	@property
+	def purpose_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'assistants',
+		         'batch',
+		         'fine-tune',
+		         'vision',
+		         'user_data',
+		         'evals' ]
+	
+	@property
+	def format_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'text', 'json_object', 'json_schema' ]
+	
+	@property
+	def reasoning_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of reasoning effort options
+
+		'''
+		return [ 'low',
+		         'medium',
+		         'high',
+		         'minimal',
+		         'xhigh' ]
+	
+	@property
+	def modality_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'auto', 'text', 'image', 'audio' ]
 	
 	def create_speech( self, text: str, file_path: str, model: str='gpt-4o-tts', format: str=None,
 			speed: float=None, voice: str=None, ):
@@ -1389,6 +1497,7 @@ class Transcription( GPT ):
 			messages: List[ Dict[ str, str ] ]=None, stops: List[ str ]=None  ):
 		super( ).__init__(  )
 		self.api_key = cfg.OPENAI_API_KEY
+		self.prompt = prompt
 		self.temperature = temperature
 		self.top_percent = top_p
 		self.frequency_penalty = frequency
@@ -1403,6 +1512,7 @@ class Transcription( GPT ):
 		self.language = language
 		self.instructions = instruct
 		self.model = model
+		self.number = number
 		self.input_text = None
 		self.audio_file = None
 		self.transcript = None
@@ -1421,7 +1531,7 @@ class Transcription( GPT ):
 		         'gpt-4o-transcribe-diarize', 'gpt-4o-transcribe-diarize' ]
 	
 	@property
-	def output_options( self ) -> List[ str ] | None:
+	def mime_options( self ) -> List[ str ] | None:
 		'''
 
 	        Purpose:
@@ -1429,55 +1539,104 @@ class Transcription( GPT ):
 	        Method that returns a list of image formats
 
         '''
-		return [ 'mp3',
-		         'wav',
-		         'aac',
-		         'flac',
-		         'opus',
-		         'pcm' ]
+		return [ 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
+	
+	@property
+	def include_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of the includeable options
+
+		'''
+		return [ 'file_search_call.results',
+		         'web_search_call.results',
+		         'web_search_call.action.sources',
+		         'message.input_image.image_url',
+		         'computer_call_output.output.image_url',
+		         'code_interpreter_call.outputs',
+		         'reasoning.encrypted_content',
+		         'message.output_text.logprobs' ]
+	
+	@property
+	def tool_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of available tools options
+
+		'''
+		return [ 'web_search',
+		         'image_generation',
+		         'file_search',
+		         'code_interpreter',
+		         'computer_use_preview' ]
+	
+	@property
+	def choice_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of available tools options
+
+		'''
+		return [ 'auto', 'required', 'none' ]
+	
+	@property
+	def purpose_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'assistants',
+		         'batch',
+		         'fine-tune',
+		         'vision',
+		         'user_data',
+		         'evals' ]
 	
 	@property
 	def format_options( self ) -> List[ str ] | None:
 		'''
-			
+		
 			Returns:
-			-------
-			List[ str ] output  format options
-			
+			--------
+			A List[ str ] of file purposes
+
 		'''
-		return [ 'json',
-		         'text',
-		         'srt',
-		         'verbose_json',
-		         'vtt',
-		         'diarized_json' ]
+		return [ 'text', 'json_object', 'json_schema' ]
 	
 	@property
-	def language_options( self ):
+	def reasoning_options( self ) -> List[ str ] | None:
 		'''
-	
-	        Purpose:
-	        --------
-	        Method that returns a list of voice names
 
-        '''
-		return [ 'english',
-		         'spanish',
-		         'french',
-		         'german',
-		         'italian',
-		         'portuguese',
-		         'russian',
-		         'ukrainian',
-		         'greek',
-		         'hebrew',
-		         'arabic',
-		         'hindi',
-		         'chinese',
-		         'japanese',
-		         'korean',
-		         'vietnamese',
-		         'thai' ]
+			Returns:
+			--------
+			A List[ str ] of reasoning effort options
+
+		'''
+		return [ 'low',
+		         'medium',
+		         'high',
+		         'minimal',
+		         'xhigh' ]
+	
+	@property
+	def modality_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'auto', 'text', 'image', 'audio' ]
 	
 	def transcribe( self, path: str, model: str='gpt-4o-transcribe', language: str=None, ) -> str:
 		"""
@@ -1624,6 +1783,17 @@ class Translation( GPT ):
 		         'gpt-4o-mini', ]
 	
 	@property
+	def mime_options( self ) -> List[ str ] | None:
+		'''
+
+	        Purpose:
+	        --------
+	        Method that returns a list of image formats
+
+        '''
+		return [ 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
+	
+	@property
 	def language_options( self ):
 		'''
 	
@@ -1651,20 +1821,101 @@ class Translation( GPT ):
 		         'thai' ]
 	
 	@property
+	def include_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of the includeable options
+
+		'''
+		return [ 'file_search_call.results',
+		         'web_search_call.results',
+		         'web_search_call.action.sources',
+		         'message.input_image.image_url',
+		         'computer_call_output.output.image_url',
+		         'code_interpreter_call.outputs',
+		         'reasoning.encrypted_content',
+		         'message.output_text.logprobs' ]
+	
+	@property
+	def tool_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of available tools options
+
+		'''
+		return [ 'web_search',
+		         'image_generation',
+		         'file_search',
+		         'code_interpreter',
+		         'computer_use_preview' ]
+	
+	@property
+	def choice_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of available tools options
+
+		'''
+		return [ 'auto', 'required', 'none' ]
+	
+	@property
+	def purpose_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'assistants',
+		         'batch',
+		         'fine-tune',
+		         'vision',
+		         'user_data',
+		         'evals' ]
+	
+	@property
 	def format_options( self ) -> List[ str ] | None:
 		'''
-			
+		
 			Returns:
-			-------
-			List[ str ] output  format options
-			
+			--------
+			A List[ str ] of file purposes
+
 		'''
-		return [ 'json',
-		         'text',
-		         'srt',
-		         'verbose_json',
-		         'vtt',
-		         'diarized_json' ]
+		return [ 'text', 'json_object', 'json_schema' ]
+	
+	@property
+	def reasoning_options( self ) -> List[ str ] | None:
+		'''
+
+			Returns:
+			--------
+			A List[ str ] of reasoning effort options
+
+		'''
+		return [ 'low',
+		         'medium',
+		         'high',
+		         'minimal',
+		         'xhigh' ]
+	
+	@property
+	def modality_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'text', 'auto', 'image', 'audio' ]
 	
 	def translate( self, prompt: str, filepath: str, model: str=None,
 			temperature: float=None, top_p: float=None, frequency: float=None,
@@ -2027,8 +2278,7 @@ class Files( GPT ):
 			A List[ str ] of reasoning effort options
 
 		'''
-		return [ 'none',
-		         'low',
+		return [ 'low',
 		         'medium',
 		         'high',
 		         'minimal',
