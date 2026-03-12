@@ -3556,7 +3556,7 @@ elif mode == 'Text':
 						key='text_number' )
 					
 					text_number = st.session_state[ 'text_number' ]
-					
+				
 				# ---------- Stream ------------
 				with resp_c2:
 					set_text_stream = st.toggle( label='Stream', key='text_stream',
@@ -3570,8 +3570,16 @@ elif mode == 'Text':
 					
 					text_store = st.session_state[ 'text_store' ]
 				
+				# ---------- Max Tokens ------------
+				with resp_c4:
+					set_text_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
+						value=int( st.session_state.get( 'text_max_tokens', 0 ) ), step=500,
+						help=cfg.MAX_OUTPUT_TOKENS, key='text_max_tokens' )
+					
+					text_tokens = st.session_state[ 'text_max_tokens' ]
+				
 				# ---------- Modalities------------
-				with resp_cg:
+				with resp_c5:
 					modality_options = list( text.modality_options )
 					set_text_modalities = st.multiselect( label='Response Modalities', options=modality_options,
 						key='text_modalities', help='Optional. Modality of the response',
@@ -3582,23 +3590,26 @@ elif mode == 'Text':
 					
 					text_modalities = st.session_state[ 'text_modalities' ]
 				
-				# ---------- Max Tokens ------------
-				with resp_c4:
-					set_text_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
-						value=int( st.session_state.get( 'text_max_tokens', 0 ) ), step=500,
-						help=cfg.MAX_OUTPUT_TOKENS, key='text_max_tokens' )
+				# ---------- Stops ------------
+				with resp_c6:
+					set_text_stops = st.text_input( label='Stop Sequences', key='text_stops_input',
+						value=','.join( st.session_state.get( 'text_stops', [ ] ) ),
+						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
 					
-					text_tokens = st.session_state[ 'text_max_tokens' ]
+					text_stops = [ d.strip( ) for d in set_text_stops.split( ',' )
+					               if d.strip( ) ]
+					
+					st.session_state[ 'text_stops' ] = text_stops
 				
 				# ---------- Reset Reponse ------------
 				if st.button( label='Reset', key='reset_text_response', width='stretch' ):
-					for key in [ 'text_stream', 'text_store', 'text_number',
+					for key in [ 'text_stream', 'text_store', 'text_number', 'text_stops',
 					             'text_tools', 'text_max_tokens', 'text_modalities' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
 					st.rerun( )
-			
+		
 		# ------------------------------------------------------------------
 		# Expander — Text System Instructions
 		# ------------------------------------------------------------------
