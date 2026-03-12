@@ -4772,8 +4772,8 @@ elif mode == 'Document Q&A':
 	docqna_max_searches = st.session_state.get( 'docqna_max_searches', 0 )
 	docqna_max_tokens = st.session_state.get( 'docqna_max_tokens', 0 )
 	docqna_top_percent = st.session_state.get( 'docqna_top_percent', 0.0 )
-	docqna_freq = st.session_state.get( 'docqna_frequency_penalty', 0.0 )
-	docqna_presence = st.session_state.get( 'docqna_presence_penalty', 0.0 )
+	docqna_frequency_penalty = st.session_state.get( 'docqna_frequency_penalty', 0.0 )
+	docqna_presence_penalty = st.session_state.get( 'docqna_presence_penalty', 0.0 )
 	docqna_temperature = st.session_state.get( 'docqna_temperature', 0.0 )
 	docqna_stream = st.session_state.get( 'docqna_stream', False )
 	docqna_parallel_tools = st.session_state.get( 'docqna_parallel_tools', False )
@@ -4815,7 +4815,7 @@ elif mode == 'Document Q&A':
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
 			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4, lmm_c5, llm_c6 = st.columns(
+				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# ---------- Model ------------
@@ -4856,7 +4856,7 @@ elif mode == 'Document Q&A':
 					set_docqna_presence = st.slider( label='Presense Penalty', min_value=-2.0, max_value=2.0,
 						step=0.01, help=cfg.PRESENCE_PENALTY, key='docqna_presence_penalty' )
 					
-					docqna_presence = st.session_state[ 'docqna_presence_penalty' ]
+					docqna_presence_penalty = st.session_state[ 'docqna_presence_penalty' ]
 				
 				# ---------- Frequency ------------
 				with llm_c6:
@@ -4875,85 +4875,52 @@ elif mode == 'Document Q&A':
 					
 					st.rerun( )
 			
-			with st.expander( label='Inference Settings', expanded=False, width='stretch' ):
-				prm_c1, prm_c2, prm_c3, prm_c4 = st.columns(
-					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
-				
-				# ---------- Top-P ------------
-				with prm_c1:
-					set_docqna_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
-						value=float( st.session_state.get( 'docqna_top_percent', 0.0 ) ),
-						step=0.01, help=cfg.TOP_P, key='docqna_top_percent' )
-					
-					docqna_top_percent = st.session_state[ 'docqna_top_percent' ]
-				
-				# ---------- Frequency ------------
-				with prm_c2:
-					set_docqna_freq = st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
-						value=float( st.session_state.get( 'docqna_frequency_penalty', 0.0 ) ),
-						step=0.01, help=cfg.FREQUENCY_PENALTY, key='docqna_frequency_penalty' )
-					
-					docqna_fequency = st.session_state[ 'docqna_frequency_penalty' ]
-				
-				# ---------- Presense ------------
-				with prm_c3:
-					set_docqna_presence = st.slider( label='Presense Penalty', min_value=-2.0, max_value=2.0,
-						value=float( st.session_state.get( 'docqna_presence_penalty', 0.0 ) ),
-						step=0.01, help=cfg.PRESENCE_PENALTY, key='docqna_presence_penalty' )
-					
-					docqna_presence = st.session_state[ 'docqna_presence_penalty' ]
-				
-				# ---------- Temperature ------------
-				with prm_c4:
-					set_docqna_temperature = st.slider( label='Temperature', min_value=0.0, max_value=1.0,
-						value=float( st.session_state.get( 'docqna_temperature', 0.0 ) ), step=0.01,
-						help=cfg.TEMPERATURE, key='docqna_temperature' )
-					
-					docqna_temperature = st.session_state[ 'docqna_temperature' ]
-				
-				# ---------- Reset Settings ------------
-				if st.button( label='Reset', key='docqna_inference_reset', width='stretch' ):
-					for key in [ 'docqna_top_percent', 'docqna_frequency_penalty',
-					             'docqna_presence_penalty', 'docqna_temperature',
-					             'docqna_top_k', ]:
-						if key in st.session_state:
-							st.session_state[ key ] = [ ]
-					
-					st.rerun( )
-			
-			with st.expander( label='Tool Settings', expanded=False, width='stretch' ):
-				tool_c1, tool_c2, tool_c3, tool_c4 = st.columns(
-					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
-				
-				# ---------- Number/Candidates ------------
-				with tool_c1:
-					set_docqna_number = st.slider( label='Number', min_value=0, max_value=50,
-						value=int( st.session_state.get( 'docqna_number', 0 ) ), step=1,
-						help='Optional. Upper limit on the responses returned by the model',
-						key='docqna_number' )
-					
-					docqna_number = st.session_state[ 'docqna_number' ]
+			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
+				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# ---------- Max Calls ------------
-				with tool_c2:
-					set_docqna_calls = st.slider( label='Max Tool Calls', min_value=0, max_value=10,
+				with tool_c1:
+					set_docqna_calls = st.slider( label='Max Calls', min_value=0, max_value=10,
 						value=int( st.session_state.get( 'docqna_max_calls', 0 ) ), step=1,
 						help=cfg.MAX_TOOL_CALLS, key='docqna_max_calls' )
 					
 					docqna_max_calls = st.session_state[ 'docqna_max_calls' ]
 				
-				# ---------- Tool Choice ------------
-				with tool_c3:
+				# ---------- Choice ------------
+				with tool_c2:
 					choice_options = list( docqna.choice_options )
 					set_docqna_choice = st.selectbox( label='Choice', options=choice_options,
 						key='docqna_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
 					
 					docqna_tool_choice = st.session_state[ 'docqna_tool_choice' ]
 				
-				# ---------- Tools ------------
+				# ---------- Include ------------
+				with tool_c3:
+					include_options = list( docqna.include_options )
+					set_docqna_include = st.multiselect( label='Include', options=include_options,
+						key='docqna_include', help=cfg.INCLUDE, placeholder='Options' )
+					
+					docqna_include = [ d.strip( ) for d in set_docqna_include
+					                   if d.strip( ) ]
+					
+					docqna_include = st.session_state[ 'docqna_include' ]
+				
+				# ---------- Domains ------------
 				with tool_c4:
+					set_docqna_domains = st.docqna_input( label='Allowed Domains', key='docqna_domains_input',
+						value=','.join( st.session_state.get( 'docqna_domains', [ ] ) ),
+						help=cfg.ALLOWED_DOMAINS, width='stretch', placeholder='Enter Domains' )
+					
+					docqna_domains = [ d.strip( ) for d in set_docqna_domains.split( ',' )
+					                   if d.strip( ) ]
+					
+					st.session_state[ 'docqna_domains' ] = docqna_domains
+				
+				# ---------- Tools ------------
+				with tool_c5:
 					tool_options = list( docqna.tool_options )
-					set_docqna_tools = st.multiselect( label='Available Tools', options=tool_options,
+					set_docqna_tools = st.multiselect( label='Tools', options=tool_options,
 						key='docqna_tools', help=cfg.TOOLS, placeholder='Options' )
 					
 					docqna_tools = [ d.strip( ) for d in set_docqna_tools
@@ -4961,67 +4928,85 @@ elif mode == 'Document Q&A':
 					
 					docqna_tools = st.session_state[ 'docqna_tools' ]
 				
-				# ---------- Reset Settings ------------
-				if st.button( label='Reset', key='docqna_tools_reset', width='stretch' ):
-					for key in [ 'docqna_parallel_tools', 'docqna_tool_choice', 'docqna_number',
-					             'docqna_tools', 'docqna_max_calls' ]:
+				# ---------- Background ------------
+				with tool_c6:
+					set_docqna_background = st.toggle( label='Background', key='docqna_background',
+						help=cfg.BACKGROUND_MODE )
+					
+					docqna_background = st.session_state[ 'docqna_background' ]
+				
+				# ---------- Reset Tools ------------
+				if st.button( label='Reset', key='reset_docqna_tools', width='stretch' ):
+					for key in [ 'docqna_max_calls', 'docqna_tool_choice', 'docqna_include',
+					             'docqna_tools', 'docqna_domains', 'docqna_background' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
 					st.rerun( )
 			
-			with st.expander( label='Response Settings', expanded=False, width='stretch' ):
-				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
+				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+				
+				# ---------- Number ------------
+				with resp_c1:
+					set_docqna_number = st.slider( label='Number', min_value=0, max_value=50,
+						value=int( st.session_state.get( 'docqna_number', 0 ) ), step=1,
+						help='Optional. Upper limit on the responses returned by the model',
+						key='docqna_number' )
+					
+					docqna_number = st.session_state[ 'docqna_number' ]
 				
 				# ---------- Stream ------------
-				with resp_c1:
+				with resp_c2:
 					set_docqna_stream = st.toggle( label='Stream', key='docqna_stream',
 						help=cfg.STREAM )
 					
 					docqna_stream = st.session_state[ 'docqna_stream' ]
 				
 				# ---------- Store ------------
-				with resp_c2:
+				with resp_c3:
 					set_docqna_store = st.toggle( label='Store', key='docqna_store', help=cfg.STORE )
 					
 					docqna_store = st.session_state[ 'docqna_store' ]
 				
-				# ---------- Background ------------
-				with resp_c3:
-					set_docqna_background = st.toggle( label='Background', key='docqna_background',
-						help=cfg.BACKGROUND_MODE )
-					
-					docqna_background = st.session_state[ 'docqna_background' ]
-				
-				# ---------- Stops ------------
-				with resp_c4:
-					set_docqna_stops = st.text_input( label='Stop Sequences', key='docqna_stops_input',
-						value=','.join( st.session_state.get( 'docqna_stops', [ ] ) ),
-						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stops' )
-					
-					docqna_stops = [ d.strip( ) for d in set_docqna_stops.split( ',' )
-					                 if d.strip( ) ]
-					
-					st.session_state[ 'docqna_stops' ] = docqna_stops
-				
 				# ---------- Max Tokens ------------
-				with resp_c5:
+				with resp_c4:
 					set_docqna_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
 						value=int( st.session_state.get( 'docqna_max_tokens', 0 ) ), step=500,
 						help=cfg.MAX_OUTPUT_TOKENS, key='docqna_max_tokens' )
 					
 					docqna_tokens = st.session_state[ 'docqna_max_tokens' ]
 				
-				# ---------- Reset Settings ------------
-				if st.button( label='Reset', key='docqna_response_reset', width='stretch' ):
-					for key in [ 'docqna_stream', 'docqna_store', 'docqna_background',
-					             'docqna_stops', 'docqna_max_tokens' ]:
+				# ---------- Modalities------------
+				with resp_c5:
+					modality_options = list( docqna.modality_options )
+					set_docqna_modalities = st.multiselect( label='Response Modalities', options=modality_options,
+						key='docqna_modalities', help='Optional. Modality of the response',
+						placeholder='Options' )
+					
+					docqna_modalities = [ d.strip( ) for d in set_docqna_modalities
+					                      if d.strip( ) ]
+					
+					docqna_modalities = st.session_state[ 'docqna_modalities' ]
+				
+				# ---------- Stops ------------
+				with resp_c6:
+					set_docqna_stops = st.docqna_input( label='Stop Sequences', key='docqna_stops_input',
+						value=','.join( st.session_state.get( 'docqna_stops', [ ] ) ),
+						help=cfg.STOP_SEQUENCES, width='stretch', placeholder='Enter Stop Strings' )
+					
+					docqna_stops = [ d.strip( ) for d in set_docqna_stops.split( ',' )
+					                 if d.strip( ) ]
+					
+					st.session_state[ 'docqna_stops' ] = docqna_stops
+				
+				# ---------- Reset Reponse ------------
+				if st.button( label='Reset', key='reset_docqna_response', width='stretch' ):
+					for key in [ 'docqna_stream', 'docqna_store', 'docqna_number', 'docqna_stops',
+					             'docqna_tools', 'docqna_max_tokens', 'docqna_modalities' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
-					# If using separated UI key for stops
-					if 'docqna_stops_input' in st.session_state:
-						del st.session_state[ 'docqna_stops_input' ]
 					
 					st.rerun( )
 		
