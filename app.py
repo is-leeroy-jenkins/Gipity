@@ -5018,7 +5018,7 @@ elif mode == 'Files':
 				
 				# ---------- Model ------------
 				with llm_c1:
-					model_options = list( docqna.model_options )
+					model_options = list( files.model_options )
 					set_files_model = st.selectbox( label='Select Model', options=model_options,
 						key='files_model', placeholder='Options', index=None,
 						help='REQUIRED. Large Language Model used by the AI', )
@@ -5027,7 +5027,7 @@ elif mode == 'Files':
 				
 				# ---------- Reasoning ------------
 				with llm_c2:
-					reasoning_options = list( docqna.reasoning_options )
+					reasoning_options = list( files.reasoning_options )
 					set_files_reasoning = st.selectbox( label='Reasoning',
 						options=reasoning_options, key='files_reasoning',
 						help=cfg.REASONING, index=None, placeholder='Options' )
@@ -5087,7 +5087,7 @@ elif mode == 'Files':
 				
 				# ---------- Choice ------------
 				with tool_c2:
-					choice_options = list( docqna.choice_options )
+					choice_options = list( files.choice_options )
 					set_files_choice = st.selectbox( label='Choice', options=choice_options,
 						key='files_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
 					
@@ -5095,7 +5095,7 @@ elif mode == 'Files':
 				
 				# ---------- Include ------------
 				with tool_c3:
-					include_options = list( docqna.include_options )
+					include_options = list( files.include_options )
 					set_files_include = st.multiselect( label='Include', options=include_options,
 						key='files_include', help=cfg.INCLUDE, placeholder='Options' )
 					
@@ -5117,7 +5117,7 @@ elif mode == 'Files':
 				
 				# ---------- Tools ------------
 				with tool_c5:
-					tool_options = list( docqna.tool_options )
+					tool_options = list( files.tool_options )
 					set_files_tools = st.multiselect( label='Tools', options=tool_options,
 						key='files_tools', help=cfg.TOOLS, placeholder='Options' )
 					
@@ -5178,7 +5178,7 @@ elif mode == 'Files':
 				
 				# ---------- Modalities------------
 				with resp_c5:
-					modality_options = list( docqna.modality_options )
+					modality_options = list( files.modality_options )
 					set_files_modalities = st.multiselect( label='Response Modalities', options=modality_options,
 						key='files_modalities', help='Optional. Modality of the response',
 						placeholder='Options' )
@@ -5192,7 +5192,7 @@ elif mode == 'Files':
 				with resp_c6:
 					set_files_stops = st.files_input( label='Stop Sequences', key='files_stops_input',
 						value=','.join( st.session_state.get( 'files_stops', [ ] ) ),
-						help=cfg.STOP_SEQUENCES, width='stretch', placeholder='Enter Stop Strings' )
+						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
 					
 					files_stops = [ d.strip( ) for d in set_files_stops.split( ',' )
 					                if d.strip( ) ]
