@@ -4221,15 +4221,15 @@ elif mode == 'Audio':
 				# ---------- Response Format ------------
 				with prm_c6:
 					modality_options = [ 'json', 'text', 'srt', 'verbose_json', 'vtt', 'diarized_json' ]
-					set_audio_modalities = st.multiselect( label='Response Modalities',
-						options=modality_options, key='audio_modalities',
+					set_audio_response_format = st.multiselect( label='Response Format',
+						options=modality_options, key='audio_response_format',
 						help='Optional. Format of the response',
 						placeholder='Options' )
 					
-					audio_modalities = [ d.strip( ) for d in set_audio_modalities
+					audio_response_format = [ d.strip( ) for d in set_audio_response_format
 					                     if d.strip( ) ]
 					
-					audio_modalities = st.session_state[ 'audio_modalities' ]
+					audio_response_formats = st.session_state[ 'audio_response_format' ]
 				
 				# --------- Reset Settings --------
 				if st.button( 'Reset', key='audio_inference_reset', width='stretch' ):

@@ -366,8 +366,7 @@ class Chat( GPT ):
 			A List[ str ] of reasoning effort options
 
 		'''
-		return [ 'none',
-		         'low',
+		return [ 'low',
 		         'medium',
 		         'high',
 		         'minimal',
@@ -488,7 +487,7 @@ class Chat( GPT ):
 			top_p: float=None, frequency: float=None, presence: float=None, max_tokens: int=None,
 			store: bool=None, stream: bool=None, instruct: str=None, background: bool=None,
 			reasoning: Dict[ str, str ]=None, include: List[ str ]=None,
-			format: Dict[ str, str ]={}, tools: List[ Dict[ str, str ] ]=None,
+			format: Dict[ str, str ]=None, tools: List[ Dict[ str, str ] ]=None,
 			allowed_domains: List[ str ]=None, ) -> str | None:
 		"""
 
@@ -789,6 +788,7 @@ class Images( GPT ):
 		self.detail = detail
 		self.size = size
 		self.style = style
+		self.compression = compression
 		self.response_format = respose_format
 		self.mime_format = image_format
 		self.parallel_tools = is_parallel
