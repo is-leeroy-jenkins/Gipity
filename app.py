@@ -4703,7 +4703,7 @@ elif mode == 'Document Q&A':
 				
 				# ---------- Stops ------------
 				with resp_c6:
-					set_docqna_stops = st.docqna_input( label='Stop Sequences', key='docqna_stops_input',
+					set_docqna_stops = st.text_input( label='Stop Sequences', key='docqna_stops_input',
 						value=','.join( st.session_state.get( 'docqna_stops', [ ] ) ),
 						help=cfg.STOP_SEQUENCES, width='stretch', placeholder='Enter Stop Strings' )
 					
