@@ -409,6 +409,12 @@ if 'image_max_calls' not in st.session_state:
 if 'image_max_searches' not in st.session_state:
 	st.session_state[ 'image_max_searches' ] = 0
 
+if 'image_number' not in st.session_state:
+	st.session_state[ 'image_number' ] = 0
+
+if 'image_compression' not in st.session_state:
+	st.session_state[ 'image_compression' ] = 0.0
+
 if 'image_temperature' not in st.session_state:
 	st.session_state[ 'image_temperature' ] = 0.0
 
@@ -420,9 +426,6 @@ if 'image_frequency_penalty' not in st.session_state:
 
 if 'image_presence_penalty' not in st.session_state:
 	st.session_state[ 'image_presence_penalty' ] = 0.0
-
-if 'image_number' not in st.session_state:
-	st.session_state[ 'image_number' ] = 0.0
 
 if 'image_parallel_tools' not in st.session_state:
 	st.session_state[ 'image_parallel_tools' ] = False
@@ -3415,7 +3418,7 @@ elif mode == 'Text':
 		
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='LLM Settings', icon='🤖', expanded=False, width='stretch' ):
+			with st.expander( label='LLM Settings', icon='🎲', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 			
@@ -3610,9 +3613,6 @@ elif mode == 'Text':
 					
 					st.rerun( )
 		
-		# ------------------------------------------------------------------
-		# Expander — Text System Instructions
-		# ------------------------------------------------------------------
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -3722,6 +3722,7 @@ elif mode == "Images":
 	image_frequency = st.session_state.get( 'image_frequency_penalty', 0.0 )
 	image_presence = st.session_state.get( 'image_presence_penalty', 0.0 )
 	image_temperature = st.session_state.get( 'image_temperature', 0.0 )
+	image_compression = st.session_state.get( 'image_compression', 0.0 )
 	image_stream = st.session_state.get( 'image_stream', False )
 	image_store = st.session_state.get( 'image_store', False )
 	image_parallel_calls = st.session_state.get( 'image_parallel_calls', False )
@@ -3757,12 +3758,12 @@ elif mode == "Images":
 	# Main  UI
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
-	with center:
+	with (center):
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
 			with st.expander( label='LLM Settings', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# ---------  Mode  --------
 				with llm_c1:
@@ -3897,7 +3898,7 @@ elif mode == "Images":
 			
 			with st.expander( label='Tool Settings', expanded=False, width='stretch' ):
 				tool_c1, tool_c2, tool_c3, tool_c4 = st.columns(
-					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='medium' )
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# ---------  Allow Parallel --------
 				with tool_c1:
@@ -3942,7 +3943,7 @@ elif mode == "Images":
 			
 			with st.expander( label='Response Settings', expanded=False, width='stretch' ):
 				res_one, res_two, res_three, res_four, res_five = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# ---------  Stream --------
 				with res_one:
@@ -4016,14 +4017,14 @@ elif mode == "Images":
 					
 					image_mime_type = st.session_state[ 'image_mime_type' ]
 				
-				# ---------  Number/Candidates --------
+				# ---------  Back Color --------
 				with img_c3:
-					set_image_number = st.slider( label='Number', min_value=0, max_value=100,
-						value=int( st.session_state.get( 'image_number', 0 ) ),
-						step=1, help='Optional. A response candidate generated from the model',
-						key='image_number' )
+					backcolor_options = list( image.backcolor_options )
+					set_image_backcolor = st.selectbox( label='Back Color', options=backcolor_options,
+						help='Optional. Image Background Color', key='image_backcolor',
+						placeholder='Options', index=None, )
 					
-					image_number = st.session_state[ 'image_number' ]
+					image_backcolor = st.session_state[ 'image_backcolor' ]
 				
 				# ---------  Image Size --------
 				with img_c4:
@@ -4046,7 +4047,7 @@ elif mode == "Images":
 				# -------- Reset Settings ------------------
 				if st.button( label='Reset', key='image_visual_reset', width='stretch' ):
 					for key in [ 'image_resolution', 'image_mime_type', 'image_size',
-					             'image_number', 'image_quality' ]:
+					             'image_backcolor', 'image_quality', 'image_compression' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					

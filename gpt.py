@@ -745,6 +745,7 @@ class Images( GPT ):
 	mime_format: Optional[ str ]
 	background: Optional[ bool ]
 	backcolor: Optional[ str ]
+	compression: Optional[ float ]
 	
 	def __init__( self, prompt: str=None, model: str='gpt-image-1', temperature: float=None,
 			top_p: float=None, presence: float=None, frequency: float=None,
@@ -756,7 +757,7 @@ class Images( GPT ):
 			is_parallel: bool=None, input: List[ Dict[ str, str ] ]=None, previous_id: str=None,
 			reasoning: Dict[ str, str ]=None,  input_text: str=None, image_url: str=None,
 			content: List[ Dict[ str, str ] ]=None, quality: str=None, size: str=None,
-			detail: str=None, style: str=None ):
+			detail: str=None, style: str=None, compression: float=None ):
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
@@ -931,9 +932,7 @@ class Images( GPT ):
 	        Method that returns a  list of format options
 
         '''
-		return [ 'transparent',
-		         'opaque',
-		         'auto' ]
+		return [ 'auto', 'transparent', 'opaque', ]
 	
 	@property
 	def quality_options( self ) -> List[ str ]:
@@ -944,7 +943,7 @@ class Images( GPT ):
 	        Method that returns a  list of quality options
 
         '''
-		return [ 'standard', 'hd' ]
+		return [ 'auto', 'low', 'medium', 'high', 'standard', 'hd' ]
 	
 	@property
 	def detail_options( self ) -> List[ str ]:
@@ -955,9 +954,7 @@ class Images( GPT ):
 	        Method that returns a  list of detail options
 
         '''
-		return [ 'auto',
-		         'low',
-		         'high' ]
+		return [ 'auto', 'low', 'medium', 'high'  ]
 	
 	@property
 	def reasoning_options( self ) -> List[ str ] | None:
@@ -987,7 +984,7 @@ class Images( GPT ):
 		return [ 'text', 'auto', 'image', 'audio' ]
 	
 	def generate( self, prompt: str, number: int=1, model: str='gpt-image-1-mini',
-			size: str='1024x1024', quality: str='standard', fmt: str = '.png' ) -> str | None:
+			size: str='1024x1024', quality: str='auto', fmt: str = '.jpeg' ) -> str | None:
 		'''
 	
 	        Purpose
