@@ -78,9 +78,7 @@ GIPITY = '🧠'
 # ----------------- GPT CONFIG -------------------
 
 MODE_CLASS_MAP = \
-{
-	'Chat': None,
-	'Text': [ 'Chat' ],
+{   'Text': [ 'Chat' ],
 	'Images': [ 'Images' ],
 	'Audio': [ 'TTS', 'Translation', 'Transcription' ],
 	'Embeddings': [ 'Embeddings' ],
@@ -109,8 +107,7 @@ GPT_DOMAINS = [ 'congress.gov',
                 'omb.gov',
                 'defense.gov' ]
 
-GPT_MODES = [ 'Chat',
-              'Text',
+GPT_MODES = [ 'Text',
               'Images',
               'Audio',
               'Embeddings',
@@ -118,8 +115,7 @@ GPT_MODES = [ 'Chat',
               'Files',
               'Vector Stores',
               'Prompt Engineering',
-              'Data Management',
-              'Export' ]
+              'Data Management' ]
 
 GPT_GENERATION = [ 'gpt-image-1.5', 'dall-e-2', 'dall-e-3', 'gpt-image-1', 'gpt-image-1-mini' ]
 

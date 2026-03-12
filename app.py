@@ -137,6 +137,9 @@ if 'mode' not in st.session_state or st.session_state[ 'mode' ] is None:
 if 'messages' not in st.session_state:
 	st.session_state.messages = [ ]
 
+if 'chat_history' not in st.session_state:
+	st.session_state[ 'chat_history' ] = [ ]
+
 if 'last_call_usage' not in st.session_state:
 	st.session_state.last_call_usage = { 'prompt_tokens': 0, 'completion_tokens': 0,
 			'total_tokens': 0 }
@@ -197,9 +200,6 @@ if 'stores_model' not in st.session_state:
 if 'instructions' not in st.session_state:
 	st.session_state[ 'instructions' ] = ''
 
-if 'chat_system_instructions' not in st.session_state:
-	st.session_state[ 'chat_system_instructions' ] = ''
-
 if 'text_system_instructions' not in st.session_state:
 	st.session_state[ 'text_system_instructions' ] = ''
 
@@ -219,9 +219,6 @@ if 'stores_system_instructions' not in st.session_state:
 	st.session_state[ 'stores_system_instructions' ] = ''
 
 # ----------MODEL PARAMETERS --------------------------------
-
-if 'chat_model' not in st.session_state:
-	st.session_state[ 'chat_model' ] = ''
 
 if 'text_model' not in st.session_state:
 	st.session_state[ 'text_model' ] = ''
@@ -252,80 +249,6 @@ if 'transcription_model' not in st.session_state:
 
 if 'translation_model' not in st.session_state:
 	st.session_state[ 'translation_model' ] = ''
-
-# --------CHAT-GENERATION PARAMETERS--------------------
-
-if 'chat_number' not in st.session_state:
-	st.session_state[ 'chat_number' ] = 0
-
-if 'chat_max_calls' not in st.session_state:
-	st.session_state[ 'chat_max_calls' ] = 0
-
-if 'chat_max_searches' not in st.session_state:
-	st.session_state[ 'chat_max_searches' ] = 0
-
-if 'chat_max_tokens' not in st.session_state:
-	st.session_state[ 'chat_max_tokens' ] = 0
-
-if 'chat_temperature' not in st.session_state:
-	st.session_state[ 'chat_temperature' ] = 0.0
-
-if 'chat_top_percent' not in st.session_state:
-	st.session_state[ 'chat_top_percent' ] = 0.0
-
-if 'chat_frequency_penalty' not in st.session_state:
-	st.session_state[ 'chat_frequency_penalty' ] = 0.0
-
-if 'chat_presence_penalty' not in st.session_state:
-	st.session_state[ 'chat_presence_penalty' ] = 0.0
-
-if 'chat_parallel_tools' not in st.session_state:
-	st.session_state[ 'chat_parallel_tools' ] = False
-
-if 'chat_background' not in st.session_state:
-	st.session_state[ 'chat_background' ] = False
-
-if 'chat_store' not in st.session_state:
-	st.session_state[ 'chat_store' ] = False
-
-if 'chat_stream' not in st.session_state:
-	st.session_state[ 'chat_stream' ] = False
-
-if 'chat_response_format' not in st.session_state:
-	st.session_state[ 'chat_response_format' ] = ''
-
-if 'chat_tool_choice' not in st.session_state:
-	st.session_state[ 'chat_tool_choice' ] = ''
-
-if 'chat_resolution' not in st.session_state:
-	st.session_state[ 'chat_resolution' ] = ''
-
-if 'chat_reasoning' not in st.session_state:
-	st.session_state[ 'chat_reasoning' ] = ''
-
-if 'chat_input' not in st.session_state:
-	st.session_state[ 'chat_input' ] = ''
-
-if 'chat_stops' not in st.session_state:
-	st.session_state[ 'chat_stops' ] = [ ]
-
-if 'chat_modalities' not in st.session_state:
-	st.session_state[ 'chat_modalities' ] = [ ]
-
-if 'chat_include' not in st.session_state:
-	st.session_state[ 'chat_include' ] = [ ]
-
-if 'chat_domains' not in st.session_state:
-	st.session_state[ 'chat_domains' ] = [ ]
-
-if 'chat_tools' not in st.session_state:
-	st.session_state[ 'chat_tools' ] = [ ]
-
-if 'chat_context' not in st.session_state:
-	st.session_state[ 'chat_context' ] = [ ]
-
-if 'chat_content' not in st.session_state:
-	st.session_state[ 'chat_content' ] = [ ]
 
 # --------TEXT-GENERATION PARAMETERS--------------------
 
@@ -1118,20 +1041,11 @@ def init_state( ) -> None:
 		
 		
 	"""
-	if 'chat_history' not in st.session_state:
-		st.session_state.chat_history = [ ]
-	
-	if 'chat_messages' not in st.session_state:
-		st.session_state.chat_messages = [ ]
-	
-	if 'execution_mode' not in st.session_state:
-		st.session_state.execution_mode = 'Standard'
-	
 	for k in ('audio_system_instructions',
 	          'image_system_instructions',
 	          'docqna_system_instructions',
 	          'text_system_instructions'):
-		st.session_state.setdefault( k, "" )
+		st.session_state.setdefault( k, '' )
 
 def reset_state( ) -> None:
 	"""
@@ -1142,10 +1056,10 @@ def reset_state( ) -> None:
 		
 	"""
 	st.session_state.chat_history = [ ]
+	st.session_state.messages = [ ]
 	st.session_state.last_answer = ''
 	st.session_state.last_sources = [ ]
-	st.session_state.last_analysis = { 'tables': [ ], 'files': [ ], 'text': [ ], }
-
+	
 def normalize( obj ):
 	if obj is None or isinstance( obj, (str, int, float, bool) ):
 		return obj
@@ -1279,19 +1193,6 @@ def display_value( val: Any ) -> str:
 	except Exception:
 		return '—'
 
-def build_intent_prefix( mode: str ) -> str:
-	if mode == 'Guidance Only':
-		return (
-				'[ANALYST INTENT]\n'
-				'Respond using authoritative policy and guidance only. '
-				'Do not perform financial computation.\n\n' )
-	if mode == 'Analysis Only':
-		return (
-				'[ANALYST INTENT]\n'
-				'Respond using financial analysis and computation only. '
-				'Minimize policy citation.\n\n' )
-	return ''
-
 def format_results( results ):
 	formatted_results = ''
 	for result in results.data:
@@ -1350,7 +1251,7 @@ def convert_xml( text: str ) -> str:
 			markdown_blocks.append( body )
 	return "\n\n".join( markdown_blocks )
 
-def markdown_converter( text: Any ) -> str:
+def convert_markdown( text: Any ) -> str:
 	"""
 	
 		Purpose:
@@ -1497,52 +1398,6 @@ def clear_history( ) -> None:
 		conn.execute( "DELETE FROM chat_history" )
 
 # ----------  DOCQNA UTILITIES ----------
-
-def route_document_query( prompt: str ) -> str:
-	"""
-	
-		Purpose:
-		--------
-		Route a document question through the unified chat pipeline and return a
-		model-generated answer.
-	
-		Parameters:
-		-----------
-		prompt : str
-			The user question to answer about active documents.
-	
-		Returns:
-		--------
-		str
-			The assistant answer text.
-	
-	"""
-	prompt = str( prompt or '' ).strip( )
-	if not prompt:
-		return 'Please enter a question about the active document.'
-	
-	try:
-		user_input = build_document_user_input( prompt )
-	except Exception as exc:
-		return f'Document retrieval failed: {exc}'
-	
-	if not user_input:
-		user_input = prompt
-	
-	try:
-		response = run_llm_turn(
-			user_input=user_input,
-			temperature=float( st.session_state.get( 'temperature', 0.0 ) ),
-			top_p=float( st.session_state.get( 'top_percent', 0.95 ) ),
-			repeat_penalty=float( st.session_state.get( 'repeat_penalty', 1.1 ) ),
-			max_tokens=int( st.session_state.get( 'max_tokens', 1024 ) ) or 1024,
-			stream=False,
-			output=None
-		)
-	except Exception as exc:
-		return f'Document question failed: {exc}'
-	
-	return str( response or '' ).strip( )
 
 def summarize_active_document( ) -> str:
 	"""
@@ -3053,7 +2908,7 @@ def build_prompt( user_input: str ) -> str:
 		str
 			A fully constructed prompt in chat template format.
 	"""
-	system_instructions = st.session_state.get( 'system_instructions', '' )
+	system_instructions = st.session_state.get( 'docqna_system_instructions', '' )
 	use_semantic = bool( st.session_state.get( 'use_semantic', False ) )
 	basic_docs = st.session_state.get( 'basic_docs', [ ] )
 	messages = st.session_state.get( 'messages', [ ] )
@@ -3164,24 +3019,11 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 	output.markdown( buf )
 	return buf.strip( )
 
-# -------------- LLM  UTILITIES -------------------
-
-@st.cache_resource
-def load_llm( ctx: int, threads: int ) -> Llama:
-	return Llama( model_path=str( cfg.MODEL_PATH ), n_ctx=ctx, n_threads=threads, n_batch=512,
-		verbose=False )
-
-@st.cache_resource
-def load_embedder( ) -> SentenceTransformer:
-	return SentenceTransformer( 'all-MiniLM-L6-v2' )
-
 # ==============================================================================
 # Init
 # ==============================================================================
 
 initialize_database( )
-llm = load_llm( cfg.DEFAULT_CTX, cfg.CORES )
-embedder = load_embedder( )
 
 if not isinstance( st.session_state.get( 'messages' ), list ):
 	st.session_state[ 'messages' ] = [ ]
@@ -3260,119 +3102,10 @@ with st.sidebar:
 	st.text( 'Select Mode' )
 	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0, label_visibility='collapsed' )
 
-# =============================================================================
-# CHAT MODE
-# =============================================================================
-if mode == 'Chat':
-	st.subheader( "💬 Chat Completions", help=cfg.CHAT_COMPLETIONS )
-	st.divider( )
-	chat_model = st.session_state.get( 'chat_model', '' )
-	chat_format = st.session_state.get( 'response_format', '' )
-	execution_mode = st.session_state.get( 'execution_mode', '' )
-	chat_reasoning = st.session_state.get( 'reasoning', '' )
-	chat_choice = st.session_state.get( 'tool_choice', '' )
-	chat_number = st.session_state.get( 'number', 0 )
-	chat_top_p = st.session_state.get( 'top_percent', 0.0 )
-	chat_freq = st.session_state.get( 'frequency_penalty', 0.0 )
-	chat_presense = st.session_state.get( 'presense_penalty', 0.0 )
-	chat_temperature = st.session_state.get( 'temperature', 0.0 )
-	chat_background = st.session_state.get( 'background', False )
-	chat_stream = st.session_state.get( 'stream', False )
-	chat_store = st.session_state.get( 'store', False )
-	chat_input = st.session_state.get( 'input', [ ] )
-	chat_messages = st.session_state.get( 'messages', [ ] )
-	chat_history = st.session_state.get( 'chat_history', [ ] )
-	
-	# ------------------------------------------------------------------
-	# Sidebar — Text Settings
-	# ------------------------------------------------------------------
-	with st.sidebar:
-		st.divider( )
-		st.text( 'Chat Settings' )
-		st.radio( 'Execution Mode', options=[ 'Standard', 'Guidance Only', 'Analysis Only' ],
-			index=[ 'Standard', 'Guidance Only', 'Analysis Only' ].index( st.session_state.execution_mode ),
-			key='execution_mode', label_visibility='collapsed' )
-	
-	# ------------------------------------------------------------------
-	# Main Chat UI
-	# ------------------------------------------------------------------
-	left, center, right = st.columns( [ 0.25, 3.5, 0.25 ] )
-	with center:
-		user_input = st.chat_input( 'Chat with Gipity' )
-		if user_input:
-			
-			# -------- Enter User Message
-			with st.chat_message( 'user', avatar=cfg.ANALYST ):
-				st.markdown( user_input )
-			
-			# --------  Run prompt
-			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
-				try:
-					chat = OpenAI( api_key=cfg.OPENAI_API_KEY )
-					with st.spinner( 'Running prompt...' ):
-						response = chat.responses.create(
-							prompt={ 'id': cfg.PROMPT_ID, 'version': cfg.PROMPT_VERSION, },
-							input=[ { 'role': 'user', 'content': [ { 'type': 'input_text',
-							                                         'text': user_input, } ], } ],
-							tools=[ { 'type': 'file_search',
-							          'vector_store_ids': cfg.GPT_VECTORSTORES, },
-							        { 'type': 'web_search',
-							          'filters': { 'allowed_domains': cfg.GPT_DOMAINS, },
-							          'search_context_size': 'medium',
-							          'user_location': { 'type': 'approximate' },
-							          },
-							        { 'type': 'code_interpreter',
-							          'container': { 'type': 'auto', 'file_ids': cfg.GPT_FILES, },
-							          }, ],
-							include=[ 'web_search_call.action.sources',
-							          'code_interpreter_call.outputs', ], store=True, )
-					sources = st.session_state.get( 'last_sources', [ ] )
-					if sources:
-						st.markdown( '#### Sources' )
-						for i, src in enumerate( sources, 1 ):
-							url = src.get( 'url' )
-							title = src.get( 'title' ) or src.get( 'file_name' ) or f'Source {i}'
-							
-							if url:
-								st.markdown( f'- [{title}]({url})' )
-							elif src.get( 'file_id' ):
-								st.markdown( f"- {title} _(Vector Store File: `{src[ 'files_id' ]}`)_" )
-					
-					# -------------------------------
-					# Extract and render text output
-					# -------------------------------
-					output_text = ""
-					for item in response.output:
-						if item.type == 'message':
-							for part in item.content:
-								if part.type == 'output_text':
-									output_text += part.text
-					
-					if output_text.strip( ):
-						st.markdown( output_text )
-					else:
-						st.warning( 'No text response returned by the prompt.' )
-					
-					# -------------------------------
-					# Persist minimal chat history
-					# -------------------------------
-					st.session_state.chat_history.append( { 'role': 'user',
-					                                        'content': user_input } )
-					st.session_state.chat_history.append( { 'role': 'assistant',
-					                                        'content': output_text } )
-				except Exception as e:
-					st.error( 'An error occurred while running the prompt.' )
-					st.exception( e )
-			
-		# --------  Reset Button
-		if st.button( 'Clear Messages' ):
-			reset_state( )
-			st.rerun( )
-
 # ======================================================================================
 # TEXT MODE
 # ======================================================================================
-elif mode == 'Text':
+if mode == 'Text':
 	st.subheader( "💬 Text Generation", help=cfg.TEXT_GENERATION )
 	st.divider( )
 	text_model = st.session_state.get( 'text_model', '' )
@@ -3418,7 +3151,7 @@ elif mode == 'Text':
 		
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='LLM Settings', icon='🎲', expanded=False, width='stretch' ):
+			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 			
@@ -3479,8 +3212,8 @@ elif mode == 'Text':
 					st.rerun( )
 					
 			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
-					tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
-						[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+					tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6, tool_c7 = st.columns(
+						[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ], border=True, gap='xxsmall' )
 					
 					# ---------- Max Calls ------------
 					with tool_c1:
@@ -3531,8 +3264,15 @@ elif mode == 'Text':
 						
 						text_tools = st.session_state[ 'text_tools' ]
 					
-					# ---------- Background ------------
+					# ---------- Parallel ------------
 					with tool_c6:
+						set_text_parallel = st.toggle( label='Allow Parallel', key='text_parallel_calls',
+							help=cfg.PARALLEL_TOOL_CALLS )
+						
+						text_parallel_calls = st.session_state[ 'text_parallel_calls' ]
+					
+					# ---------- Background ------------
+					with tool_c7:
 						set_text_background = st.toggle( label='Background', key='text_background',
 							help=cfg.BACKGROUND_MODE )
 						
@@ -3541,7 +3281,8 @@ elif mode == 'Text':
 					# ---------- Reset Tools ------------
 					if st.button( label='Reset', key='reset_text_tools', width='stretch' ):
 						for key in [ 'text_max_calls', 'text_tool_choice', 'text_include',
-						             'text_tools', 'text_domains', 'text_background' ]:
+						             'text_tools', 'text_domains', 'text_background',
+						             'text_parallel_calls' ]:
 							if key in st.session_state:
 								del st.session_state[ key ]
 						
@@ -3761,7 +3502,7 @@ elif mode == "Images":
 	with (center):
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='LLM Settings', icon='🎲', expanded=False, width='stretch' ):
+			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
@@ -6158,7 +5899,6 @@ st.markdown(
 # ======================================================================================
 _mode_to_model_key = \
 {
-	'Chat': 'chat_model',
 	'Text': 'text_model',
 	'Images': 'image_model',
 	'Audio': 'audio_model',
