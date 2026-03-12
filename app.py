@@ -458,8 +458,8 @@ if 'audio_response_format' not in st.session_state:
 if 'audio_input' not in st.session_state:
 	st.session_state[ 'audio_input' ] = ''
 
-if 'audio_media_resolution' not in st.session_state:
-	st.session_state[ 'audio_media_resolution' ] = ''
+if 'audio_mime_type' not in st.session_state:
+	st.session_state[ 'audio_mime_type' ] = ''
 
 if 'audio_stops' not in st.session_state:
 	st.session_state[ 'audio_stops' ] = [ ]
@@ -791,6 +791,17 @@ if 'stores_include' not in st.session_state:
 
 if 'stores_id' not in st.session_state:
 	st.session_state[ 'stores_id' ] = ''
+
+# -------------- LLM  UTILITIES -------------------
+
+@st.cache_resource
+def load_llm( ctx: int, threads: int ) -> Llama:
+	return Llama( model_path=str( cfg.MODEL_PATH ), n_ctx=ctx, n_threads=threads, n_batch=512,
+		verbose=False )
+
+@st.cache_resource
+def load_embedder( ) -> SentenceTransformer:
+	return SentenceTransformer( 'all-MiniLM-L6-v2' )
 
 # ======================================================================================
 # Utilities
@@ -1398,6 +1409,39 @@ def clear_history( ) -> None:
 		conn.execute( "DELETE FROM chat_history" )
 
 # ----------  DOCQNA UTILITIES ----------
+
+def route_document_query( prompt: str ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Route a document question through the unified chat pipeline and return a
+		model-generated answer.
+	
+		Parameters:
+		-----------
+		prompt : str
+			The user question to answer about active documents.
+	
+		Returns:
+		--------
+		str
+			The assistant answer text.
+	
+	"""
+	prompt = str( prompt or '' ).strip( )
+	if not prompt:
+		return 'Please enter a question about the active document.'
+	
+	try:
+		user_input = build_document_user_input( prompt )
+	except Exception as exc:
+		return f'Document retrieval failed: {exc}'
+	
+	if not user_input:
+		user_input = prompt
+		
+	return str( user_iput or '' ).strip( )
 
 def summarize_active_document( ) -> str:
 	"""
@@ -3024,6 +3068,8 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 # ==============================================================================
 
 initialize_database( )
+llm = load_llm( cfg.DEFAULT_CTX, cfg.CORES )
+embedder = load_embedder( )
 
 if not isinstance( st.session_state.get( 'messages' ), list ):
 	st.session_state[ 'messages' ] = [ ]
@@ -3212,8 +3258,8 @@ if mode == 'Text':
 					st.rerun( )
 					
 			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
-					tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6, tool_c7 = st.columns(
-						[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ], border=True, gap='xxsmall' )
+					tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
+						[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 					
 					# ---------- Max Calls ------------
 					with tool_c1:
@@ -3271,26 +3317,18 @@ if mode == 'Text':
 						
 						text_parallel_calls = st.session_state[ 'text_parallel_calls' ]
 					
-					# ---------- Background ------------
-					with tool_c7:
-						set_text_background = st.toggle( label='Background', key='text_background',
-							help=cfg.BACKGROUND_MODE )
-						
-						text_background = st.session_state[ 'text_background' ]
-					
 					# ---------- Reset Tools ------------
 					if st.button( label='Reset', key='reset_text_tools', width='stretch' ):
 						for key in [ 'text_max_calls', 'text_tool_choice', 'text_include',
-						             'text_tools', 'text_domains', 'text_background',
-						             'text_parallel_calls' ]:
+						             'text_tools', 'text_domains', 'text_background', ]:
 							if key in st.session_state:
 								del st.session_state[ key ]
 						
 						st.rerun( )
 			
-			with st.expander( label='Response Settings', icon='🌐', expanded=False, width='stretch' ):
-				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
+				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6, resp_c7 = st.columns(
+					[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ], border=True, gap='xxsmall' )
 				
 				# ---------- Number ------------
 				with resp_c1:
@@ -3301,21 +3339,8 @@ if mode == 'Text':
 					
 					text_number = st.session_state[ 'text_number' ]
 				
-				# ---------- Stream ------------
-				with resp_c2:
-					set_text_stream = st.toggle( label='Stream', key='text_stream',
-						help=cfg.STREAM )
-					
-					text_stream = st.session_state[ 'text_stream' ]
-				
-				# ---------- Store ------------
-				with resp_c3:
-					set_text_store = st.toggle( label='Store', key='text_store', help=cfg.STORE )
-					
-					text_store = st.session_state[ 'text_store' ]
-				
 				# ---------- Max Tokens ------------
-				with resp_c4:
+				with resp_c2:
 					set_text_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
 						value=int( st.session_state.get( 'text_max_tokens', 0 ) ), step=500,
 						help=cfg.MAX_OUTPUT_TOKENS, key='text_max_tokens' )
@@ -3323,7 +3348,7 @@ if mode == 'Text':
 					text_tokens = st.session_state[ 'text_max_tokens' ]
 				
 				# ---------- Modalities------------
-				with resp_c5:
+				with resp_c3:
 					modality_options = list( text.modality_options )
 					set_text_modalities = st.multiselect( label='Response Modalities', options=modality_options,
 						key='text_modalities', help='Optional. Modality of the response',
@@ -3335,7 +3360,7 @@ if mode == 'Text':
 					text_modalities = st.session_state[ 'text_modalities' ]
 				
 				# ---------- Stops ------------
-				with resp_c6:
+				with resp_c4:
 					set_text_stops = st.text_input( label='Stop Sequences', key='text_stops_input',
 						value=','.join( st.session_state.get( 'text_stops', [ ] ) ),
 						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
@@ -3345,10 +3370,31 @@ if mode == 'Text':
 					
 					st.session_state[ 'text_stops' ] = text_stops
 				
+				# ---------- Store ------------
+				with resp_c5:
+					set_text_store = st.toggle( label='Store', key='text_store', help=cfg.STORE )
+					
+					text_store = st.session_state[ 'text_store' ]
+				
+				# ---------- Stream ------------
+				with resp_c6:
+					set_text_stream = st.toggle( label='Stream', key='text_stream',
+						help=cfg.STREAM )
+					
+					text_stream = st.session_state[ 'text_stream' ]
+				
+				# ---------- Background ------------
+				with resp_c7:
+					set_text_background = st.toggle( label='Background', key='text_background',
+						help=cfg.BACKGROUND_MODE )
+					
+					text_background = st.session_state[ 'text_background' ]
+				
 				# ---------- Reset Reponse ------------
 				if st.button( label='Reset', key='reset_text_response', width='stretch' ):
 					for key in [ 'text_stream', 'text_store', 'text_number', 'text_stops',
-					             'text_tools', 'text_max_tokens', 'text_modalities' ]:
+					             'text_tools', 'text_max_tokens', 'text_modalities',
+					             'text_parallel_calls' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
@@ -3447,6 +3493,7 @@ elif mode == "Images":
 	image_mode = st.session_state.get( 'image_mode', '' )
 	image_quality = st.session_state.get( 'image_quality', '' )
 	image_size = st.session_state.get( 'image_size', '' )
+	image_reasoning = st.session_state.get( 'image_reasoning', '' )
 	image_response_format = st.session_state.get( 'image_response_format', '' )
 	image_mime_type = st.session_state.get( 'image_mime_type', '' )
 	image_output = st.session_state.get( 'image_output', '' )
@@ -3632,7 +3679,7 @@ elif mode == "Images":
 					
 					st.rerun( )
 			
-			with st.expander( label='Response Settings', icon='🌐', expanded=False, width='stretch' ):
+			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
 				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
@@ -3997,7 +4044,8 @@ elif mode == 'Audio':
 	audio_input = st.session_state.get( 'audio_input', '' )
 	audio_task = st.session_state.get( 'audio_task', '' )
 	audio_language = st.session_state.get( 'audio_language', '' )
-	audio_format = st.session_state.get( 'audio_format', '' )
+	audio_mime_type = st.session_state.get( 'audio_mime_type', '' )
+	audio_response_format = st.session_state.get( 'audio_response_format', '' )
 	audio_file = st.session_state.get( 'audio_file', '' )
 	audio_reasoning = st.session_state.get( 'audio_reasoning', '' )
 	audio_choice = st.session_state.get( 'audio_tool_choice', '' )
@@ -4039,9 +4087,9 @@ elif mode == 'Audio':
 	with center:
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( 'LLM Options', expanded=False, width='stretch' ):
-				aud_c1, aud_c2, aud_c3, aud_c4, aud_c5 = st.columns(
-					[ 0.2, 0.2, 0.2, 0.2, 0.2 ], gap='xxsmall', border=True )
+			with st.expander( 'LLM Options', icon='🧊', expanded=False, width='stretch' ):
+				aud_c1, aud_c2, aud_c3, aud_c4, aud_c5, aud_c6 = st.columns(
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# --------- Task ---------------
 				with aud_c1:
@@ -4069,22 +4117,14 @@ elif mode == 'Audio':
 						
 						audio_model = st.session_state[ 'audio_model' ]
 				
-				# --------- Language -------------
+				# ---------- Reasoning ------------
 				with aud_c3:
-					if audio_task in ('Transcribe', 'Translate'):
-						obj = transcriber if audio_task == 'Transcribe' else translator
-						if obj and hasattr( obj, 'language_options' ):
-							audio_language = st.selectbox( label='Language', options=obj.language_options,
-								key='audio_language', placeholder='Options', index=None )
-							
-							audio_language = st.session_state[ 'audio_language' ]
+					reasoning_options = list( text.reasoning_options )
+					set_text_reasoning = st.selectbox( label='Reasoning',
+						options=reasoning_options, key='text_reasoning',
+						help=cfg.REASONING, index=None, placeholder='Options' )
 					
-					if audio_task == 'Text-to-Speech' and tts:
-						if hasattr( tts, 'voice_options' ):
-							audio_voice = st.selectbox( label='Voice', options=tts.voice_options,
-								key='audio_voice', placeholder='Options', index=None )
-							
-							audio_voice = st.session_state[ 'audio_voice' ]
+					text_reasoning = st.session_state[ 'text_reasoning' ]
 				
 				# ---------- Sample Rate ----------
 				with aud_c4:
@@ -4093,7 +4133,7 @@ elif mode == 'Audio':
 					
 					audio_rate = st.session_state[ 'audio_rate' ]
 				
-				# -------- Response Format --------
+				# -------- MIME type --------
 				with aud_c5:
 					format_options = [ ]
 					if audio_task == 'Transcribe':
@@ -4109,21 +4149,28 @@ elif mode == 'Audio':
 						
 						audio_format = st.session_state[ 'audio_format' ]
 				
+				# ---------- Background ------------
+				with aud_c6:
+					set_audio_background = st.toggle( label='Background', key='audio_background',
+						help=cfg.BACKGROUND_MODE )
+					
+					audio_background = st.session_state[ 'audio_background' ]
+				
 				# ----------- Reset Settings -------
 				if st.button( 'Reset', key='audio_model_reset', width='stretch' ):
-					for key in [ 'audio_task', 'audio_model', 'audio_language',
-					             'audio_voice', 'audio_rate', 'audio_format' ]:
+					for key in [ 'audio_task', 'audio_model', 'audio_language', 'audio_background',
+					             'audio_reasoning', 'audio_rate', 'audio_mime_type' ]:
 						if key in st.session_state:
 							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
-			with st.expander( 'Inference Options', expanded=False, width='stretch' ):
-				prm_one, prm_two, prm_three, prm_four = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
-					border=True, gap='medium' )
+			with st.expander( 'Inference Options', icon='🎚️', expanded=False, width='stretch' ):
+				prm_c1, prm_c2, prm_c3, prm_c4, prm_c5, prm_c6 = st.columns(
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# ---------  Top-P --------
-				with prm_one:
+				with prm_c1:
 					set_audio_top = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
 						value=float( st.session_state.get( 'audio_top_percent', 0.0 ) ),
 						step=0.01, help=cfg.TOP_P )
@@ -4131,7 +4178,7 @@ elif mode == 'Audio':
 					audio_top_percent = st.session_state[ 'audio_top_percent' ]
 				
 				# ---------  Frequency --------
-				with prm_two:
+				with prm_c2:
 					set_audio_frequency = st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
 						value=float( st.session_state.get( 'audio_frequency_penalty', 0.0 ) ),
 						step=0.01, help=cfg.FREQUENCY_PENALTY )
@@ -4139,7 +4186,7 @@ elif mode == 'Audio':
 					audio_frequency = st.session_state[ 'audio_frequency_penalty' ]
 				
 				# ---------  Presense --------
-				with prm_three:
+				with prm_c3:
 					set_audio_presence = st.slider( label='Presence Penalty', min_value=-2.0, max_value=2.0,
 						value=float( st.session_state.get( 'audio_presence_penalty', 0.0 ) ),
 						step=0.01, help=cfg.PRESENCE_PENALTY )
@@ -4147,41 +4194,83 @@ elif mode == 'Audio':
 					audio_presence = st.session_state[ 'audio_presence_penalty' ]
 				
 				# ---------  Temperature --------
-				with prm_four:
+				with prm_c4:
 					set_audio_temperature = st.slider( label='Temperature', min_value=0.0, max_value=1.0,
 						value=float( st.session_state.get( 'audio_temperature', 0.0 ) ), step=0.01,
 						help=cfg.TEMPERATURE )
 					
 					audio_temperature = st.session_state[ 'audio_temperature' ]
 				
+				# ---------- Modalities------------
+				with prm_c5:
+					modality_options = [ 'auto', 'text', 'image', 'audio' ]
+					set_audio_modalities = st.multiselect( label='Response Modalities', options=modality_options,
+						key='audio_modalities', help='Optional. Modality of the response',
+						placeholder='Options' )
+					
+					audio_modalities = [ d.strip( ) for d in set_audio_modalities
+					                     if d.strip( ) ]
+					
+					audio_modalities = st.session_state[ 'audio_modalities' ]
+				
+				# ---------- Response Format ------------
+				with prm_c6:
+					modality_options = [ 'json', 'text', 'srt', 'verbose_json', 'vtt', 'diarized_json' ]
+					set_audio_modalities = st.multiselect( label='Response Modalities',
+						options=modality_options, key='audio_modalities',
+						help='Optional. Format of the response',
+						placeholder='Options' )
+					
+					audio_modalities = [ d.strip( ) for d in set_audio_modalities
+					                     if d.strip( ) ]
+					
+					audio_modalities = st.session_state[ 'audio_modalities' ]
+				
 				# --------- Reset Settings --------
 				if st.button( 'Reset', key='audio_inference_reset', width='stretch' ):
-					for key in [ 'audio_top_percent', 'audio_temperature',
-					             'audio_presence_penalty',
-					             'audio_frequency_penalty', ]:
+					for key in [ 'audio_top_percent', 'audio_temperature', 'audio_presence_penalty',
+					             'audio_modalities', 'audio_frequency_penalty',
+					             'audio_response_format' ]:
 						if key in st.session_state:
 							st.session_state[ key ] = [ ]
 					
 					st.rerun( )
 			
-			with st.expander( 'Response Options', expanded=False, width='stretch' ):
-				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5 = st.columns(
-					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], gap='xxsmall', border=True, )
+			with st.expander( 'Sound Options', icon='👂', expanded=False, width='stretch' ):
+				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+				
+				# --------- Voice -------------
+				with resp_c1:
+					if audio_task in ('Transcribe', 'Translate'):
+						obj = transcriber if audio_task == 'Transcribe' else translator
+						if obj and hasattr( obj, 'language_options' ):
+							audio_language = st.selectbox( label='Language', options=obj.language_options,
+								key='audio_language', placeholder='Options', index=None )
+							
+							audio_language = st.session_state[ 'audio_language' ]
+					
+					if audio_task == 'Text-to-Speech' and tts:
+						if hasattr( tts, 'voice_options' ):
+							audio_voice = st.selectbox( label='Voice', options=tts.voice_options,
+								key='audio_voice', placeholder='Options', index=None )
+							
+							audio_voice = st.session_state[ 'audio_voice' ]
 				
 				# ---------  Loop --------
-				with resp_c1:
+				with resp_c2:
 					set_audio_loop = st.toggle( label='Loop Audio', value=False, key='audio_loop' )
 					
 					audio_loop = st.session_state[ 'audio_loop' ]
 				
 				# --------- Autoplay --------
-				with resp_c2:
+				with resp_c3:
 					set_audio_autoplay = st.toggle( label='Auto Play', value=False, key='audio_autoplay' )
 					
 					audio_autoplay = st.session_state[ 'audio_autoplay' ]
 				
 				# ---------  Start Time --------
-				with resp_c3:
+				with resp_c4:
 					set_start_time = st.slider( label='Start Time:', min_value=0.00, max_value=5.00,
 						value=float( st.session_state.get( 'audio_start_time' ) ), step=0.01,
 						key='audio_start_time' )
@@ -4189,7 +4278,7 @@ elif mode == 'Audio':
 					audio_start_time = st.session_state[ 'audio_start_time' ]
 				
 				# ---------  End Time --------
-				with resp_c4:
+				with resp_c5:
 					set_end_time = st.slider( label='End Time:', min_value=0.00, max_value=5.00,
 						value=float( st.session_state.get( 'audio_end_time' ) ), step=0.01,
 						key='audio_end_time' )
@@ -4197,7 +4286,7 @@ elif mode == 'Audio':
 					audio_end_time = st.session_state[ 'audio_end_time' ]
 				
 				# --------- Max Tokens --------
-				with resp_c5:
+				with resp_c6:
 					set_max_tokens = st.slider( label='Max Output Tokens', min_value=1, max_value=100000,
 						value=int( st.session_state.get( 'audio_max_tokens', 0 ) ), step=1000,
 						help=cfg.MAX_OUTPUT_TOKENS, key='audio_max_tokens' )
@@ -4207,7 +4296,8 @@ elif mode == 'Audio':
 				# ---------  Reset Setting --------
 				if st.button( 'Reset', key='audio_repsonse_reset', width='stretch' ):
 					for key in [ 'audio_autoplay', 'audio_loop', 'audio_start_time',
-					             'audio_end_time', 'audio_rate', 'audio_max_tokens' ]:
+					             'audio_end_time', 'audio_rate', 'audio_max_tokens',
+					             'audio_voice' ]:
 						if key in st.session_state:
 							st.session_state[ key ] = [ ]
 					
@@ -4363,7 +4453,7 @@ elif mode == 'Audio':
 							pass
 		
 		# --------  Reset Button
-		if st.button( 'Clear' ):
+		if st.button( 'Clear Message' ):
 			reset_state( )
 			st.rerun( )
 
@@ -4386,7 +4476,7 @@ elif mode == 'Embeddings':
 	# ------------------------------------------------------------------
 	emb_left, emb_center, emb_right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with emb_center:
-		with st.expander( label='Configuration', icon='⚙️', expanded=False, width='stretch' ):
+		with st.expander( label='Configuration', icon='🎚️', expanded=False, width='stretch' ):
 			emb_c1, emb_c2, emb_c3, emb_c4, emb_c5 = st.columns(
 				[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
 			
