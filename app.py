@@ -3892,7 +3892,7 @@ elif mode == "Images":
 					st.rerun( )
 			
 			with st.expander( label='Response Settings', icon='🌐', expanded=False, width='stretch' ):
-				res_one, res_two, res_three, res_four, res_five = st.columns(
+				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
 				# ---------- Number ------------
