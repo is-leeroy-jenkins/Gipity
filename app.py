@@ -3415,7 +3415,7 @@ elif mode == 'Text':
 		
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='Model Settings', expanded=False, width='stretch' ):
+			with st.expander( label='LLM Settings', icon='🤖', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 			
@@ -3475,7 +3475,7 @@ elif mode == 'Text':
 					
 					st.rerun( )
 					
-			with st.expander( label='Tool Settings', expanded=False, width='stretch' ):
+			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
 					tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
 						[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 					
@@ -3544,7 +3544,7 @@ elif mode == 'Text':
 						
 						st.rerun( )
 			
-			with st.expander( label='Response Settings', expanded=False, width='stretch' ):
+			with st.expander( label='Response Settings', icon='🌐', expanded=False, width='stretch' ):
 				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
 				
