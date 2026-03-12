@@ -3213,7 +3213,7 @@ if mode == 'Text':
 					
 			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
 					tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6, tool_c7 = st.columns(
-						[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ], border=True, gap='xxsmall' )
+						[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ], border=True, gap='xxsmall' )
 					
 					# ---------- Max Calls ------------
 					with tool_c1:
