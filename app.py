@@ -5190,7 +5190,7 @@ elif mode == 'Files':
 				
 				# ---------- Stops ------------
 				with resp_c6:
-					set_files_stops = st.files_input( label='Stop Sequences', key='files_stops_input',
+					set_files_stops = st.text_input( label='Stop Sequences', key='files_stops_input',
 						value=','.join( st.session_state.get( 'files_stops', [ ] ) ),
 						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
 					
