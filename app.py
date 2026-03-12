@@ -5299,16 +5299,14 @@ elif mode == 'Files':
 							except Exception as exc:
 								st.error( f'Delete failed: {exc}' )
 		
-		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		st.divider( )
 		
 		# ---------------------------------------------------
 		#                   MESSAGES
 		# ---------------------------------------------------
-		for msg in st.session_state.docqna_messages:
+		for msg in st.session_state.files_messages:
 			with st.chat_message( msg[ 'role' ] ):
 				st.markdown( msg[ 'content' ] )
-		
-		st.divider( )
 		
 		if prompt := st.chat_input( 'Ask a question about the files' ):
 			st.session_state.files_messages.append( { 'role': 'user', 'content': prompt } )
