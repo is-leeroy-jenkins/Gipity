@@ -1,8 +1,8 @@
 openai==2.21.0
 numpy==1.26.4
 openpyxl
-pydantic>=2.7,<2.10
-typing_extensions>=4.11,<5
+pydantic>=2.10,<2.12
+typing_extensions>=4.12,<5
 pymupdf
 httpx>=0.28.1
 reportlab>=4.0.8

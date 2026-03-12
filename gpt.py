@@ -206,7 +206,7 @@ class Chat( GPT ):
 			top_p: float=None, presense: float=None, store: bool=None, stream: bool=None,
 			stops: List[ str ]=None, response_format: Dict[ str, str ]=None, number: int=None,
 			instruct: str=None, context: List[ Dict[ str, str ] ]=None, allowed_domains: List[ str ]=None,
-			include: List[ Dict[ str, str ] ]= None, tools: List[ Dict[ str, str ] ]=[ ],
+			include: List[ Dict[ str, str ] ]=None, tools: List[ Dict[ str, str ] ]=None,
 			max_tools: int=None, tool_choice: str=None, file_path: str=None,
 			background: bool=None, is_parallel: bool=None, max_tokens: int=None, frequency: float=None,
 			input: List[ Dict[ str, str ] ]=None, file_ids: List[ str ]=None, previous_id: str=None,
