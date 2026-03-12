@@ -5106,7 +5106,7 @@ elif mode == 'Files':
 				
 				# ---------- Domains ------------
 				with tool_c4:
-					set_files_domains = st.files_input( label='Allowed Domains', key='files_domains_input',
+					set_files_domains = st.text_input( label='Allowed Domains', key='files_domains_input',
 						value=','.join( st.session_state.get( 'files_domains', [ ] ) ),
 						help=cfg.ALLOWED_DOMAINS, width='stretch', placeholder='Enter Domains' )
 					
