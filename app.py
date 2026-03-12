@@ -3941,7 +3941,7 @@ elif mode == "Images":
 				with resp_c6:
 					set_image_stops = st.text_input( label='Stop Sequences', key='image_stops_input',
 						value=','.join( st.session_state.get( 'image_stops', [ ] ) ),
-						help=cfg.STOP_SEQUENCES, width='stretch', placeholder='Enter Stop Strings' )
+						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
 					
 					image_stops = [ d.strip( ) for d in set_image_stops.split( ',' )
 					                if d.strip( ) ]
@@ -3964,7 +3964,7 @@ elif mode == "Images":
 				# ------------ Compression -------
 				with img_c1:
 					set_image_compression = st.slider( label='Image Compression', key='image_compression',
-						value=float( st.session_state.get( 'image_compression', 0.0 ) ),
+						value=float( st.session_state.get( 'image_compression' ) ),
 						min_value=0.0, max_value=1.0, step=0.01, help=cfg.IMAGE_COMPRESSION )
 					
 					image_compression = st.session_state[ 'image_compression' ]
@@ -4049,8 +4049,8 @@ elif mode == "Images":
 		# ------------------------------------------------------------------
 		tab_gen, tab_analyze, tab_edit = st.tabs( [ 'Generate', 'Analyze', 'Edit' ] )
 		with tab_gen:
-			gen_c1, gen_c2 = st.columns( [ 0.5, 0.5 ] )
 			prompt = st.chat_input( 'Prompt', key='image_generate_message' )
+			gen_c1, gen_c2 = st.columns( [ 0.5, 0.5 ] )
 			with gen_c1:
 				if st.button( 'Generate Image' ):
 					with st.spinner( 'Generating…' ):
@@ -4113,7 +4113,6 @@ elif mode == "Images":
 			#                   MESSAGES
 			# ---------------------------------------------------
 			prompt = st.chat_input( 'Prompt', key='image_analysis_message' )
-			
 			ana_c1, ana_c2 = st.columns( [ 0.5, 0.5 ] )
 			with ana_c1:
 				if st.button( 'Analyze Image' ):

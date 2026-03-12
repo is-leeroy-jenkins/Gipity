@@ -175,7 +175,8 @@ PARALLEL_TOOL_CALLS = r'''Optional.  Parallel function calling lets you execute 
 MAX_TOOL_CALLS = r'''Optional. An integer representing the upper threshold on the number of tool calls
 		allowed during generation'''
 
-STOP_SEQUENCE = r'''Optional. Up to 4 string sequences where the API will stop generating further tokens.'''
+STOP_SEQUENCE = r'''Optional. Up to 4 comma-delimited string sequences where the API
+		will stop generating further tokens.'''
 
 STORE = 'Optional. Whether to maintain state from turn to turn, preserving reasoning and tool context '
 
