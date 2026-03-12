@@ -2228,6 +2228,30 @@ class Files( GPT ):
 				'gpt-4o-mini' ]
 	
 	@property
+	def mime_options( self ) -> List[ str ]:
+		'''
+	
+	        Purpose:
+	        ________
+	        Method that returns a  list of format options
+
+        '''
+		return [ 'png',
+		         'jpeg',
+		         'webp' ]
+	
+	@property
+	def modality_options( self ) -> List[ str ] | None:
+		'''
+		
+			Returns:
+			--------
+			A List[ str ] of file purposes
+
+		'''
+		return [ 'auto', 'text', 'image', 'audio' ]
+	
+	@property
 	def purpose_options( self ) -> List[ str ]:
 		"""
 		
