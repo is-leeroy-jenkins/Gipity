@@ -4525,6 +4525,7 @@ elif mode == 'Document Q&A':
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			
 			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
@@ -4705,7 +4706,7 @@ elif mode == 'Document Q&A':
 				with resp_c6:
 					set_docqna_stops = st.text_input( label='Stop Sequences', key='docqna_stops_input',
 						value=','.join( st.session_state.get( 'docqna_stops', [ ] ) ),
-						help=cfg.STOP_SEQUENCES, width='stretch', placeholder='Enter Stop Strings' )
+						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
 					
 					docqna_stops = [ d.strip( ) for d in set_docqna_stops.split( ',' )
 					                 if d.strip( ) ]
