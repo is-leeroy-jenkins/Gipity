@@ -10,8 +10,8 @@ and document-grounded analysis in a single Streamlit application.
 Rather than being a local-only application, Gipity combines:
 
 * **cloud-hosted GPT workflows** for its primary multimodal experience
-* **local GGUF inference** through [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) as a fallback path
-* **retrieval and vector workflows** backed by SQLite and [sqlite-vec](https://github.com/asg017/sqlite-vec)
+* **local GGUF inference** through [llama-cpp-python](https://llama-cpp-python.readthedocs.io/en/latest/) as a fallback path
+* **retrieval and vector workflows** backed by SQLite and [sqlite-vec](https://github.com/asg017/sqlite-vec?tab=readme-ov-file)
 * **embedding pipelines** using [sentence-transformers](https://github.com/huggingface/sentence-transformers?tab=readme-ov-file) and related NLP tooling
 
 ## [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
