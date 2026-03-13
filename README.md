@@ -1,6 +1,6 @@
 ###### Gipity
 
-![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity_project.png)
+![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity_project.gif)
 
 Gipity is a Python application for multimodal AI workflows centered primarily on **OpenAI GPT-5.x**,
 with a lightweight **local GGUF fallback** for text generation. It is designed to provide a unified
