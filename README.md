@@ -60,6 +60,8 @@ The application is intended to support multimodal workflows across:
 
 For local text-generation fallback, Gipity also points to a GGUF model at:
 
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/Gipity)
+
 ```text
 models/gipity-3-270m-it-Q4_K_M.gguf
 ```
@@ -155,8 +157,6 @@ If you want to use Gipity's local fallback model path, place the GGUF model file
 ```text
 models/gipity-3-270m-it-Q4_K_M.gguf
 ```
-
-The default application configuration already points to that relative path.
 
 ### Option A: Download from the Hugging Face Web UI
 
