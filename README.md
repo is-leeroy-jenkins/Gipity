@@ -64,7 +64,7 @@ For local text-generation fallback, Gipity also points to a GGUF model at:
 models/gipity-3-270m-it-Q4_K_M.gguf
 ```
 
-This local artifact is intended for use with `llama.cpp` / `llama-cpp-python` and provides a small,
+This local llm is intended for use with `llama.cpp` / `llama-cpp-python` and provides a small,
 portable inference option when a local path is preferred.
 
 ## 🗂 Repository Structure
@@ -76,14 +76,14 @@ Gipity/
 ├─ gpt.py                     # GPT / provider integration logic
 ├─ requirements.txt           # Python dependencies
 ├─ models/
-│  └─ gipity-3-270m-it-Q4_K_M.gguf
+│  └─ gipity-3-270m-it-Q4_K_M.gguf    # Local LLM for privacy
 ├─ resources/
 │  ├─ images/
 │  │  ├─ favicon.ico
 │  │  ├─ gipity_logo.png
 │  │  └─ gpt.png
 │  └─ audio/
-│     └─ conditions.mp3
+│     └─ conditions.mp3        # For testing the Audio API
 ├─ stores/
 │  └─ sqlite/
 │     └─ gipity.db
@@ -179,11 +179,6 @@ Install the CLI support:
 python -m pip install huggingface_hub
 ```
 
-If the model repo is private or gated, authenticate first:
-
-```bash
-hf auth login
-```
 
 Then download the GGUF file directly into Gipity's `models` folder:
 
@@ -238,9 +233,7 @@ If your configuration is valid, Gipity should launch in your browser.
 
 ## 🧭 Application Modes
 
-Based on the current configuration and source structure, Gipity supports the following major
-workflow
-areas:
+Gipity supports the following major workflow areas:
 
 | Mode               | Purpose                                                  |
 | ------------------ | -------------------------------------------------------- |
@@ -257,8 +250,7 @@ areas:
 ## 📄 Document and Retrieval Workflows
 
 Gipity includes infrastructure for document-aware workflows rather than simple chat alone. The
-current
-project configuration and dependencies indicate support for:
+current project configuration and dependencies indicate support for:
 
 * PDF and document ingestion
 * semantic embeddings
@@ -267,8 +259,7 @@ project configuration and dependencies indicate support for:
 * document question answering
 
 This makes Gipity suitable for structured analysis over user-provided materials in addition to
-general
-multimodal prompting.
+general multimodal prompting.
 
 ## 🧪 Local Inference Notes
 
@@ -280,8 +271,7 @@ than the sole centerpiece of the application.
 ## 🔒 Privacy and Deployment Notes
 
 Gipity is not accurately described as a fully local application in its current form. The current
-source
-shows explicit support for cloud-backed provider workflows, especially OpenAI, alongside local
+source shows explicit support for cloud-backed provider workflows, especially OpenAI, alongside local
 components.
 
 In practice, privacy characteristics depend on which features you use:
@@ -327,13 +317,7 @@ In practice, privacy characteristics depend on which features you use:
 
 ## 📜 License
 
-Refer to the repository license for application code and to any upstream model or provider terms
-for:
-
-* OpenAI model usage
-* Hugging Face-hosted artifacts
-* GGUF-converted local model files
-* any third-party assets or dependencies
+Gipity is published under the MIT license for open source use locate here
 
 ## 🙌 Acknowledgements
 
