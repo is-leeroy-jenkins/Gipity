@@ -270,11 +270,9 @@ than the sole centerpiece of the application.
 
 ## 🔒 Privacy and Deployment Notes
 
-Gipity is not accurately described as a fully local application in its current form. The current
-source shows explicit support for cloud-backed provider workflows, especially OpenAI, alongside local
-components.
 
-In practice, privacy characteristics depend on which features you use:
+In practice, Gipity interfaces with OpenAI's API with the option for local privacy depending on the 
+feature set in use:
 
 * **OpenAI-backed workflows** involve remote API usage
 * **local GGUF fallback workflows** can run on-machine
@@ -317,7 +315,7 @@ In practice, privacy characteristics depend on which features you use:
 
 ## 📜 License
 
-Gipity is published under the MIT license for open source use locate here
+Gipity is published under the MIT license for open source use locate !()[here]
 
 ## 🙌 Acknowledgements
 
