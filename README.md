@@ -1,7 +1,3 @@
-
-###### Gipity
-![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity_project.png)
-
 ###### Gipity
 
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity_project.png)
