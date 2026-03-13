@@ -345,16 +345,3 @@ for:
 * `sqlite-vec`
 * the broader open-source Python and ML tooling ecosystem
 
-## Relationship to the Local Model Repository
-
-The main Gipity application code is hosted on GitHub in this repository. The local backup GGUF model
-can be hosted separately on Hugging Face as a companion artifact repository.
-
-That separation keeps:
-
-* **GitHub** focused on application source code, documentation, and setup
-* **Hugging Face** focused on the downloadable local model artifact
-
-Once your Hugging Face model repository is finalized, replace the placeholder references in this
-README
-with the exact model repository slug.
