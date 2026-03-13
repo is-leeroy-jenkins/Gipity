@@ -3399,16 +3399,22 @@ if mode == 'Text':
 							del st.session_state[ key ]
 					
 					st.rerun( )
-		
+				
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
+			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
 				prompt_names = [ '' ]
 			
 			with in_left:
-				st.text_area( label='Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='text_system_instructions' )
+				st.text_area(
+					label='Enter Text',
+					height=50,
+					width='stretch',
+					help=cfg.SYSTEM_INSTRUCTIONS,
+					key='text_system_instructions'
+				)
 			
 			def _on_template_change( ) -> None:
 				name = st.session_state.get( 'instructions' )
@@ -3418,15 +3424,50 @@ if mode == 'Text':
 						st.session_state[ 'text_system_instructions' ] = text
 			
 			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=_on_template_change )
+				st.selectbox(
+					label='Use Template',
+					options=prompt_names,
+					index=None,
+					key='instructions',
+					on_change=_on_template_change
+				)
 			
 			def _on_clear( ) -> None:
 				st.session_state[ 'text_system_instructions' ] = ''
 				st.session_state[ 'instructions' ] = ''
 			
-			st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
-		
+			def _on_convert_system_instructions( ) -> None:
+				text = st.session_state.get( 'text_system_instructions', '' )
+				if not isinstance( text, str ) or not text.strip( ):
+					return
+				
+				src = text.strip( )
+				
+				# XML-delimited prompt blocks -> Markdown headings
+				if cfg.XML_BLOCK_PATTERN.search( src ):
+					converted = convert_xml( src )
+				
+				# Markdown headings <-> simple <hN> tags handled by existing helper
+				else:
+					converted = convert_markdown( src )
+				
+				st.session_state[ 'text_system_instructions' ] = converted
+			
+			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			with btn_c1:
+				st.button(
+					label='Clear Instructions',
+					width='stretch',
+					on_click=_on_clear
+				)
+			
+			with btn_c2:
+				st.button(
+					label='XML <-> Markdown',
+					width='stretch',
+					on_click=_on_convert_system_instructions
+				)
+	
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ---------------------------------------------------
@@ -3807,12 +3848,13 @@ elif mode == "Images":
 		# ------------------------------------------------------------------
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
+			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
-				prompt_names = [ 'No Templates Found' ]
+				prompt_names = [ '' ]
 			
 			with in_left:
-				st.text_area( 'Enter Text', height=50, width='stretch',
+				st.text_area( label='Enter Text', height=50, width='stretch',
 					help=cfg.SYSTEM_INSTRUCTIONS, key='image_system_instructions' )
 			
 			def _on_template_change( ) -> None:
@@ -3823,14 +3865,37 @@ elif mode == "Images":
 						st.session_state[ 'image_system_instructions' ] = text
 			
 			with in_right:
-				st.selectbox( 'Select Template', prompt_names,
-					key='instructions', on_change=_on_template_change, index=None )
+				st.selectbox( label='Use Template', options=prompt_names, index=None,
+					key='instructions', on_change=_on_template_change )
 			
 			def _on_clear( ) -> None:
 				st.session_state[ 'image_system_instructions' ] = ''
 				st.session_state[ 'instructions' ] = ''
 			
-			st.button( 'Clear Instructions', width='stretch', on_click=_on_clear )
+			def _on_convert_system_instructions( ) -> None:
+				text = st.session_state.get( 'image_system_instructions', '' )
+				if not isinstance( text, str ) or not text.strip( ):
+					return
+				
+				src = text.strip( )
+				
+				# XML-delimited prompt blocks -> Markdown headings
+				if cfg.XML_BLOCK_PATTERN.search( src ):
+					converted = convert_xml( src )
+				
+				# Markdown headings <-> simple <hN> tags handled by existing helper
+				else:
+					converted = convert_markdown( src )
+				
+				st.session_state[ 'image_system_instructions' ] = converted
+			
+			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			with btn_c1:
+				st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+			
+			with btn_c2:
+				st.button( label='XML <-> Markdown', width='stretch',
+					on_click=_on_convert_system_instructions )
 		
 		# ------------------------------------------------------------------
 		# Tab Section
@@ -4314,12 +4379,13 @@ elif mode == 'Audio':
 		
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
+			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
-				prompt_names = [ 'No Templates Found' ]
+				prompt_names = [ '' ]
 			
 			with in_left:
-				st.text_area( 'Enter Text', height=50, width='stretch',
+				st.text_area( label='Enter Text', height=50, width='stretch',
 					help=cfg.SYSTEM_INSTRUCTIONS, key='audio_system_instructions' )
 			
 			def _on_template_change( ) -> None:
@@ -4330,14 +4396,37 @@ elif mode == 'Audio':
 						st.session_state[ 'audio_system_instructions' ] = text
 			
 			with in_right:
-				st.selectbox( 'Select Template', prompt_names,
-					key='instructions', on_change=_on_template_change, index=None )
+				st.selectbox( label='Use Template', options=prompt_names, index=None,
+					key='instructions', on_change=_on_template_change )
 			
 			def _on_clear( ) -> None:
-				st.session_state[ 'audio_system_instructions' ] = ''
+				st.session_state[ 'audiosystem_instructions' ] = ''
 				st.session_state[ 'instructions' ] = ''
 			
-			st.button( 'Clear Instructions', width='stretch', on_click=_on_clear )
+			def _on_convert_system_instructions( ) -> None:
+				text = st.session_state.get( 'audio_system_instructions', '' )
+				if not isinstance( text, str ) or not text.strip( ):
+					return
+				
+				src = text.strip( )
+				
+				# XML-delimited prompt blocks -> Markdown headings
+				if cfg.XML_BLOCK_PATTERN.search( src ):
+					converted = convert_xml( src )
+				
+				# Markdown headings <-> simple <hN> tags handled by existing helper
+				else:
+					converted = convert_markdown( src )
+				
+				st.session_state[ 'audio_system_instructions' ] = converted
+			
+			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			with btn_c1:
+				st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+			
+			with btn_c2:
+				st.button( label='XML <-> Markdown', width='stretch',
+					on_click=_on_convert_system_instructions )
 		
 		left_audio, center_audio, right_audio = st.columns( [ 0.33, 0.33, 0.33 ],
 			border=True, gap='medium' )
@@ -4723,13 +4812,14 @@ elif mode == 'Document Q&A':
 					st.rerun( )
 		
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			ins_c1, ins_c2 = st.columns( [ 0.8, 0.2 ] )
+			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
+			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
-				prompt_names = [ 'No Templates Found' ]
+				prompt_names = [ '' ]
 			
-			with ins_c1:
-				st.text_area( 'Enter Text', height=50, width='stretch',
+			with in_left:
+				st.text_area( label='Enter Text', height=50, width='stretch',
 					help=cfg.SYSTEM_INSTRUCTIONS, key='docqna_system_instructions' )
 			
 			def _on_template_change( ) -> None:
@@ -4739,15 +4829,38 @@ elif mode == 'Document Q&A':
 					if text is not None:
 						st.session_state[ 'docqna_system_instructions' ] = text
 			
-			with ins_c2:
-				st.selectbox( 'Select Template', prompt_names,
-					key='instructions', on_change=_on_template_change, index=None )
+			with in_right:
+				st.selectbox( label='Use Template', options=prompt_names, index=None,
+					key='instructions', on_change=_on_template_change )
 			
 			def _on_clear( ) -> None:
 				st.session_state[ 'docqna_system_instructions' ] = ''
 				st.session_state[ 'instructions' ] = ''
 			
-			st.button( 'Clear Instructions', width='stretch', on_click=_on_clear )
+			def _on_convert_system_instructions( ) -> None:
+				text = st.session_state.get( 'docqna_system_instructions', '' )
+				if not isinstance( text, str ) or not text.strip( ):
+					return
+				
+				src = text.strip( )
+				
+				# XML-delimited prompt blocks -> Markdown headings
+				if cfg.XML_BLOCK_PATTERN.search( src ):
+					converted = convert_xml( src )
+				
+				# Markdown headings <-> simple <hN> tags handled by existing helper
+				else:
+					converted = convert_markdown( src )
+				
+				st.session_state[ 'docqna_system_instructions' ] = converted
+			
+			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			with btn_c1:
+				st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+			
+			with btn_c2:
+				st.button( label='XML <-> Markdown', width='stretch',
+					on_click=_on_convert_system_instructions )
 		
 		with st.expander( label='Document Loading', icon='📥', expanded=False, width='stretch' ):
 			doc_left, doc_right = st.columns( [ 0.2, 0.8 ], border=True )
@@ -5209,31 +5322,55 @@ elif mode == 'Files':
 					st.rerun( )
 		
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			ins_c1, ins_c2 = st.columns( [ 0.8, 0.2 ] )
+			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
+			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
-				prompt_names = [ 'No Templates Found' ]
+				prompt_names = [ '' ]
 			
-			with ins_c1:
-				st.text_area( 'Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='docqna_system_instructions' )
+			with in_left:
+				st.text_area( label='Enter Text', height=50, width='stretch',
+					help=cfg.SYSTEM_INSTRUCTIONS, key='files_system_instructions' )
 			
 			def _on_template_change( ) -> None:
 				name = st.session_state.get( 'instructions' )
 				if name and name != 'No Templates Found':
 					text = fetch_prompt_text( cfg.DB_PATH, name )
 					if text is not None:
-						st.session_state[ 'docqna_system_instructions' ] = text
+						st.session_state[ 'files_system_instructions' ] = text
 			
-			with ins_c2:
-				st.selectbox( 'Select Template', prompt_names,
-					key='instructions', on_change=_on_template_change, index=None )
+			with in_right:
+				st.selectbox( label='Use Template', options=prompt_names, index=None,
+					key='instructions', on_change=_on_template_change )
 			
 			def _on_clear( ) -> None:
-				st.session_state[ 'docqna_system_instructions' ] = ''
+				st.session_state[ 'files_system_instructions' ] = ''
 				st.session_state[ 'instructions' ] = ''
 			
-			st.button( 'Clear Instructions', width='stretch', on_click=_on_clear )
+			def _on_convert_system_instructions( ) -> None:
+				text = st.session_state.get( 'files_system_instructions', '' )
+				if not isinstance( text, str ) or not text.strip( ):
+					return
+				
+				src = text.strip( )
+				
+				# XML-delimited prompt blocks -> Markdown headings
+				if cfg.XML_BLOCK_PATTERN.search( src ):
+					converted = convert_xml( src )
+				
+				# Markdown headings <-> simple <hN> tags handled by existing helper
+				else:
+					converted = convert_markdown( src )
+				
+				st.session_state[ 'files_system_instructions' ] = converted
+			
+			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			with btn_c1:
+				st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+			
+			with btn_c2:
+				st.button( label='XML <-> Markdown', width='stretch',
+					on_click=_on_convert_system_instructions )
 		
 		list_method = None
 		if hasattr( files, 'list' ):
@@ -6235,62 +6372,7 @@ if active_model is not None:
 	right_parts.append( f'Model: {active_model}' )
 
 # ---- Rendered Variables
-if mode == 'Chat':
-	temperature = st.session_state.get( 'chat_temperature' )
-	top_p = st.session_state.get( 'chat_top_percent' )
-	freq = st.session_state.get( 'chat_frequency_penalty' )
-	presence = st.session_state.get( 'chat_presence_penalty' )
-	number = st.session_state.get( 'chat_number' )
-	stream = st.session_state.get( 'chat_stream' )
-	parallel_tools = st.session_state.get( 'chat_parallel_tools' )
-	max_calls = st.session_state.get( 'chat_max_tools' )
-	store = st.session_state.get( 'chat_store' )
-	tools = st.session_state.get( 'chat_tools' )
-	include = st.session_state.get( 'chat_include' )
-	domains = st.session_state.get( 'chat_domains' )
-	input_mode = st.session_state.get( 'chat_input' )
-	tool_choice = st.session_state.get( 'chat_tool_choice' )
-	background = st.session_state.get( 'chat_background' )
-	messages = st.session_state.get( 'chat_messages' )
-	max_tokens = st.session_state.get( 'chat_max_tokens' )
-	
-	if temperature is not None:
-		right_parts.append( f'Temp: {temperature:.1%}' )
-	if top_p is not None:
-		right_parts.append( f'Top-P: {top_p:.1%}' )
-	if freq is not None:
-		right_parts.append( f'Freq: {freq:.2f}' )
-	if presence is not None:
-		right_parts.append( f'Presence: {presence:.2f}' )
-	if number is not None:
-		right_parts.append( f'N: {number}' )
-	if max_tokens is not None:
-		right_parts.append( f'Max Tokens: {max_tokens}' )
-	
-	if stream:
-		right_parts.append( 'Stream: On' )
-	if parallel_tools:
-		right_parts.append( 'Parallel Tools: On' )
-	if max_calls is not None:
-		right_parts.append( f'Max Calls: {max_calls}' )
-	if store:
-		right_parts.append( 'Store: On' )
-	if tools:
-		right_parts.append( f'Tools: {len( tools )}' )
-	if include:
-		right_parts.append( 'Include: On' )
-	if domains:
-		right_parts.append( 'Domains: Set' )
-	if input_mode:
-		right_parts.append( 'Input: Set' )
-	if tool_choice:
-		right_parts.append( f'Tool Choice: On' )
-	if background:
-		right_parts.append( 'Background: On' )
-	if messages:
-		right_parts.append( 'Messages: Set' )
-
-elif mode == 'Text':
+if mode == 'Text':
 	temperature = st.session_state.get( 'text_temperature' )
 	top_p = st.session_state.get( 'text_top_percent' )
 	freq = st.session_state.get( 'text_frequency_penalty' )

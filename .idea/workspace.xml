@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6d4955c8-d7a7-41aa-8ef2-d202f7ddda67" name="Changes" comment="updates" />
+    <list default="true" id="6d4955c8-d7a7-41aa-8ef2-d202f7ddda67" name="Changes" comment="updates">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -19,6 +22,17 @@
     &quot;assignee&quot;: &quot;is-leeroy-jenkins&quot;
   }
 }</component>
+  <component name="GitToolBoxStore">
+    <option name="largeFiles">
+      <LargeFiles>
+        <option name="unlockedFilePaths">
+          <set>
+            <option value="$PROJECT_DIR$/app.py" />
+          </set>
+        </option>
+      </LargeFiles>
+    </option>
+  </component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/is-leeroy-jenkins/Gipity.git&quot;,
@@ -68,6 +82,8 @@
       <updated>1773406108251</updated>
       <workItem from="1773406110797" duration="3201000" />
       <workItem from="1773413020457" duration="4189000" />
+      <workItem from="1773418578800" duration="121000" />
+      <workItem from="1773425748343" duration="3065000" />
     </task>
     <task id="LOCAL-00001" summary="updates">
       <option name="closed" value="true" />
@@ -253,7 +269,23 @@
       <option name="project" value="LOCAL" />
       <updated>1773416883076</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="updates">
+      <option name="closed" value="true" />
+      <created>1773418604253</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1773418604253</updated>
+    </task>
+    <task id="LOCAL-00025" summary="updates">
+      <option name="closed" value="true" />
+      <created>1773418692315</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1773418692315</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
