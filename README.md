@@ -315,7 +315,7 @@ feature set in use:
 
 ## 📜 License
 
-Gipity is published under the MIT license for open source use located ![here](https://github.com/is-leeroy-jenkins/Gipity/blob/main/LICENSE.txt) .
+Gipity is published under the MIT license for open source use located [MIT General Public License v3](https://github.com/is-leeroy-jenkins/Gipity/blob/main/LICENSE.txt).
 
 ## 🙌 Acknowledgements
 
