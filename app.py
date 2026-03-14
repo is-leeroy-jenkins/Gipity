@@ -128,6 +128,68 @@ if st.session_state.geocoding_api_key == '':
 		st.session_state.geocoding_api_key = default
 		os.environ[ 'GEOCODING_API_KEY' ] = default
 
+# --------CHAT-GENERATION PARAMETERS--------------------
+
+if 'max_tools' not in st.session_state:
+	st.session_state[ 'max_tools' ] = 0
+
+if 'max_tokens' not in st.session_state:
+	st.session_state[ 'max_tokens' ] = 0
+
+if 'temperature' not in st.session_state:
+	st.session_state[ 'temperature' ] = 0.0
+
+if 'top_percent' not in st.session_state:
+	st.session_state[ 'top_percent' ] = 0.0
+
+if 'frequency_penalty' not in st.session_state:
+	st.session_state[ 'frequency_penalty' ] = 0.0
+
+if 'presense_penalty' not in st.session_state:
+	st.session_state[ 'presense_penalty' ] = 0.0
+
+if 'background' not in st.session_state:
+	st.session_state[ 'background' ] = False
+
+if 'parallel_tools' not in st.session_state:
+	st.session_state[ 'parallel_tools' ] = False
+
+if 'store' not in st.session_state:
+	st.session_state[ 'store' ] = False
+
+if 'stream' not in st.session_state:
+	st.session_state[ 'stream' ] = False
+
+if 'execution_mode' not in st.session_state:
+	st.session_state[ 'execution_mode' ] = ''
+
+if 'response_format' not in st.session_state:
+	st.session_state[ 'response_format' ] = ''
+
+if 'tool_choice' not in st.session_state:
+	st.session_state[ 'tool_choice' ] = ''
+
+if 'reasoning' not in st.session_state:
+	st.session_state[ 'reasoning' ] = ''
+
+if 'stops' not in st.session_state:
+	st.session_state[ 'stops' ] = [ ]
+
+if 'include' not in st.session_state:
+	st.session_state[ 'include' ] = [ ]
+
+if 'input' not in st.session_state:
+	st.session_state[ 'input' ] = [ ]
+
+if 'tools' not in st.session_state:
+	st.session_state[ 'tools' ] = [ ]
+
+if 'messages' not in st.session_state:
+	st.session_state[ 'messages' ] = [ ]
+
+if 'last_sources' not in st.session_state:
+	st.session_state[ 'last_sources' ] = [ ]
+	
 if 'provider' not in st.session_state or st.session_state[ 'provider' ] is None:
 	st.session_state[ 'provider' ] = 'GPT'
 
@@ -163,37 +225,6 @@ if 'selected_prompt_id' not in st.session_state:
 if 'pending_system_prompt_name' not in st.session_state:
 	st.session_state[ 'pending_system_prompt_name' ] = ''
 
-# ----------MODEL PARAMETERS --------------------------------
-
-if 'text_model' not in st.session_state:
-	st.session_state[ 'text_model' ] = ''
-
-if 'image_model' not in st.session_state:
-	st.session_state[ 'image_model' ] = ''
-
-if 'audio_model' not in st.session_state:
-	st.session_state[ 'audio_model' ] = ''
-
-if 'tts_model' not in st.session_state:
-	st.session_state[ 'tts_model' ] = ''
-
-if 'transcription_model' not in st.session_state:
-	st.session_state[ 'transcription_model' ] = ''
-
-if 'translation_model' not in st.session_state:
-	st.session_state[ 'translation_model' ] = ''
-
-if 'docqna_model' not in st.session_state:
-	st.session_state[ 'docqna_model' ] = ''
-
-if 'embedding_model' not in st.session_state:
-	st.session_state[ 'embedding_model' ] = ''
-
-if 'files_model' not in st.session_state:
-	st.session_state[ 'files_model' ] = ''
-
-if 'stores_model' not in st.session_state:
-	st.session_state[ 'stores_model' ] = ''
 
 # -------- INSTRUCTION VARIABLES ----------------------
 
@@ -220,6 +251,9 @@ if 'stores_system_instructions' not in st.session_state:
 
 # ----------MODEL PARAMETERS --------------------------------
 
+if 'chat_model' not in st.session_state:
+	st.session_state[ 'chat_model' ] = ''
+
 if 'text_model' not in st.session_state:
 	st.session_state[ 'text_model' ] = ''
 
@@ -250,6 +284,68 @@ if 'transcription_model' not in st.session_state:
 if 'translation_model' not in st.session_state:
 	st.session_state[ 'translation_model' ] = ''
 
+# --------CHAT-GENERATION PARAMETERS--------------------
+
+if 'max_tools' not in st.session_state:
+	st.session_state[ 'max_tools' ] = 0
+
+if 'max_tokens' not in st.session_state:
+	st.session_state[ 'max_tokens' ] = 0
+
+if 'temperature' not in st.session_state:
+	st.session_state[ 'temperature' ] = 0.0
+
+if 'top_percent' not in st.session_state:
+	st.session_state[ 'top_percent' ] = 0.0
+
+if 'frequency_penalty' not in st.session_state:
+	st.session_state[ 'frequency_penalty' ] = 0.0
+
+if 'presense_penalty' not in st.session_state:
+	st.session_state[ 'presense_penalty' ] = 0.0
+
+if 'background' not in st.session_state:
+	st.session_state[ 'background' ] = False
+
+if 'parallel_tools' not in st.session_state:
+	st.session_state[ 'parallel_tools' ] = False
+
+if 'store' not in st.session_state:
+	st.session_state[ 'store' ] = False
+
+if 'stream' not in st.session_state:
+	st.session_state[ 'stream' ] = False
+
+if 'execution_mode' not in st.session_state:
+	st.session_state[ 'execution_mode' ] = ''
+
+if 'response_format' not in st.session_state:
+	st.session_state[ 'response_format' ] = ''
+
+if 'tool_choice' not in st.session_state:
+	st.session_state[ 'tool_choice' ] = ''
+
+if 'reasoning' not in st.session_state:
+	st.session_state[ 'reasoning' ] = ''
+
+if 'stops' not in st.session_state:
+	st.session_state[ 'stops' ] = [ ]
+
+if 'include' not in st.session_state:
+	st.session_state[ 'include' ] = [ ]
+
+if 'input' not in st.session_state:
+	st.session_state[ 'input' ] = [ ]
+
+if 'tools' not in st.session_state:
+	st.session_state[ 'tools' ] = [ ]
+
+if 'messages' not in st.session_state:
+	st.session_state[ 'messages' ] = [ ]
+
+if 'last_sources' not in st.session_state:
+	st.session_state[ 'last_sources' ] = [ ]
+	
 # --------TEXT-GENERATION PARAMETERS--------------------
 
 if 'text_number' not in st.session_state:
@@ -792,6 +888,31 @@ if 'stores_include' not in st.session_state:
 if 'stores_id' not in st.session_state:
 	st.session_state[ 'stores_id' ] = ''
 
+# ------- TOKEN PARAMATERS  ---------------------------
+if 'last_answer' not in st.session_state:
+	st.session_state.last_answer = ''
+
+if 'last_sources' not in st.session_state:
+	st.session_state.last_sources = [ ]
+
+if 'last_analysis' not in st.session_state:
+	st.session_state.last_analysis = {
+			'tables': [ ],
+			'docqna_files': [ ],
+			'text': [ ],
+	}
+
+if 'last_call_usage' not in st.session_state:
+	st.session_state.last_call_usage = {
+			'prompt_tokens': 0,
+			'completion_tokens': 0,
+			'total_tokens': 0, }
+
+if 'token_usage' not in st.session_state:
+	st.session_state.token_usage = { 'prompt_tokens': 0,
+	                                 'completion_tokens': 0,
+	                                 'total_tokens': 0, }
+	
 # -------------- LLM  UTILITIES -------------------
 
 @st.cache_resource
