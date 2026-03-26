@@ -183,7 +183,7 @@ class Chat( GPT ):
 	parallel_tools: Optional[ bool ]
 	max_tools = Optional[ int ]
 	input: Optional[ List[ Dict[ str, str ] ] | str ]
-	tools: Optional[ List[ Dict[ str, str ] ] ]
+	tools: Optional[ List[ Dict[ str, Any ] ] ]
 	reasoning_effort: Optional[ Dict[ str, str ] ]
 	image_url: Optional[ str ]
 	image_path: Optional[ str ]
@@ -205,41 +205,42 @@ class Chat( GPT ):
 	def __init__( self, model: str='gpt-5-nano', prompt: str=None, temperature: float=None,
 			top_p: float=None, presense: float=None, store: bool=None, stream: bool=None,
 			stops: List[ str ]=None, response_format: Dict[ str, str ]=None, number: int=None,
-			instruct: str=None, context: List[ Dict[ str, str ] ]=None, allowed_domains: List[ str ]=None,
-			include: List[ Dict[ str, str ] ]=None, tools: List[ Dict[ str, str ] ]=None,
-			max_tools: int=None, tool_choice: str=None, file_path: str=None,
-			background: bool=None, is_parallel: bool=None, max_tokens: int=None, frequency: float=None,
-			input: List[ Dict[ str, str ] ]=None, file_ids: List[ str ]=None, previous_id: str=None,
-			reasoning: Dict[ str, str ]=None, output_text: str=None, max_search_results: int=None,
-			content: str=None, vector_store_ids: List[ str ]= None ):
+			instruct: str=None, context: List[ Dict[ str, str ] ]=None,
+			allowed_domains: List[ str ]=None, include: List[ str ]=None,
+			tools: List[ Dict[ str, Any ] ]=None, max_tools: int=None,
+			tool_choice: str=None, file_path: str=None, background: bool=None,
+			is_parallel: bool=None, max_tokens: int=None, frequency: float=None,
+			input: List[ Dict[ str, Any ] ]=None, file_ids: List[ str ]=None,
+			previous_id: str=None, reasoning: Dict[ str, str ] | str=None,
+			output_text: str=None, max_search_results: int=None, content: str=None,
+			vector_store_ids: List[ str ] = None ):
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
 		self.model = model
 		self.prompt = prompt
 		self.number = number
-		self.response_format = response_format
+		self.response_format = response_format if response_format is not None else { }
 		self.temperature = temperature
 		self.top_percent = top_p
-		self.allowed_domains = allowed_domains
+		self.allowed_domains = allowed_domains if allowed_domains is not None else [ ]
 		self.frequency_penalty = frequency
 		self.presence_penalty = presense
 		self.max_tokens = max_tokens
-		self.context = context
+		self.context = context if context is not None else [ ]
 		self.stream = stream
 		self.store = store
 		self.instructions = instruct
-		self.stops = stops
+		self.stops = stops if stops is not None else [ ]
 		self.background = background
-		self.conetxt = context
-		self.input = input
-		self.include = include
-		self.allowed_domains = allowed_domains
+		self.conetxt = self.context
+		self.input = input if input is not None else [ ]
+		self.include = include if include is not None else [ ]
 		self.output_text = output_text
 		self.max_tools = max_tools
-		self.vector_store_ids = vector_store_ids
-		self.file_ids = file_ids
-		self.tools = tools
+		self.vector_store_ids = vector_store_ids if vector_store_ids is not None else [ ]
+		self.file_ids = file_ids if file_ids is not None else [ ]
+		self.tools = tools if tools is not None else [ ]
 		self.previous_id = previous_id
 		self.reasoning = reasoning
 		self.parallel_tools = is_parallel
@@ -249,7 +250,7 @@ class Chat( GPT ):
 		self.file_url = file_path
 		self.image_url = None
 		self.content = content
-		self.output_text = None
+		self.output_text = output_text
 		self.max_search_results = max_search_results
 		self.purpose = None
 		self.vector_stores = \
@@ -275,16 +276,17 @@ class Chat( GPT ):
 
         '''
 		return [
-				 'gpt-5',
-				 'gpt-5.2',
-				 'gpt-5-mini',
-				 'gpt-5-nano',
-				 'gpt-5-turbo',
-		         'gpt-4.1',
-		         'gpt-4.1-mini',
-		         'gpt-4.1-nano',
-		         'gpt-4o',
-		         'gpt-4o-mini' ]
+				'gpt-5.4',
+				'gpt-5.4-mini',
+				'gpt-5.4-nano',
+				'gpt-5',
+				'gpt-5-mini',
+				'gpt-5-nano',
+				'gpt-4.1',
+				'gpt-4.1-mini',
+				'gpt-4.1-nano',
+				'gpt-4o',
+				'gpt-4o-mini' ]
 	
 	@property
 	def include_options( self ) -> List[ str ] | None:
@@ -313,11 +315,8 @@ class Chat( GPT ):
 			A List[ str ] of available tools options
 
 		'''
-		return [ 'web_search',
-		         'image_generation',
-		         'file_search',
-		         'code_interpreter',
-		         'computer_use_preview' ]
+		return [ 'web_search', 'image_generation', 'file_search',
+		         'code_interpreter', 'computer_use_preview' ]
 	
 	@property
 	def choice_options( self ) -> List[ str ] | None:
@@ -339,12 +338,8 @@ class Chat( GPT ):
 			A List[ str ] of file purposes
 
 		'''
-		return [ 'assistants',
-		         'batch',
-		         'fine-tune',
-		         'vision',
-		         'user_data',
-		         'evals' ]
+		return [ 'assistants', 'batch', 'fine-tune', 'vision',
+		         'user_data', 'evals' ]
 	
 	@property
 	def format_options( self ) -> List[ str ] | None:
@@ -366,11 +361,7 @@ class Chat( GPT ):
 			A List[ str ] of reasoning effort options
 
 		'''
-		return [ 'low',
-		         'medium',
-		         'high',
-		         'minimal',
-		         'xhigh' ]
+		return [ 'low','medium', 'high', 'minimal','xhigh' ]
 	
 	@property
 	def modality_options( self ) -> List[ str ] | None:
@@ -383,12 +374,354 @@ class Chat( GPT ):
 		'''
 		return [ 'text', 'auto', 'image', 'audio' ]
 	
-	def generate_text( self, prompt: str, model: str, temperature: float=None,
-			format: Dict[ str, str ]=None, top_p: float=None, frequency: float=None,
-			max_tools: int=None, presence: float=None, max_tokens: int=None, store: bool=None,
-			stream: bool=None, instruct: str=None, background: bool=False, reasoning: str=None,
-			include: List[ str ]=None, tools: List[ Dict[ str, str ] ]=None,
-			allowed_domains: List[ str ]=None,) -> str | None:
+	def _build_reasoning( self, reasoning: str | Dict[ str, str ]=None ) -> Dict[ str, str ] | None:
+		"""
+	
+	        Purpose
+	        _______
+	        Creates a Responses API reasoning object
+	        from a string or dictionary input
+	
+	
+	        Parameters
+	        ----------
+	        reasoning: str | Dict[ str, str ]
+	
+	
+	        Returns
+	        -------
+	        Dict[ str, str ] | None
+
+        """
+		try:
+			if reasoning is None:
+				return None
+			
+			if isinstance( reasoning, dict ):
+				return reasoning if len( reasoning ) > 0 else None
+			
+			if isinstance( reasoning, str ) and reasoning.strip( ):
+				return { 'effort': reasoning.strip( ) }
+			
+			return None
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = '_build_reasoning( self, reasoning: str | Dict[ str, str ] )'
+			raise exception
+	
+	def _build_input( self, prompt: str, context: List[ Dict[ str, str ] ]=None,
+			input_data: List[ Dict[ str, Any ] ]=None ) -> List[ Dict[ str, Any ] ]:
+		"""
+	
+	        Purpose
+	        _______
+	        Creates the Responses API input payload
+	        for text generation requests
+	
+	
+	        Parameters
+	        ----------
+	        prompt: str
+	        context: List[ Dict[ str, str ] ]
+	        input_data: List[ Dict[ str, Any ] ]
+	
+	
+	        Returns
+	        -------
+	        List[ Dict[ str, Any ] ]
+
+        """
+		try:
+			throw_if( 'prompt', prompt )
+			self.messages = [ ]
+			if input_data is not None and len( input_data ) > 0:
+				self.messages.extend( input_data )
+			elif context is not None and len( context ) > 0:
+				for item in context:
+					if not isinstance( item, dict ):
+						continue
+					
+					self.messages.append( item )
+			
+			self.messages.append(
+			{
+				'role': 'user',
+				'content': [
+				{
+					'type': 'input_text',
+					'text': prompt,
+				}, ],
+			})
+			
+			return self.messages
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = ('_build_input( self, prompt: str, '
+			                    'context: List[ Dict[ str, str ] ]=None, '
+			                    'input_data: List[ Dict[ str, Any ] ]=None )')
+			raise exception
+	
+	def _build_tools( self, tools: List[ Dict[ str, Any ] ] = None,
+			allowed_domains: List[ str ] = None ) -> List[ Dict[ str, Any ] ] | None:
+		"""
+	
+	        Purpose
+	        _______
+	        Normalizes built-in Responses API tool objects
+	        for text generation requests
+	
+	
+	        Parameters
+	        ----------
+	        tools: List[ Dict[ str, Any ] ]
+	        allowed_domains: List[ str ]
+	
+	
+	        Returns
+	        -------
+	        List[ Dict[ str, Any ] ] | None
+
+        """
+		try:
+			self.allowed_domains = allowed_domains if allowed_domains is not None else [ ]
+			if tools is None or len( tools ) == 0:
+				return None
+			
+			self.built_tools = [ ]
+			for tool in tools:
+				if not isinstance( tool, dict ):
+					continue
+				
+				self.tool = dict( tool )
+				self.tool_type = self.tool.get( 'type' )
+				if not self.tool_type:
+					continue
+				
+				if self.tool_type == 'web_search' and len( self.allowed_domains ) > 0:
+					self.filters = self.tool.get( 'filters' )
+					if not isinstance( self.filters, dict ):
+						self.filters = { }
+					
+					self.filters[ 'allowed_domains' ] = self.allowed_domains
+					self.tool[ 'filters' ] = self.filters
+				
+				if self.tool_type == 'file_search' and len( self.vector_store_ids ) > 0:
+					self.tool[ 'vector_store_ids' ] = self.vector_store_ids
+				
+				self.built_tools.append( self.tool )
+			return self.built_tools if len( self.built_tools ) > 0 else None
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = ('_build_tools( self, tools: List[ Dict[ str, Any ] ]=None, '
+			                    'allowed_domains: List[ str ]=None )')
+			raise exception
+	
+	def _build_request( self, prompt: str, model: str, temperature: float = None,
+			format: Dict[ str, Any ] = None, top_p: float = None, frequency: float = None,
+			max_tools: int = None, presence: float = None, max_tokens: int = None, store: bool = None,
+			stream: bool = None, instruct: str = None, background: bool = False, reasoning: str = None,
+			include: List[ str ] = None, tools: List[ Dict[ str, Any ] ] = None,
+			allowed_domains: List[ str ] = None, previous_id: str = None,
+			tool_choice: str = None, is_parallel: bool = None,
+			context: List[ Dict[ str, str ] ] = None,
+			input_data: List[ Dict[ str, Any ] ] = None ) -> Dict[ str, Any ]:
+		"""
+	
+	        Purpose
+	        _______
+	        Creates a normalized Responses API request payload
+	        for text generation
+	
+	
+	        Parameters
+	        ----------
+	        prompt: str
+	        model: str
+	
+	
+	        Returns
+	        -------
+	        Dict[ str, Any ]
+
+        """
+		try:
+			throw_if( 'prompt', prompt )
+			throw_if( 'model', model )
+			self.model = model
+			self.prompt = prompt
+			self.temperature = temperature
+			self.top_percent = top_p
+			self.frequency_penalty = frequency
+			self.presence_penalty = presence
+			self.max_tokens = max_tokens
+			self.store = store
+			self.stream = stream
+			self.background = background
+			self.instructions = instruct
+			self.response_format = format if format is not None else { }
+			self.max_tools = max_tools
+			self.include = include if include is not None else [ ]
+			self.previous_id = previous_id if isinstance( previous_id, str ) else None
+			self.tool_choice = tool_choice.strip( ) if isinstance( tool_choice, str ) else None
+			self.parallel_tools = is_parallel
+			self.reasoning = self._build_reasoning( reasoning )
+			self.tools = self._build_tools( tools=tools, allowed_domains=allowed_domains )
+			self.input = self._build_input( prompt=prompt, context=context, input_data=input_data )
+			self.request = \
+			{
+				'model': self.model,
+				'input': self.input,
+			}
+			
+			if self.instructions:
+				self.request[ 'instructions' ] = self.instructions
+			
+			if self.reasoning is not None:
+				self.request[ 'reasoning' ] = self.reasoning
+			
+			if isinstance( self.max_tokens, int ) and self.max_tokens > 0:
+				self.request[ 'max_output_tokens' ] = self.max_tokens
+			
+			if self.temperature is not None and not self.model.startswith( 'gpt-5' ):
+				self.request[ 'temperature' ] = self.temperature
+			
+			if self.top_percent is not None and not self.model.startswith( 'gpt-5' ):
+				self.request[ 'top_p' ] = self.top_percent
+			
+			if self.store is not None:
+				self.request[ 'store' ] = self.store
+			
+			if self.stream is not None:
+				self.request[ 'stream' ] = self.stream
+			
+			if self.background is not None:
+				self.request[ 'background' ] = self.background
+			
+			if self.include is not None and len( self.include ) > 0:
+				self.request[ 'include' ] = self.include
+			
+			if self.tools is not None and len( self.tools ) > 0:
+				self.request[ 'tools' ] = self.tools
+			
+			if self.tool_choice:
+				self.request[ 'tool_choice' ] = self.tool_choice
+			
+			if self.parallel_tools is not None:
+				self.request[ 'parallel_tool_calls' ] = self.parallel_tools
+			
+			if self.previous_id and self.previous_id.strip( ):
+				self.request[ 'previous_response_id' ] = self.previous_id.strip( )
+			
+			if isinstance( self.max_tools, int ) and self.max_tools > 0:
+				self.request[ 'max_tool_calls' ] = self.max_tools
+			
+			if self.response_format is not None and len( self.response_format ) > 0:
+				self.request[ 'text' ] = self.response_format
+			
+			return self.request
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = ('_build_request( self, prompt: str, model: str, '
+			                    'temperature: float=None, format: Dict[ str, Any ]=None )')
+			raise exception
+	
+	def get_output_text( self ) -> str | None:
+		"""
+	
+	        Purpose
+	        _______
+	        Returns the text output from the last
+	        Responses API call
+	
+	
+	        Parameters
+	        ----------
+	        self
+	
+	
+	        Returns
+	        -------
+	        str | None
+
+        """
+		try:
+			if self.response is None:
+				return None
+			
+			self.output_text = getattr( self.response, 'output_text', None )
+			if self.output_text:
+				return self.output_text
+			
+			if hasattr( self.response, 'output' ) and self.response.output:
+				for item in self.response.output:
+					if getattr( item, 'type', None ) != 'message':
+						continue
+					
+					if not hasattr( item, 'content' ) or item.content is None:
+						continue
+					
+					for block in item.content:
+						if getattr( block, 'type', None ) == 'output_text':
+							self.output_text = getattr( block, 'text', None )
+							if self.output_text:
+								return self.output_text
+			
+			return None
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = 'get_output_text( self ) -> str | None'
+			raise exception
+	
+	def get_usage( self ) -> Any:
+		"""
+	
+	        Purpose
+	        _______
+	        Returns usage metadata from the last
+	        Responses API call
+	
+	
+	        Parameters
+	        ----------
+	        self
+	
+	
+	        Returns
+	        -------
+	        Any
+
+        """
+		try:
+			if self.response is None:
+				return None
+			
+			return getattr( self.response, 'usage', None )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = 'get_usage( self ) -> Any'
+			raise exception
+	
+	def generate_text( self, prompt: str, model: str, temperature: float = None,
+			format: Dict[ str, Any ] = None, top_p: float = None, frequency: float = None,
+			max_tools: int = None, presence: float = None, max_tokens: int = None, store: bool = None,
+			stream: bool = None, instruct: str = None, background: bool = False, reasoning: str = None,
+			include: List[ str ] = None, tools: List[ Dict[ str, Any ] ] = None,
+			allowed_domains: List[ str ] = None, previous_id: str = None,
+			tool_choice: str = None, is_parallel: bool = None,
+			context: List[ Dict[ str, str ] ] = None,
+			input_data: List[ Dict[ str, Any ] ] = None ) -> str | None:
 		"""
 	
 	        Purpose
@@ -409,275 +742,24 @@ class Chat( GPT ):
 		try:
 			throw_if( 'prompt', prompt )
 			throw_if( 'model', model )
-			self.model = model
-			self.prompt = prompt
-			self.temperature = temperature
-			self.top_percent = top_p
-			self.frequency_penalty = frequency
-			self.presence_penalty = presence
-			self.max_tokens = max_tokens
-			self.store = store
-			self.stream = stream
-			self.background = background
-			self.instructions = instruct
-			self.response_format = format
-			self.max_tools = max_tools
-			self.tools = tools
-			self.include = include
-			self.allowed_domains = allowed_domains
-			self.reasoning_effort = { 'effort': reasoning }
-			self.input.append( { 'text': self.prompt } )
 			self.client = OpenAI( api_key=self.api_key )
-			if self.model.startswith( 'gpt-5' ):
-				self.response = self.client.responses.create( model=self.model, input=self.input,
-					reasoning=self.reasoning )
-			else:
-				self.response = self.client.responses.create( model=self.model, input=self.input,
-					max_output_tokens=self.max_tokens, temperature=self.temperature,
-					top_p=self.top_percent )
-			return self.response.output_text
+			self.request = self._build_request( prompt=prompt, model=model,
+				temperature=temperature, format=format, top_p=top_p, frequency=frequency,
+				max_tools=max_tools, presence=presence, max_tokens=max_tokens, store=store,
+				stream=stream, instruct=instruct, background=background, reasoning=reasoning,
+				include=include, tools=tools, allowed_domains=allowed_domains,
+				previous_id=previous_id, tool_choice=tool_choice, is_parallel=is_parallel,
+				context=context, input_data=input_data )
+			self.response = self.client.responses.create( **self.request )
+			self.previous_id = getattr( self.response, 'id', None )
+			self.output_text = self.get_output_text( )
+			return self.output_text
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Chat'
 			exception.method = 'generate_text( self, prompt: str )'
 			raise exception
-	
-	def generate_image( self, prompt: str, number: int=None, model: str=None, style: str=None,
-			size: str=None, quality: str=None, fmt: str=None,  ) -> str | None:
-		'''
-	
-	        Purpose
-	        _______
-	        Generates an image given a prompt
-	
-	
-	        Parameters
-	        ----------
-	        prompt: str
-
-	
-	        Returns
-	        -------
-	        str | None
-
-        '''
-		try:
-			throw_if( 'prompt', prompt )
-			self.prompt = prompt
-			self.number = number
-			self.model = model
-			self.size = size
-			self.style = style
-			self.quality = quality
-			self.response_format = fmt
-			self.client = OpenAI( api_key=self.api_key )
-			self.response = self.client.images.generate( model=self.model, prompt=self.prompt,
-				size=self.size, quality=self.quality, response_format=self.response_format,
-				n=self.number )
-			return self.response.data[ 0 ].url
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'gpt'
-			exception.cause = 'Chat'
-			exception.method = ('generate_image( self, prompt: str ) -> str | None')
-			raise exception
-	
-	def analyze_image( self, prompt: str, url: str, temperature: float=None,
-			top_p: float=None, frequency: float=None, presence: float=None, max_tokens: int=None,
-			store: bool=None, stream: bool=None, instruct: str=None, background: bool=None,
-			reasoning: Dict[ str, str ]=None, include: List[ str ]=None,
-			format: Dict[ str, str ]=None, tools: List[ Dict[ str, str ] ]=None,
-			allowed_domains: List[ str ]=None, ) -> str | None:
-		"""
-
-	        Purpose
-	        _______
-	        Analyze an image with a text instruction.
-	
-	        Parameters
-	        ----------
-	        prompt: str
-	        url: str
-	
-	        Returns
-	        -------
-	        str
-
-        """
-		try:
-			throw_if( 'prompt', prompt )
-			throw_if( 'url', url )
-			self.prompt = prompt
-			self.image_url = url
-			self.temperature = temperature
-			self.top_percent = top_p
-			self.response_format = format
-			self.frequency_penalty = frequency
-			self.presence_penalty = presence
-			self.max_tokens = max_tokens
-			self.store = store
-			self.stream = stream
-			self.background = background
-			self.instructions = instruct
-			self.reasoning = reasoning
-			self.include = include
-			self.allowed_domains = allowed_domains
-			self.tools = tools
-			self.input = [
-			{
-				'role': 'user',
-				'content': [
-				{
-					'type': 'input_text',
-					'text': self.prompt
-				},
-				{
-					'type': 'input_image',
-					'image_url': self.image_url
-				}, ],
-			} ]
-			
-			self.client = OpenAI( api_key=self.api_key )
-			self.response = self.client.responses.create( model=self.model, input=self.input )
-			return self.response.output_text
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'gpt'
-			exception.cause = 'Chat'
-			exception.method = 'analyze_image( self, prompt: str, url: str )'
-			raise exception
-	
-			
-	def summarize_document( self, prompt: str, pdf_path: str ) -> str | None:
-		"""
-	
-	        Purpose
-	        _______
-	        Method that summarizes a document given a
-	        path prompt, and a path
-	
-	        Parameters
-	        ----------
-	        prompt: str
-	        path: str
-	
-	        Returns
-	        -------
-	        str | None
-
-        """
-		try:
-			throw_if( 'prompt', prompt )
-			throw_if( 'pdf_path', pdf_path )
-			self.prompt = prompt
-			self.file_path = pdf_path
-			self.client = OpenAI( api_key=self.api_key )
-			self.file = self.client.files.create( file=open( file=self.file_path, mode='rb' ),
-				purpose='user_data' )
-			self.messages = [
-			{
-				'role': 'user',
-				'content': [
-				{
-					'type': 'file',
-					'file':
-					{
-						'file_id': self.file.id,
-					},
-				},
-				{
-					'type': 'text',
-					'text': self.prompt,
-				},],
-			}]
-			
-			self.response = self.client.responses.create( model=self.model, input=self.messages )
-			return self.response.output_text
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'gpt'
-			exception.cause = 'Chat'
-			exception.method = 'summarize_document( self, prompt: str, path: str ) -> str'
-			raise exception
-	
-	def search_web( self, prompt: str, model: str='gpt-4.1-nano-2025-04-14',
-			recency: int=30, max_results: int=100, ) -> str | None:
-		"""
-
-	        Purpose
-	        _______
-	        Method that analyzeses an image given a prompt,
-	
-	        Parameters
-	        ----------
-	        prompt: str
-	
-	        Returns
-	        -------
-	        str | None
-
-        """
-		try:
-			throw_if( 'prompt', prompt )
-			self.prompt = prompt
-			self.model = model
-			self.search_recency = recency
-			self.max_search_results = max_results
-			self.client = OpenAI( api_key=self.api_key )
-			self.web_options = { 'search_recency_days': self.search_recency,
-			                     'max_search_results': self.max_search_results }
-			self.messages = [
-			{
-				'role': 'user',
-				'content': self.prompt,
-			}]
-			
-			self.response = self.client.responses.create( model=self.model,
-				web_search_options=self.web_options, input=self.messages )
-			return self.response.output_text
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'gpt'
-			exception.cause = 'Chat'
-			exception.method = ('search_web( self, prompt: str, model: str, '
-			                    'recency: int=30, max_results: int=8 ) -> str | None')
-			raise exception
-
-	def __dir__( self ) -> List[ str ] | None:
-		return [ 'num',
-		         'temperature',
-		         'top_percent',
-		         'frequency_penalty',
-		         'presence_penalty',
-		         'max_completion_tokens',
-		         'system_instructions',
-		         'store',
-		         'stream',
-		         'modalities',
-		         'stops',
-		         'content',
-		         'prompt',
-		         'response',
-		         'completion',
-		         'file',
-		         'path',
-		         'messages',
-		         'image_url',
-		         'response_format',
-		         'tools',
-		         'vector_store_ids',
-		         'name',
-		         'id',
-		         'description',
-		         'format_options',
-		         'model_options',
-		         'reasoning_effort',
-		         'input_text',
-		         'generate_text',
-		         'analyze_image',
-		         'summarize_document',
-		         'search_web']
 
 class Images( GPT ):
 	"""
@@ -982,58 +1064,92 @@ class Images( GPT ):
 
 		'''
 		return [ 'text', 'auto', 'image', 'audio' ]
-	
-	def generate( self, prompt: str, number: int=1, model: str='gpt-image-1-mini',
-			size: str='1024x1024', quality: str='auto', fmt: str = '.jpeg' ) -> str | None:
+		
+	def generate( self, prompt: str, number: int = 1, model: str = 'gpt-image-1-mini',
+			size: str = '1024x1024', quality: str = 'auto', fmt: str = '.jpeg',
+			compression: float = None, background: str = None ) -> str | bytes | None:
 		'''
 	
-	        Purpose
-	        _______
-	        Generates an image given a prompt
+			Purpose
+			_______
+			Generates an image given a prompt
 	
 	
-	        Parameters
-	        ----------
-	        prompt: str
+			Parameters
+			----------
+			prompt: str
+	
+	
+			Returns
+			-------
+			str | bytes | None
 
-	
-	        Returns
-	        -------
-	        str | None
-
-        '''
+		'''
 		try:
 			throw_if( 'prompt', prompt )
 			self.prompt = prompt
-			self.number = number
+			self.number = number if isinstance( number, int ) and number > 0 else 1
 			self.model = model
-			self.size = size
-			self.quality = quality
-			self.response_format = fmt
+			self.size = size if isinstance( size, str ) and size.strip( ) else '1024x1024'
+			self.quality = quality if isinstance( quality, str ) and quality.strip( ) else 'auto'
+			self.response_format = fmt if isinstance( fmt, str ) and fmt.strip( ) else '.jpeg'
 			self.client = OpenAI( api_key=self.api_key )
-			self.response = self.client.images.generate( model=self.model, prompt=self.prompt,
-				size=self.size, quality=self.quality, response_format=self.response_format,
-				n=self.number )
-			return self.response.data[ 0 ].url
+			self.output_format = self.response_format.lower( ).replace( '.', '' )
+			if self.output_format not in [ 'png', 'jpeg', 'webp' ]:
+				self.output_format = 'jpeg'
+			
+			self.request = \
+				{
+						'model': self.model,
+						'prompt': self.prompt,
+						'n': self.number,
+						'size': self.size,
+						'quality': self.quality,
+						'output_format': self.output_format,
+				}
+			
+			if isinstance( background, str ) and background.strip( ):
+				self.request[ 'background' ] = background.strip( )
+			
+			if compression is not None and self.output_format in [ 'jpeg', 'webp' ]:
+				self.output_compression = max( 0, min( 100, int( round( compression * 100 ) ) ) )
+				self.request[ 'output_compression' ] = self.output_compression
+			
+			self.response = self.client.images.generate( **self.request )
+			self.data = getattr( self.response, 'data', None )
+			if self.data and len( self.data ) > 0:
+				self.item = self.data[ 0 ]
+				self.b64_json = getattr( self.item, 'b64_json', None )
+				self.url = getattr( self.item, 'url', None )
+				if self.b64_json:
+					return base64.b64decode( self.b64_json )
+				
+				if self.url:
+					return self.url
+			
+			return None
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
-			exception.cause = 'Chat'
-			exception.method = ('generate_image( self, prompt: str ) -> str | None')
+			exception.cause = 'Image'
+			exception.method = ('generate( self, prompt: str, number: int=1, '
+			                    'model: str="gpt-image-1-mini" ) -> str | bytes | None')
 			raise exception
 	
-	def analyze( self, text: str, path: str, instruct: str, model: str='gpt-4o-mini' ) -> str:
+	def analyze( self, text: str, path: str, instruct: str = None,
+			model: str = 'gpt-4o-mini' ) -> str | None:
 		'''
 	
 	        Purpose:
 	        ________
-	
 	        Method providing image analysis functionality given a prompt and path
+	
 	
 	        Parameters:
 	        ----------
-	        input: str
+	        text: str
 	        path: str
+	
 	
 	        Returns:
 	        --------
@@ -1043,68 +1159,123 @@ class Images( GPT ):
 		try:
 			throw_if( 'text', text )
 			throw_if( 'path', path )
-			throw_if( 'instruct', instruct )
-			self.instructions = instruct
+			self.instructions = instruct if isinstance( instruct, str ) else ''
 			self.input_text = text
 			self.model = model
 			self.file_path = path
-			self.include.append( 'message.input_image.image_url' )
-			self.input = [
-			{
-					'role': 'user',
-					'content': [
-							{ 'type': 'input_text', 'text': self.input_text },
-							{ 'type': 'input_image', 'image_url': self.file_path },
-					],
-			} ]
-	
 			self.client = OpenAI( api_key=self.api_key )
-			self.response = self.client.responses.create( model=self.model, input=self.input,
-				max_output_tokens=self.max_completion_tokens, temperature=self.temperature,
-				tool_choice=self.tool_choice, include=self.include,
-				instructions=self.instructions, stream=self.stream, store=self.store )
-			return self.response.output_text
+			with open( self.file_path, 'rb' ) as source:
+				self.file = self.client.files.create( file=source, purpose='vision' )
+			
+			self.input = \
+			[ { 'role': 'user', 'content':[ { 'type': 'input_text', 'text': self.input_text },
+					              { 'type': 'input_image', 'file_id': self.file.id } ] } ]
+			
+			self.request = \
+			{
+				'model': self.model,
+				'input': self.input,
+			}
+			
+			if self.instructions and self.instructions.strip( ):
+				self.request[ 'instructions' ] = self.instructions.strip( )
+			
+			if isinstance( self.max_tokens, int ) and self.max_tokens > 0:
+				self.request[ 'max_output_tokens' ] = self.max_tokens
+			
+			if self.temperature is not None:
+				self.request[ 'temperature' ] = self.temperature
+			
+			if self.tool_choice is not None and str( self.tool_choice ).strip( ):
+				self.request[ 'tool_choice' ] = str( self.tool_choice ).strip( )
+			
+			if self.include is not None and len( self.include ) > 0:
+				self.request[ 'include' ] = self.include
+			
+			if self.stream is not None:
+				self.request[ 'stream' ] = self.stream
+			
+			if self.store is not None:
+				self.request[ 'store' ] = self.store
+			
+			self.response = self.client.responses.create( **self.request )
+			return getattr( self.response, 'output_text', None )
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Image'
-			exception.method = 'analyze( self, path: str, text: str ) -> str'
-			raise  exception
+			exception.method = 'analyze( self, text: str, path: str, instruct: str=None ) -> str | None'
+			raise exception
 	
-	def edit( self, prompt: str, path: str, size: str='1024x1024' ) -> str:
+	def edit( self, prompt: str, path: str, model: str = 'gpt-image-1-mini',
+			size: str = '1024x1024', quality: str = 'auto', fmt: str = '.jpeg',
+			compression: float = None ) -> str | bytes | None:
 		"""
-
+	
 	        Purpose
 	        _______
-	        Method that analyzeses an image given a path prompt,
+	        Creates an edited image given a prompt and source image path
+	
 	
 	        Parameters
 	        ----------
 	        prompt: str
-	        url: str
+	        path: str
+	
 	
 	        Returns
 	        -------
-	        str
+	        str | bytes | None
 
         """
 		try:
-			throw_if( 'input', prompt )
+			throw_if( 'prompt', prompt )
 			throw_if( 'path', path )
 			self.input_text = prompt
 			self.file_path = path
-			self.size = size
+			self.model = model
+			self.size = size if isinstance( size, str ) and size.strip( ) else '1024x1024'
+			self.quality = quality if isinstance( quality, str ) and quality.strip( ) else 'auto'
+			self.response_format = fmt if isinstance( fmt, str ) and fmt.strip( ) else '.jpeg'
 			self.client = OpenAI( api_key=self.api_key )
-			self.client.images.create_variation()
-			self.response = self.client.images.edit( model=self.model,
-				image=open( self.file_path, 'rb' ), prompt=self.input_text, n=self.number,
-				size=self.size, )
-			return self.response.data[ 0 ].url
+			self.output_format = self.response_format.lower( ).replace( '.', '' )
+			if self.output_format not in [ 'png', 'jpeg', 'webp' ]:
+				self.output_format = 'jpeg'
+			
+			self.request = \
+			{
+				'model': self.model,
+				'prompt': self.input_text,
+				'size': self.size,
+				'quality': self.quality,
+				'output_format': self.output_format,
+				'n': self.number if isinstance( self.number, int ) and self.number > 0 else 1,
+			}
+			
+			if compression is not None and self.output_format in [ 'jpeg', 'webp' ]:
+				self.output_compression = max( 0, min( 100, int( round( compression * 100 ) ) ) )
+				self.request[ 'output_compression' ] = self.output_compression
+			
+			with open( self.file_path, 'rb' ) as source:
+				self.response = self.client.images.edit( image=source, **self.request )
+			
+			self.data = getattr( self.response, 'data', None )
+			if self.data and len( self.data ) > 0:
+				self.item = self.data[ 0 ]
+				self.b64_json = getattr( self.item, 'b64_json', None )
+				self.url = getattr( self.item, 'url', None )
+				if self.b64_json:
+					return base64.b64decode( self.b64_json )
+				
+				if self.url:
+					return self.url
+			
+			return None
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Image'
-			exception.method = 'edit( self, text: str, path: str, size: str=1024x1024 ) -> str'
+			exception.method = 'edit( self, prompt: str, path: str, model: str="gpt-image-1-mini" )'
 			raise exception
 	
 	def __dir__( self ) -> List[ str ] | None:
@@ -2306,7 +2477,8 @@ class Files( GPT ):
 		         'medium',
 		         'high',
 		         'minimal',
-		         'xhigh' ]
+		         'xhigh',
+		         'none' ]
 	
 	@property
 	def choice_options( self ) -> List[ str ] | None:

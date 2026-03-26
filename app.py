@@ -77,7 +77,7 @@ from gpt import (
 	Translation,
 	TTS,
 	Files,
-	VectorStores)
+	VectorStores )
 
 # ======================================================================================
 # SESSION STATE INITIALIZATION
@@ -345,17 +345,11 @@ if 'messages' not in st.session_state:
 
 if 'last_sources' not in st.session_state:
 	st.session_state[ 'last_sources' ] = [ ]
-	
-# --------TEXT-GENERATION PARAMETERS--------------------
 
-if 'text_number' not in st.session_state:
-	st.session_state[ 'text_number' ] = 0
+# --------TEXT-GENERATION PARAMETERS--------------------
 
 if 'text_max_calls' not in st.session_state:
 	st.session_state[ 'text_max_calls' ] = 0
-
-if 'text_max_searches' not in st.session_state:
-	st.session_state[ 'text_max_searches' ] = 0
 
 if 'text_max_tokens' not in st.session_state:
 	st.session_state[ 'text_max_tokens' ] = 0
@@ -372,8 +366,8 @@ if 'text_frequency_penalty' not in st.session_state:
 if 'text_presence_penalty' not in st.session_state:
 	st.session_state[ 'text_presence_penalty' ] = 0.0
 
-if 'text_parallel_tools' not in st.session_state:
-	st.session_state[ 'text_parallel_tools' ] = False
+if 'text_parallel_calls' not in st.session_state:
+	st.session_state[ 'text_parallel_calls' ] = False
 
 if 'text_background' not in st.session_state:
 	st.session_state[ 'text_background' ] = False
@@ -396,11 +390,8 @@ if 'text_reasoning' not in st.session_state:
 if 'text_input' not in st.session_state:
 	st.session_state[ 'text_input' ] = ''
 
-if 'text_stops' not in st.session_state:
-	st.session_state[ 'text_stops' ] = [ ]
-
-if 'text_modalities' not in st.session_state:
-	st.session_state[ 'text_modalities' ] = [ ]
+if 'text_previous_response_id' not in st.session_state:
+	st.session_state[ 'text_previous_response_id' ] = ''
 
 if 'text_include' not in st.session_state:
 	st.session_state[ 'text_include' ] = [ ]
@@ -416,6 +407,9 @@ if 'text_context' not in st.session_state:
 
 if 'text_content' not in st.session_state:
 	st.session_state[ 'text_content' ] = [ ]
+	
+if 'text_messages' not in st.session_state:
+	st.session_state.text_messages = [ ]
 
 # --------IMAGE-GENERATION PARAMETERS--------------------
 
@@ -470,6 +464,9 @@ if 'image_mime_type' not in st.session_state:
 if 'image_response_format' not in st.session_state:
 	st.session_state[ 'image_response_format' ] = ''
 
+if 'image_previous_response_id' not in st.session_state:
+	st.session_state[ 'image_previous_response_id' ] = ''
+
 if 'image_input' not in st.session_state:
 	st.session_state[ 'image_input' ] = List[ str ]
 
@@ -481,6 +478,9 @@ if 'image_tools' not in st.session_state:
 
 if 'image_modalities' not in st.session_state:
 	st.session_state[ 'image_modalities' ] = [ ]
+
+if 'image_messages' not in st.session_state:
+	st.session_state[ 'image_messages' ] = [ ]
 
 if 'image_context' not in st.session_state:
 	st.session_state[ 'image_context' ]: List[ Dict[ str, Any ] ] = [ ]
@@ -1562,7 +1562,7 @@ def route_document_query( prompt: str ) -> str:
 	if not user_input:
 		user_input = prompt
 		
-	return str( user_iput or '' ).strip( )
+	return str( user_input or '' ).strip( )
 
 def summarize_active_document( ) -> str:
 	"""
@@ -3041,7 +3041,7 @@ def fetch_prompt_by_name( name: str ) -> Dict[ str, Any ] | None:
 
 def insert_prompt( data: Dict[ str, Any ] ) -> None:
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		conn.execute( 'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?)',
+		conn.execute( 'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?, ?)',
 			(data[ 'Caption' ], data[ 'Name' ], data[ 'Text' ], data[ 'Version' ], data[ 'ID' ]) )
 
 def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
@@ -3281,30 +3281,22 @@ if mode == 'Text':
 	text_tool_choice = st.session_state.get( 'text_tool_choice', '' )
 	text_content = st.session_state.get( 'text_content', '' )
 	text_input = st.session_state.get( 'text_input', '' )
-	text_number = st.session_state.get( 'text_number', 0 )
+	text_previous_response_id = st.session_state.get( 'text_previous_response_id', '' )
 	text_max_calls = st.session_state.get( 'text_max_calls', 0 )
-	text_max_searches = st.session_state.get( 'text_max_searches', 0 )
 	text_max_tokens = st.session_state.get( 'text_max_tokens', 0 )
 	text_top_percent = st.session_state.get( 'text_top_percent', 0.0 )
-	text_freq = st.session_state.get( 'text_frequency_penalty', 0.0 )
-	text_presence = st.session_state.get( 'text_presence_penalty', 0.0 )
+	text_frequency_penalty = st.session_state.get( 'text_frequency_penalty', 0.0 )
+	text_presence_penalty = st.session_state.get( 'text_presence_penalty', 0.0 )
 	text_temperature = st.session_state.get( 'text_temperature', 0.0 )
 	text_stream = st.session_state.get( 'text_stream', False )
-	text_parallel_tools = st.session_state.get( 'text_parallel_tools', False )
+	text_parallel_calls = st.session_state.get( 'text_parallel_calls', False )
 	text_store = st.session_state.get( 'text_store', False )
 	text_background = st.session_state.get( 'text_background', False )
 	text_tools = st.session_state.get( 'text_tools', [ ] )
-	text_modalities = st.session_state.get( 'text_modalities', [ ] )
 	text_context = st.session_state.get( 'text_context', [ ] )
 	text_include = st.session_state.get( 'text_include', [ ] )
 	text_domains = st.session_state.get( 'text_domains', [ ] )
-	text_stops = st.session_state.get( 'text_stops', [ ] )
 	text = Chat( )
-	
-	for key in [ 'text_domains', 'text_stops', 'text_includes',
-	             'text_input', 'text_modalities', 'text_tools' ]:
-		if key in st.session_state and isinstance( key, list ):
-			del st.session_state[ key ]
 	
 	# ------------------------------------------------------------------
 	# Main Chat UI
@@ -3441,24 +3433,25 @@ if mode == 'Text':
 					# ---------- Reset Tools ------------
 					if st.button( label='Reset', key='reset_text_tools', width='stretch' ):
 						for key in [ 'text_max_calls', 'text_tool_choice', 'text_include',
-						             'text_tools', 'text_domains', 'text_background', ]:
+						             'text_tools', 'text_domains', 'text_parallel_calls' ]:
 							if key in st.session_state:
 								del st.session_state[ key ]
 						
 						st.rerun( )
-			
+						
 			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
 				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6, resp_c7 = st.columns(
 					[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ], border=True, gap='xxsmall' )
 				
-				# ---------- Number ------------
+				# ---------- Input Mode ------------
 				with resp_c1:
-					set_text_number = st.slider( label='Number', min_value=0, max_value=50,
-						value=int( st.session_state.get( 'text_number', 0 ) ), step=1,
-						help='Optional. Upper limit on the responses returned by the model',
-						key='text_number' )
+					input_mode_options = [ '', 'conversation', 'single_turn' ]
+					set_text_input = st.selectbox( label='Input Mode', options=input_mode_options,
+						key='text_input', help=('Optional. Controls whether prior chat messages are '
+						                        'sent back to the Responses API as context.'),
+						placeholder='Options' )
 					
-					text_number = st.session_state[ 'text_number' ]
+					text_input = st.session_state.get( 'text_input', '' )
 				
 				# ---------- Max Tokens ------------
 				with resp_c2:
@@ -3468,28 +3461,27 @@ if mode == 'Text':
 					
 					text_tokens = st.session_state[ 'text_max_tokens' ]
 				
-				# ---------- Modalities------------
+				# ---------- Response Format ------------
 				with resp_c3:
-					modality_options = list( text.modality_options )
-					set_text_modalities = st.multiselect( label='Response Modalities', options=modality_options,
-						key='text_modalities', help='Optional. Modality of the response',
+					format_options = [ '', 'text' ]
+					set_text_response_format = st.selectbox( label='Response Format',
+						options=format_options, key='text_response_format',
+						help=('Optional. Responses API text.format setting. '
+						      'Use "text" for plain text responses.'),
 						placeholder='Options' )
 					
-					text_modalities = [ d.strip( ) for d in set_text_modalities
-					                    if d.strip( ) ]
-					
-					text_modalities = st.session_state[ 'text_modalities' ]
+					text_response_format = st.session_state.get( 'text_response_format', '' )
 				
-				# ---------- Stops ------------
+				# ---------- Previous Response ID ------------
 				with resp_c4:
-					set_text_stops = st.text_input( label='Stop Sequences', key='text_stops_input',
-						value=','.join( st.session_state.get( 'text_stops', [ ] ) ),
-						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
+					set_text_previous_id = st.text_input( label='Previous Response ID',
+						key='text_previous_response_id',
+						value=st.session_state.get( 'text_previous_response_id', '' ),
+						help=('Optional. Responses API conversation-state identifier. '
+						      'Leave blank to start a new chain.'),
+						width='stretch', placeholder='Enter Previous Response ID' )
 					
-					text_stops = [ d.strip( ) for d in set_text_stops.split( ',' )
-					               if d.strip( ) ]
-					
-					st.session_state[ 'text_stops' ] = text_stops
+					text_previous_response_id = st.session_state.get( 'text_previous_response_id', '' )
 				
 				# ---------- Store ------------
 				with resp_c5:
@@ -3511,11 +3503,11 @@ if mode == 'Text':
 					
 					text_background = st.session_state[ 'text_background' ]
 				
-				# ---------- Reset Reponse ------------
+				# ---------- Reset Response ------------
 				if st.button( label='Reset', key='reset_text_response', width='stretch' ):
-					for key in [ 'text_stream', 'text_store', 'text_number', 'text_stops',
-					             'text_tools', 'text_max_tokens', 'text_modalities',
-					             'text_parallel_calls' ]:
+					for key in [ 'text_stream', 'text_store', 'text_max_tokens',
+					             'text_background', 'text_response_format',
+					             'text_input', 'text_previous_response_id' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
@@ -3529,13 +3521,8 @@ if mode == 'Text':
 				prompt_names = [ '' ]
 			
 			with in_left:
-				st.text_area(
-					label='Enter Text',
-					height=50,
-					width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS,
-					key='text_system_instructions'
-				)
+				st.text_area( label='Enter Text', height=50, width='stretch',
+					help=cfg.SYSTEM_INSTRUCTIONS, key='text_system_instructions' )
 			
 			def _on_template_change( ) -> None:
 				name = st.session_state.get( 'instructions' )
@@ -3545,13 +3532,8 @@ if mode == 'Text':
 						st.session_state[ 'text_system_instructions' ] = text
 			
 			with in_right:
-				st.selectbox(
-					label='Use Template',
-					options=prompt_names,
-					index=None,
-					key='instructions',
-					on_change=_on_template_change
-				)
+				st.selectbox( label='Use Template', options=prompt_names, index=None,
+					key='instructions', on_change=_on_template_change )
 			
 			def _on_clear( ) -> None:
 				st.session_state[ 'text_system_instructions' ] = ''
@@ -3576,79 +3558,162 @@ if mode == 'Text':
 			
 			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
 			with btn_c1:
-				st.button(
-					label='Clear Instructions',
-					width='stretch',
-					on_click=_on_clear
-				)
+				st.button( label='Clear Instructions', width='stretch',
+					on_click=_on_clear )
 			
 			with btn_c2:
-				st.button(
-					label='XML <-> Markdown',
-					width='stretch',
-					on_click=_on_convert_system_instructions
-				)
+				st.button( label='XML <-> Markdown', width='stretch',
+					on_click=_on_convert_system_instructions )
 	
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ---------------------------------------------------
 		#                   MESSAGES
 		# ---------------------------------------------------
-		if st.session_state[ 'text_input' ] is not None:
-			for msg in st.session_state.text_input:
-				with st.chat_message( msg[ 'role' ], avatar='' ):
-					st.markdown( msg[ 'content' ] )
+		if st.session_state.get( 'text_messages' ) is not None:
+			for msg in st.session_state.text_messages:
+				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
+				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
+					st.markdown( msg.get( 'content', '' ) )
 		
 		prompt = st.chat_input( 'Gipity Generate …' )
-		if prompt is not None:
-			st.session_state.text_messages.append( { 'role': 'user', 'content': prompt } )
+		if prompt is not None and str( prompt ).strip( ):
+			prompt = str( prompt ).strip( )
+			st.session_state.text_messages.append(
+			{
+				'role': 'user',
+				'content': prompt,
+			} )
+			
 			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
-				text_kwargs = { }
-				
 				with st.spinner( 'Thinking…' ):
-					text_kwargs[ 'model' ] = st.session_state[ 'text_model' ]
-					text_kwargs[ 'top_percent' ] = st.session_state[ 'text_top_percent' ]
-					text_kwargs[ 'background' ] = st.session_state[ 'text_background' ]
-					text_kwargs[ 'max_tokens' ] = st.session_state[ 'text_max_tokens' ]
-					text_kwargs[ 'frequency' ] = st.session_state[ 'text_frequency_penalty' ]
-					text_kwargs[ 'presence' ] = st.session_state[ 'text_presence_penalty' ]
-					
-					if st.session_state[ 'text_stops' ]:
-						text_kwargs[ 'stops' ] = st.session_state[ 'text_stops' ]
-					
-					response = None
+					response_text = None
+					response_obj = None
 					
 					try:
-						mdl = str( text_kwargs[ 'text_model' ] )
-						if mdl.startswith( 'gpt-5' ):
-							response = text.generate_text( prompt=prompt, model=text_kwargs[ 'text_model' ] )
-						else:
-							response = text.generate_text( )
+						text_tools = [ ]
+						for name in st.session_state.get( 'text_tools', [ ] ):
+							if not isinstance( name, str ) or not name.strip( ):
+								continue
+							
+							text_tools.append( { 'type': name.strip( ) } )
+						
+						text_context = [ ]
+						if st.session_state.get( 'text_input' ) != 'single_turn':
+							for item in st.session_state.get( 'text_messages', [ ] )[ :-1 ]:
+								if not isinstance( item, dict ):
+									continue
+								
+								role = str( item.get( 'role', '' ) ).strip( )
+								content = item.get( 'content', '' )
+								if role not in [ 'user', 'assistant', 'system', 'developer' ]:
+									continue
+								
+								if not isinstance( content, str ) or not content.strip( ):
+									continue
+								
+								text_context.append(
+								{
+									'role': role,
+									'content': content.strip( ),
+								} )
+						
+						st.session_state[ 'text_context' ] = text_context
+						
+						text_format = None
+						if st.session_state.get( 'text_response_format' ) == 'text':
+							text_format = \
+							{
+								'format': { 'type': 'text' }
+							}
+						
+						text_previous_id = st.session_state.get( 'text_previous_response_id' )
+						if not isinstance( text_previous_id, str ) or not text_previous_id.strip( ):
+							text_previous_id = None
+						
+						if st.session_state.get( 'text_input' ) == 'single_turn':
+							text_previous_id = None
+						
+						response_text = text.generate_text( prompt=prompt,
+							model=st.session_state.get( 'text_model' ),
+							temperature=st.session_state.get( 'text_temperature' ),
+							format=text_format,
+							top_p=st.session_state.get( 'text_top_percent' ),
+							frequency=st.session_state.get( 'text_frequency_penalty' ),
+							presence=st.session_state.get( 'text_presence_penalty' ),
+							max_tools=st.session_state.get( 'text_max_calls' ),
+							max_tokens=st.session_state.get( 'text_max_tokens' ),
+							store=st.session_state.get( 'text_store' ),
+							stream=st.session_state.get( 'text_stream' ),
+							instruct=st.session_state.get( 'text_system_instructions' ),
+							background=st.session_state.get( 'text_background' ),
+							reasoning=st.session_state.get( 'text_reasoning' ),
+							include=st.session_state.get( 'text_include', [ ] ),
+							tools=text_tools,
+							allowed_domains=st.session_state.get( 'text_domains', [ ] ),
+							previous_id=text_previous_id,
+							tool_choice=st.session_state.get( 'text_tool_choice' ),
+							is_parallel=st.session_state.get( 'text_parallel_calls' ),
+							context=text_context )
+						response_obj = getattr( text, 'response', None )
+						st.session_state[ 'text_previous_response_id' ] = (
+								getattr( text, 'previous_id', None ) or '')
+					
 					except Exception as exc:
 						err = Error( exc )
 						st.error( f'Generation Failed: {err.info}' )
-						response = None
+						response_text = None
+						response_obj = getattr( text, 'response', None )
 					
-					if response is not None and str( response ).strip( ):
-						st.markdown( response )
-						st.session_state.text_messages.append( { 'role': 'assistant',
-						                                         'content': response } )
+					if response_text is not None and str( response_text ).strip( ):
+						st.markdown( response_text )
+						st.session_state.text_messages.append(
+							{
+									'role': 'assistant',
+									'content': str( response_text ).strip( ),
+							} )
+						
+						st.session_state[ 'text_context' ] = [ ]
+						for item in st.session_state.get( 'text_messages', [ ] ):
+							if not isinstance( item, dict ):
+								continue
+							
+							role = str( item.get( 'role', '' ) ).strip( )
+							content = item.get( 'content', '' )
+							if role not in [ 'user', 'assistant', 'system', 'developer' ]:
+								continue
+							
+							if not isinstance( content, str ) or not content.strip( ):
+								continue
+							
+							st.session_state[ 'text_context' ].append(
+								{
+										'role': role,
+										'content': content.strip( ),
+								} )
+						
+						st.session_state.last_answer = str( response_text ).strip( )
+						st.session_state.last_sources = extract_sources( response_obj )
 					else:
 						st.error( 'Generation Failed!.' )
-						try:
-							update_token_counters( getattr( text, 'response', None ) or response )
-						except Exception:
-							pass
-			
+					
+					try:
+						update_token_counters( response_obj )
+					except Exception:
+						pass
+		
 		# --------  Reset Button
 		if st.button( 'Clear Messages' ):
-			reset_state( )
+			st.session_state.text_messages = [ ]
+			st.session_state[ 'text_previous_response_id' ] = ''
+			st.session_state.last_answer = ''
+			st.session_state.last_sources = [ ]
 			st.rerun( )
 
 # ======================================================================================
 # IMAGES MODE
 # ======================================================================================
-elif mode == "Images":
+elif mode == 'Images':
 	st.subheader( '📷 Images API', help=cfg.IMAGES_API )
 	st.divider( )
 	image_model = st.session_state.get( 'image_model', '' )
@@ -3950,7 +4015,7 @@ elif mode == "Images":
 				with img_c5:
 					quality_options = list( image.quality_options )
 					set_image_quality = st.selectbox( label='Image Quality',
-						options=size_options, help='Optional. Image Quality',
+						options=quality_options, help='Optional. Image Quality',
 						key='image_quality', placeholder='Options', index=None )
 					
 					image_quality = st.session_state[ 'image_quality' ]
@@ -4017,34 +4082,39 @@ elif mode == "Images":
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
 					on_click=_on_convert_system_instructions )
-		
 		# ------------------------------------------------------------------
 		# Tab Section
 		# ------------------------------------------------------------------
 		tab_gen, tab_analyze, tab_edit = st.tabs( [ 'Generate', 'Analyze', 'Edit' ] )
 		with tab_gen:
-			prompt = st.chat_input( 'Prompt', key='image_generate_message' )
+			prompt = st.chat_input( 'Enter image generation prompt...', key='image_generate_message' )
 			gen_c1, gen_c2 = st.columns( [ 0.5, 0.5 ] )
 			with gen_c1:
 				if st.button( 'Generate Image' ):
 					with st.spinner( 'Generating…' ):
 						try:
-							kwargs = { 'prompt': prompt, 'model': image_model, }
-							if image_size:
-								kwargs[ 'size' ] = st.session_state[ 'image_size' ]
-							if image_quality:
-								kwargs[ 'quality' ] = st.session_state[ 'image_quality' ]
-							if image_output:
-								kwargs[ 'fmt' ] = st.session_state[ 'image_output' ]
-							
-							img_url = image.generate( **kwargs )
-							st.image( img_url )
-							
-							try:
-								update_token_counters( getattr( image, 'response', None ) )
-							except Exception:
-								pass
-						
+							if not isinstance( prompt, str ) or not prompt.strip( ):
+								st.warning( 'Enter a prompt before generating an image.' )
+							else:
+								image_result = image.generate(
+									prompt=prompt,
+									number=(st.session_state.get( 'image_number', 0 ) or 1),
+									model=image_model,
+									size=st.session_state.get( 'image_size' ) or '1024x1024',
+									quality=st.session_state.get( 'image_quality' ) or 'auto',
+									fmt=st.session_state.get( 'image_output' ) or '.jpeg',
+									compression=st.session_state.get( 'image_compression' ),
+									background=st.session_state.get( 'image_backcolor' ) or None )
+								
+								if image_result is None:
+									st.warning( 'No image output was returned.' )
+								else:
+									st.image( image_result )
+								
+								try:
+									update_token_counters( getattr( image, 'response', None ) )
+								except Exception:
+									pass
 						except Exception as exc:
 							st.error( f'Image generation failed: {exc}' )
 			
@@ -4052,171 +4122,106 @@ elif mode == "Images":
 				if st.button( 'Clear Messages', key='clear_image_generation' ):
 					reset_state( )
 					st.rerun( )
-				
+		
 		with tab_analyze:
 			uploaded_img = st.file_uploader(
 				'Upload an image for analysis',
 				type=[ 'png', 'jpg', 'jpeg', 'webp' ],
 				accept_multiple_files=False,
 				key='images_analyze_uploader', )
+			
+			tmp_path = None
 			if uploaded_img:
 				tmp_path = save_temp( uploaded_img )
 				st.image( uploaded_img, caption='Uploaded image preview', use_column_width=True, )
-				
-				# Discover available analysis methods on Image object
-				available_methods = [ ]
-				for candidate in ('analyze', 'describe_image', 'describe', 'classify',
-				                  'detect_objects', 'caption', 'image_analysis',):
-					if hasattr( image, candidate ):
-						available_methods.append( candidate )
-				
-				if available_methods:
-					chosen_method = st.selectbox( 'Method', available_methods, index=0, )
-				else:
-					chosen_method = None
-					st.info( 'No dedicated image analysis method found on Image object; '
-					         'attempting generic handlers.' )
-				
-				chosen_model = st.selectbox( 'Model (analysis)', [ image_model, None ], index=0, )
-				
-				chosen_model_arg = (image_model if chosen_model is None else chosen_model)
-		
+			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 			
 			# ---------------------------------------------------
 			#                   MESSAGES
 			# ---------------------------------------------------
-			prompt = st.chat_input( 'Prompt', key='image_analysis_message' )
+			prompt = st.chat_input( 'Enter image analysis prompt...', key='image_analysis_message' )
 			ana_c1, ana_c2 = st.columns( [ 0.5, 0.5 ] )
 			with ana_c1:
 				if st.button( 'Analyze Image' ):
 					with st.spinner( 'Analyzing image…' ):
-						analysis_result = None
 						try:
-							if chosen_method:
-								func = getattr( image, chosen_method, None )
-								if func:
-									try:
-										analysis_result = func( tmp_path )
-									except TypeError:
-										analysis_result = func(
-											tmp_path, model=chosen_model_arg
-										)
+							if not tmp_path:
+								st.warning( 'Upload an image before running analysis.' )
+							elif not isinstance( prompt, str ) or not prompt.strip( ):
+								st.warning( 'Enter a prompt before analyzing an image.' )
 							else:
-								for fallback in ('analyze', 'describe_image', 'describe',
-								                 'caption'):
-									if hasattr( image, fallback ):
-										func = getattr( image, fallback )
-										try:
-											analysis_result = func( tmp_path )
-											break
-										except Exception:
-											continue
-							
-							if analysis_result is None:
-								st.warning(
-									'No analysis output returned by the available methods.'
-								)
-							else:
-								if isinstance( analysis_result, (dict, list) ):
-									st.json( analysis_result )
+								analysis_result = image.analyze(
+									text=prompt,
+									path=tmp_path,
+									instruct=st.session_state.get( 'image_system_instructions', '' ),
+									model=image_model or 'gpt-4o-mini' )
+								
+								if analysis_result is None:
+									st.warning( 'No analysis output was returned.' )
 								else:
 									st.markdown( '**Analysis result:**' )
 									st.write( analysis_result )
 								
 								try:
-									update_token_counters(
-										getattr( image, 'response', None )
-										or analysis_result
-									)
+									update_token_counters( getattr( image, 'response', None ) )
 								except Exception:
 									pass
-						
 						except Exception as exc:
 							st.error( f'Analysis Failed: {exc}' )
-	
+			
 			with ana_c2:
 				if st.button( 'Clear Messages', key='clear_analysis_message' ):
 					reset_state( )
 					st.rerun( )
-
+		
 		with tab_edit:
 			uploaded_img = st.file_uploader( 'Upload Image for Edit',
 				type=[ 'png', 'jpg', 'jpeg', 'webp' ], accept_multiple_files=False,
 				key='images_edit_uploader', )
+			
+			tmp_path = None
 			if uploaded_img:
 				tmp_path = save_temp( uploaded_img )
 				st.image( uploaded_img, caption='Uploaded image preview', use_column_width=True, )
-				available_methods = [ ]
-				for candidate in ('edit', 'describe_image', 'describe', 'classify',
-				                  'detect_objects', 'caption', 'image_edit',):
-					if hasattr( image, candidate ):
-						available_methods.append( candidate )
-				
-				if available_methods:
-					chosen_method = st.selectbox( 'Method', available_methods, index=0, )
-				else:
-					chosen_method = None
-					st.info( 'No dedicated image editing method found on Image object;'
-					         'attempting generic handlers.' )
-				
-				chosen_model = st.selectbox( 'Model (edit)', [ image_model, None ], index=0, )
-				chosen_model_arg = (image_model if chosen_model is None else chosen_model)
 			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 			
 			# ---------------------------------------------------
 			#                   MESSAGES
 			# ---------------------------------------------------
-			prompt = st.chat_input( 'Prompt', key='image_edit_messgae' )
+			prompt = st.chat_input( 'Enter image editing prompt...', key='image_edit_messgae' )
 			edit_c1, edit_c2 = st.columns( [ 0.5, 0.5 ] )
 			with edit_c1:
 				if st.button( 'Edit Image', key='edit_image' ):
 					with st.spinner( 'Editing image…' ):
-						analysis_result = None
 						try:
-							if chosen_method:
-								func = getattr( image, chosen_method, None )
-								if func:
-									try:
-										analysis_result = func( tmp_path )
-									except TypeError:
-										analysis_result = func(
-											tmp_path, model=chosen_model_arg
-										)
+							if not tmp_path:
+								st.warning( 'Upload an image before editing.' )
+							elif not isinstance( prompt, str ) or not prompt.strip( ):
+								st.warning( 'Enter a prompt before editing an image.' )
 							else:
-								for fallback in ('analyze', 'describe_image',
-								                 'describe', 'caption',):
-									if hasattr( image, fallback ):
-										func = getattr( image, fallback )
-										try:
-											analysis_result = func( tmp_path )
-											break
-										except Exception:
-											continue
-							
-							if analysis_result is None:
-								st.warning( 'No editing output returned by the available methods.' )
-							else:
-								if isinstance( analysis_result, (dict, list) ):
-									st.json( analysis_result )
+								edit_result = image.edit( prompt=prompt, path=tmp_path,
+									model=image_model,
+									size=st.session_state.get( 'image_size' ) or '1024x1024',
+									quality=st.session_state.get( 'image_quality' ) or 'auto',
+									fmt=st.session_state.get( 'image_output' ) or '.jpeg',
+									compression=st.session_state.get( 'image_compression' ) )
+								
+								if edit_result is None:
+									st.warning( 'No edited image output was returned.' )
 								else:
-									st.markdown( '**Analysis result:**' )
-									st.write( analysis_result )
+									st.image( edit_result )
 								
 								try:
-									update_token_counters(
-										getattr( image, 'response', None )
-										or analysis_result
-									)
+									update_token_counters( getattr( image, 'response', None ) )
 								except Exception:
 									pass
-						
 						except Exception as exc:
-							st.error( f"Analysis Failed: {exc}" )
-		
+							st.error( f'Edit Failed: {exc}' )
+			
 			with edit_c2:
-				if st.button( 'Clear Messages' ):
+				if st.button( 'Clear Messages', key='clear_edit_message' ):
 					reset_state( )
 					st.rerun( )
 
@@ -6494,14 +6499,14 @@ if active_model is not None:
 
 # ---- Rendered Variables
 if mode == 'Text':
+	number = st.session_state.get( 'text_number' )
 	temperature = st.session_state.get( 'text_temperature' )
 	top_p = st.session_state.get( 'text_top_percent' )
 	freq = st.session_state.get( 'text_frequency_penalty' )
 	presence = st.session_state.get( 'text_presence_penalty' )
-	number = st.session_state.get( 'text_number' )
 	stream = st.session_state.get( 'text_stream' )
-	parallel_tools = st.session_state.get( 'text_parallel_tools' )
-	max_calls = st.session_state.get( 'text_max_tools' )
+	parallel_tools = st.session_state.get( 'text_parallel_calls' )
+	max_calls = st.session_state.get( 'text_max_calls' )
 	store = st.session_state.get( 'text_store' )
 	tools = st.session_state.get( 'text_tools' )
 	include = st.session_state.get( 'text_include' )
