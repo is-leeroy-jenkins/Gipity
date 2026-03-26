@@ -3219,7 +3219,14 @@ init_state( )
 with st.sidebar:
 	style_subheaders( )
 	st.logo( cfg.LOGO_PATH, size='large' )
+	
 	st.divider( )
+	
+	st.text( 'Select Mode' )
+	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0, label_visibility='collapsed' )
+	
+	st.divider( )
+	
 	st.text( 'API Settings' )
 	
 	# -----API KEY Expander------------------------------
@@ -3239,7 +3246,7 @@ with st.sidebar:
 		if google_key:
 			st.session_state.google_api_key = google_key
 			os.environ[ 'GOOGLE_API_KEY' ] = google_key
-	
+		
 		googlemaps_key = st.text_input( 'Google Maps API Key', type='password',
 			value=st.session_state.googlemaps_api_key or '',
 			help='Overrides GOOGLEMAPS_API_KEY from config.py for this session only.' )
@@ -3263,11 +3270,6 @@ with st.sidebar:
 		if google_cse_id:
 			st.session_state.google_cse_id = google_cse_id
 			os.environ[ 'GOOGLE_CSE_ID' ] = google_cse_id
-	
-	st.divider( )
-	
-	st.text( 'Select Mode' )
-	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0, label_visibility='collapsed' )
 
 # ======================================================================================
 # TEXT MODE
@@ -4082,6 +4084,7 @@ elif mode == 'Images':
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
 					on_click=_on_convert_system_instructions )
+		
 		# ------------------------------------------------------------------
 		# Tab Section
 		# ------------------------------------------------------------------
