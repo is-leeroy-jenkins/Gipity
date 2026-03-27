@@ -4,4 +4,7 @@
     <option name="sdkName" value="python  ( gipity )" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="python  ( gipity )" project-jdk-type="Python SDK" />
+  <component name="PythonCompatibilityInspectionAdvertiser">
+    <option name="version" value="3" />
+  </component>
 </project>

@@ -53,6 +53,7 @@ import base64
 from openai.types import CreateEmbeddingResponse, VectorStore, FileObject
 from boogr import Error
 import config as cfg
+import tempfile
 
 def throw_if( name: str, value: object ):
 	if value is None:
@@ -1325,7 +1326,7 @@ class Images( GPT ):
 				'analyze',
 				'edit', ]
 
-class TTS(  ):
+class TTS( ):
 	"""
 	
 	    Purpose
@@ -1335,29 +1336,32 @@ class TTS(  ):
 	
 	    Parameters
 	    ------------
-	    num: int=1
-	    temp: float=0.8
-	    top: float=0.9
-	    freq: float=0.0
-	    pres: float=0.0
-	    max: int=10000
-	    store: bool=True
-	    stream: bool=True
+	    input: str=None
+	    model: str='gpt-4o-mini-tts'
+	    format: str=None
+	    instruct: str=None
+	    voice: str=None
+	    speed: float=None
+	    file_path: str=None
+	
 	
 	    Attributes
 	    -----------
-	    self.api_key, self.system_instructions, self.client, self.small_model, self.reasoning_effort,
-	    self.response, self.num, self.temperature, self.top_percent,
-	    self.frequency_penalty, self.presence_penalty, self.max_completion_tokens,
-	    self.store, self.stream, self.modalities, self.stops, self.content,
-	    self.input_text, self.response, self.completion, self.file, self.path,
-	    self.messages, self.image_url, self.response_format,
-	    self.tools, self.vector_store_ids, self.descriptions, self.assistants
+	    self.api_key
+	    self.client
+	    self.speed
+	    self.voice
+	    self.input
+	    self.instructions
+	    self.response
+	    self.response_format
+	    self.file_path
+	    self.model
+	
 	
 	    Methods
 	    ------------
-	    get_model_options( self ) -> str
-	    create_small_embedding( self, prompt: str, path: str )
+	    create_speech( self, text: str ) -> bytes | None
 
     """
 	api_key: Optional[ str ]
@@ -1366,19 +1370,18 @@ class TTS(  ):
 	voice: Optional[ str ]
 	input: Optional[ str ]
 	instructions: Optional[ str ]
-	response: Optional[ Response ]
-	streamed_response: Optional[ Response ]
-	tools: Optional[ List[ Dict[ str, str ] ] ]
+	response: Optional[ Any ]
 	response_format: Optional[ str ]
 	file_path: Optional[ str ]
+	model: Optional[ str ]
 	
-	def __init__( self, input: str=None, model: str='gpt-4o-mini-tts',  format: str=None,
-			instruct: str=None, voice: str=None, speed: float=None, file_path: str=None  ):
+	def __init__( self, input: str = None, model: str = 'gpt-4o-mini-tts', format: str = None,
+			instruct: str = None, voice: str = None, speed: float = None, file_path: str = None ):
 		'''
 
 	        Purpose:
 	        --------
-	        Constructor to  create_small_embedding TTS objects
+	        Constructor to create TTS objects
 
         '''
 		self.api_key = cfg.OPENAI_API_KEY
@@ -1390,6 +1393,7 @@ class TTS(  ):
 		self.voice = voice
 		self.file_path = file_path
 		self.speed = speed
+		self.response = None
 	
 	@property
 	def model_options( self ) -> List[ str ] | None:
@@ -1397,10 +1401,11 @@ class TTS(  ):
 	
 	        Purpose:
 	        --------
-	        Methods that returns a list of tts model names
+	        Method that returns a list of TTS model names
 
         '''
 		return [ 'gpt-4o-mini-tts',
+		         'gpt-4o-mini-tts-2025-12-15',
 		         'tts-1',
 		         'tts-1-hd' ]
 	
@@ -1410,7 +1415,7 @@ class TTS(  ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of image formats
+	        Method that returns a list of audio output formats
 
         '''
 		return [ 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
@@ -1425,24 +1430,18 @@ class TTS(  ):
 
         '''
 		return [ 'alloy',
-		         'verse',
+		         'ash',
 		         'ballad',
-		         'aria',
-		         'sol',
-		         'luna',
+		         'coral',
+		         'echo',
+		         'fable',
 		         'nova',
-		         'sage', ]
-	
-	@property
-	def mime_options( self ) -> List[ str ] | None:
-		'''
-
-	        Purpose:
-	        --------
-	        Method that returns a list of image formats
-
-        '''
-		return [ 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
+		         'onyx',
+		         'sage',
+		         'shimmer',
+		         'verse',
+		         'marin',
+		         'cedar' ]
 	
 	@property
 	def speed_options( self ) -> List[ float ] | None:
@@ -1454,146 +1453,85 @@ class TTS(  ):
 	        representing different audio speeds
 
         '''
-		return [ 0.25, 1.0, 4.0 ]
+		return [ 0.25, 0.50, 0.75, 1.0, 1.25, 1.50, 2.0, 3.0, 4.0 ]
 	
-	@property
-	def include_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of the includeable options
-
-		'''
-		return [ 'file_search_call.results',
-		         'web_search_call.results',
-		         'web_search_call.action.sources',
-		         'message.input_image.image_url',
-		         'computer_call_output.output.image_url',
-		         'code_interpreter_call.outputs',
-		         'reasoning.encrypted_content',
-		         'message.output_text.logprobs' ]
-	
-	@property
-	def tool_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of available tools options
-
-		'''
-		return [ 'web_search',
-		         'image_generation',
-		         'file_search',
-		         'code_interpreter',
-		         'computer_use_preview' ]
-	
-	@property
-	def choice_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of available tools options
-
-		'''
-		return [ 'auto', 'required', 'none' ]
-	
-	@property
-	def purpose_options( self ) -> List[ str ] | None:
-		'''
-		
-			Returns:
-			--------
-			A List[ str ] of file purposes
-
-		'''
-		return [ 'assistants',
-		         'batch',
-		         'fine-tune',
-		         'vision',
-		         'user_data',
-		         'evals' ]
-	
-	@property
-	def format_options( self ) -> List[ str ] | None:
-		'''
-		
-			Returns:
-			--------
-			A List[ str ] of file purposes
-
-		'''
-		return [ 'text', 'json_object', 'json_schema' ]
-	
-	@property
-	def reasoning_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of reasoning effort options
-
-		'''
-		return [ 'low',
-		         'medium',
-		         'high',
-		         'minimal',
-		         'xhigh' ]
-	
-	@property
-	def modality_options( self ) -> List[ str ] | None:
-		'''
-		
-			Returns:
-			--------
-			A List[ str ] of file purposes
-
-		'''
-		return [ 'auto', 'text', 'image', 'audio' ]
-	
-	def create_speech( self, text: str, file_path: str, model: str='gpt-4o-tts', format: str=None,
-			speed: float=None, voice: str=None, ):
+	def create_speech( self, text: str, model: str = 'gpt-4o-mini-tts', format: str = 'mp3',
+			speed: float = 1.0, voice: str = 'alloy', instruct: str = None,
+			file_path: str = None ) -> bytes | None:
 		"""
 	
 	        Purpose
 	        _______
-	        Generates audio given a text prompt less than
-	        4096 characters and a path to audio file
+	        Generates audio from input text and returns
+	        the audio bytes. Optionally writes them to a file.
 	
 	
 	        Parameters
 	        ----------
-	        prompt: str
-	        path: str
+	        text: str
+	        model: str='gpt-4o-mini-tts'
+	        format: str='mp3'
+	        speed: float=1.0
+	        voice: str='alloy'
+	        instruct: str=None
+	        file_path: str=None
 	
 	
 	        Returns
 	        -------
-	        str
+	        bytes | None
 
         """
 		try:
 			throw_if( 'text', text )
-			throw_if( 'file_pat', file_path )
-			
 			self.input = text
-			self.speed = speed
-			self.model = model
-			self.response_format = format
-			self.voice = voice
+			self.model = model or 'gpt-4o-mini-tts'
+			self.response_format = format or 'mp3'
+			self.voice = voice or 'alloy'
+			self.speed = speed if speed is not None else 1.0
+			self.instructions = instruct
 			self.file_path = file_path
 			self.client = OpenAI( api_key=self.api_key )
-			with self.client.audio.speech.with_streaming_response.create( model=self.model,
-					speed=self.speed, voice=self.voice, response_format=self.response_format,
-					input=self.input ) as response:
-				response.stream_to_file( self.file_path )
+			self.response = None
+			
+			with tempfile.NamedTemporaryFile( suffix=f'.{self.response_format}', delete=False ) as tmp:
+				temp_path = tmp.name
+			
+			try:
+				self.request = {
+						'model': self.model,
+						'voice': self.voice,
+						'input': self.input,
+						'response_format': self.response_format,
+						'speed': self.speed, }
+				
+				if self.instructions and self.model not in ('tts-1', 'tts-1-hd'):
+					self.request[ 'instructions' ] = self.instructions
+				
+				with self.client.audio.speech.with_streaming_response.create(
+						**self.request ) as response:
+					self.response = response
+					response.stream_to_file( temp_path )
+				
+				with open( temp_path, 'rb' ) as source:
+					self.audio_bytes = source.read( )
+				
+				if self.file_path:
+					with open( self.file_path, 'wb' ) as target:
+						target.write( self.audio_bytes )
+				
+				return self.audio_bytes
+			finally:
+				try:
+					if os.path.exists( temp_path ):
+						os.remove( temp_path )
+				except Exception:
+					pass
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'TTS'
-			exception.method = 'create_speech( self, prompt: str, path: str ) -> str'
+			exception.method = 'create_speech( self, text: str ) -> bytes | None'
 			raise exception
 	
 	def __dir__( self ) -> List[ str ] | None:
@@ -1612,61 +1550,80 @@ class TTS(  ):
 	        List[ str ] | None
 
         '''
-		return [ 'input', 'file_path', 'voice', 'client', 'response_formaat',
-		         'speed', 'model', 'instructions', 'create_speech' ]
+		return [ 'input',
+		         'file_path',
+		         'voice',
+		         'client',
+		         'response_format',
+		         'speed',
+		         'model',
+		         'instructions',
+		         'response',
+		         'create_speech' ]
 
 class Transcription( GPT ):
 	"""
 	
 	    Purpose
 	    ___________
-	    Class used for interacting with OpenAI's TTS API (whisper-1)
+	    Class used for interacting with OpenAI's transcription API
 	
 	
 	    Parameters
 	    ------------
-	    num: int=1
-	    temp: float=0.8
-	    top: float=0.9
-	    freq: float=0.0
-	    pres: float=0.0
-	    max: int=10000
-	    store: bool=True
-	    stream: bool=True
+	    model: str='gpt-4o-transcribe'
+	    temperature: float=None
+	    prompt: str=None
+	    number: int=None
+	    top_p: float=None
+	    frequency: float=None
+	    presence: float=None
+	    max_tokens: int=None
+	    stream: bool=None
+	    store: bool=None
+	    language: str=None
+	    instruct: str=None
+	    format: str=None
+	    background: bool=None
+	    messages: List[ Dict[ str, str ] ]=None
+	    stops: List[ str ]=None
+	
 	
 	    Attributes
 	    -----------
-	    self.api_key, self.system_instructions, self.client, self.small_model, self.reasoning_effort,
-	    self.response, self.num, self.temperature, self.top_percent,
-	    self.frequency_penalty, self.presence_penalty, self.max_completion_tokens,
-	    self.store, self.stream, self.modalities, self.stops, self.content,
-	    self.input_text, self.response, self.completion, self.audio_file, self.transcript
-	
-	
-	    Methods
-	    ------------
-	    get_model_options( self ) -> str
-	    create_small_embedding( self, path: str  ) -> str
-
+	    self.api_key
+	    self.prompt
+	    self.temperature
+	    self.top_percent
+	    self.frequency_penalty
+	    self.presence_penalty
+	    self.max_tokens
+	    self.stream
+	    self.response_format
+	    self.background
+	    self.message
+	    self.stops
+	    self.store
+	    self.language
+	    self.instructions
+	    self.model
+	    self.number
+	    self.input_text
+	    self.audio_file
+	    self.transcript
+	    self.response
 
     """
 	client: Optional[ OpenAI ]
-	speed: Optional[ float ]
-	voice: Optional[ str ]
 	language: Optional[ str ]
-	include: Optional[ List[ str ] ]
-	tool_choice: Optional[ str ]
-	input: Optional[ List[ Dict[ str, str ] ] ]
 	instructions: Optional[ str ]
-	tools: Optional[ List[ Dict[ str, str ] ] ]
-	reasoning: Optional[ Dict[ str, str ] ]
 	
-	def __init__( self, model: str='gpt-4o-transcribe', temperature: float=None, prompt: str=None,
-			number: int=None, top_p: float=None, frequency: float=None, presence: float=None,
-			max_tokens: int=None, stream: bool=None, store: bool=None, language: str=None,
-			instruct: str=None, format: str=None,  background: bool=None,
-			messages: List[ Dict[ str, str ] ]=None, stops: List[ str ]=None  ):
-		super( ).__init__(  )
+	def __init__( self, model: str = 'gpt-4o-transcribe', temperature: float = None, prompt: str = None,
+			number: int = None, top_p: float = None, frequency: float = None, presence: float = None,
+			max_tokens: int = None, stream: bool = None, store: bool = None, language: str = None,
+			instruct: str = None, format: str = None, background: bool = None,
+			messages: List[ Dict[ str, str ] ] = None, stops: List[ str ] = None ):
+		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.prompt = prompt
 		self.temperature = temperature
@@ -1675,7 +1632,7 @@ class Transcription( GPT ):
 		self.presence_penalty = presence
 		self.max_tokens = max_tokens
 		self.stream = stream
-		self.response_format = { 'text': format }
+		self.response_format = format
 		self.background = background
 		self.message = messages
 		self.stops = stops
@@ -1690,16 +1647,19 @@ class Transcription( GPT ):
 		self.response = None
 	
 	@property
-	def model_options( self ) -> str:
+	def model_options( self ) -> List[ str ] | None:
 		'''
 
 	        Purpose:
 	        --------
-	        Methods that returns a list of small_model names
+	        Method that returns a list of transcription model names
 
         '''
-		return [ 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'whisper-1',
-		         'gpt-4o-transcribe-diarize', 'gpt-4o-transcribe-diarize' ]
+		return [ 'gpt-4o-transcribe',
+		         'gpt-4o-mini-transcribe',
+		         'gpt-4o-mini-transcribe-2025-12-15',
+		         'whisper-1',
+		         'gpt-4o-transcribe-diarize' ]
 	
 	@property
 	def mime_options( self ) -> List[ str ] | None:
@@ -1707,130 +1667,152 @@ class Transcription( GPT ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of image formats
+	        Method that returns a list of supported input audio formats
 
         '''
-		return [ 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
+		return [ 'flac', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'wav', 'webm' ]
+		
+	@property
+	def language_options( self ) -> List[ str ] | None:
+		'''
+	
+	        Purpose:
+	        --------
+	        Method that returns a list of ISO-639-1 language codes
+	        supported for UI selection and API submission
+
+        '''
+		return [ 'en',
+		         'es',
+		         'fr',
+		         'de',
+		         'it',
+		         'pt',
+		         'ru',
+		         'uk',
+		         'el',
+		         'he',
+		         'ar',
+		         'hi',
+		         'zh',
+		         'ja',
+		         'ko',
+		         'vi',
+		         'th' ]
 	
 	@property
-	def include_options( self ) -> List[ str ] | None:
+	def language_labels( self ) -> Dict[ str, str ] | None:
 		'''
+	
+	        Purpose:
+	        --------
+	        Method that returns a mapping of ISO-639-1 language codes
+	        to human-readable labels for UI display
 
-			Returns:
-			--------
-			A List[ str ] of the includeable options
-
-		'''
-		return [ 'file_search_call.results',
-		         'web_search_call.results',
-		         'web_search_call.action.sources',
-		         'message.input_image.image_url',
-		         'computer_call_output.output.image_url',
-		         'code_interpreter_call.outputs',
-		         'reasoning.encrypted_content',
-		         'message.output_text.logprobs' ]
+        '''
+		return {
+				'en': 'English',
+				'es': 'Spanish',
+				'fr': 'French',
+				'de': 'German',
+				'it': 'Italian',
+				'pt': 'Portuguese',
+				'ru': 'Russian',
+				'uk': 'Ukrainian',
+				'el': 'Greek',
+				'he': 'Hebrew',
+				'ar': 'Arabic',
+				'hi': 'Hindi',
+				'zh': 'Chinese',
+				'ja': 'Japanese',
+				'ko': 'Korean',
+				'vi': 'Vietnamese',
+				'th': 'Thai', }
 	
 	@property
-	def tool_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of available tools options
-
-		'''
-		return [ 'web_search',
-		         'image_generation',
-		         'file_search',
-		         'code_interpreter',
-		         'computer_use_preview' ]
-	
-	@property
-	def choice_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of available tools options
-
-		'''
-		return [ 'auto', 'required', 'none' ]
-	
-	@property
-	def purpose_options( self ) -> List[ str ] | None:
+	def response_format_options( self ) -> Dict[ str, List[ str ] ]:
 		'''
 		
 			Returns:
 			--------
-			A List[ str ] of file purposes
+			Dict[ str, List[ str ] ]
 
 		'''
-		return [ 'assistants',
-		         'batch',
-		         'fine-tune',
-		         'vision',
-		         'user_data',
-		         'evals' ]
+		return {
+				'whisper-1': [ 'json', 'text', 'srt', 'verbose_json', 'vtt' ],
+				'gpt-4o-transcribe': [ 'json', 'text' ],
+				'gpt-4o-mini-transcribe': [ 'json', 'text' ],
+				'gpt-4o-mini-transcribe-2025-12-15': [ 'json', 'text' ],
+				'gpt-4o-transcribe-diarize': [ 'json', 'text', 'diarized_json' ], }
 	
-	@property
-	def format_options( self ) -> List[ str ] | None:
-		'''
-		
-			Returns:
-			--------
-			A List[ str ] of file purposes
-
-		'''
-		return [ 'text', 'json_object', 'json_schema' ]
-	
-	@property
-	def reasoning_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of reasoning effort options
-
-		'''
-		return [ 'low',
-		         'medium',
-		         'high',
-		         'minimal',
-		         'xhigh' ]
-	
-	@property
-	def modality_options( self ) -> List[ str ] | None:
-		'''
-		
-			Returns:
-			--------
-			A List[ str ] of file purposes
-
-		'''
-		return [ 'auto', 'text', 'image', 'audio' ]
-	
-	def transcribe( self, path: str, model: str='gpt-4o-transcribe', language: str=None, ) -> str:
+	def transcribe( self, path: str, model: str = 'gpt-4o-transcribe', language: str = None,
+			prompt: str = None, format: str = None, temperature: float = None ) -> str | None:
 		"""
 		
 			Purpose:
 			----------
-            Transcribe audio with Whisper.
+			Transcribes audio into the input language.
+		
+		
+			Parameters:
+			-----------
+			path: str
+			model: str='gpt-4o-transcribe'
+			language: str=None
+			prompt: str=None
+			format: str=None
+			temperature: float=None
+		
+		
+			Returns:
+			--------
+			str | None
         
         """
 		try:
 			throw_if( 'path', path )
-			self.model = model
+			self.model = model or 'gpt-4o-transcribe'
 			self.language = language
+			self.prompt = prompt
+			self.response_format = format
+			self.temperature = temperature
 			self.client = OpenAI( api_key=cfg.OPENAI_API_KEY )
+			self.request = {
+					'model': self.model, }
+			
+			if self.language:
+				self.request[ 'language' ] = self.language
+			
+			if self.prompt:
+				self.request[ 'prompt' ] = self.prompt
+			
+			if self.response_format:
+				self.request[ 'response_format' ] = self.response_format
+			
+			if self.temperature is not None and self.model == 'whisper-1':
+				self.request[ 'temperature' ] = self.temperature
+			
 			with open( path, 'rb' ) as self.audio_file:
-				resp = self.client.audio.transcriptions.create( model=self.model,
-					file=self.audio_file, language=self.language )
-			return resp.text
+				self.response = self.client.audio.transcriptions.create(
+					file=self.audio_file,
+					**self.request )
+			
+			self.transcript = getattr( self.response, 'text', None )
+			if isinstance( self.response, str ):
+				self.transcript = self.response
+			
+			if self.transcript is not None:
+				return self.transcript
+			
+			if hasattr( self.response, 'text' ):
+				return self.response.text
+			
+			return str( self.response )
 		except Exception as e:
 			ex = Error( e )
-			ex.module = 'boo'
+			ex.module = 'gpt'
 			ex.cause = 'Transcription'
-			ex.method = 'transcribe(self, path)'
+			ex.method = 'transcribe( self, path: str ) -> str | None'
 			raise ex
 	
 	def __dir__( self ) -> List[ str ] | None:
@@ -1849,15 +1831,14 @@ class Transcription( GPT ):
 	        List[ str ] | None
 
         '''
-		return [ 'num',
+		return [ 'number',
 		         'temperature',
 		         'top_percent',
 		         'frequency_penalty',
 		         'presence_penalty',
-		         'max_completion_tokens',
+		         'max_tokens',
 		         'store',
 		         'stream',
-		         'modalities',
 		         'stops',
 		         'prompt',
 		         'response',
@@ -1867,56 +1848,42 @@ class Transcription( GPT ):
 		         'api_key',
 		         'client',
 		         'input_text',
-		         'transcript', ]
+		         'transcript',
+		         'language',
+		         'model' ]
 
 class Translation( GPT ):
 	"""
 
 	    Purpose
 	    ___________
-	    Class used for interacting with OpenAI's TTS API (whisper-1)
+	    Class used for interacting with OpenAI's translation API
 	
 	
 	    Parameters
 	    ------------
-	    num: int=1
-	    temp: float=0.8
-	    top: float=0.9
-	    freq: float=0.0
-	    pres: float=0.0
-	    max: int=10000
-	    store: bool=True
-	    stream: bool=True
-	
-	    Attributes
-	    -----------
-	    self.api_key, self.system_instructions, self.client, self.small_model,  self.reasoning_effort,
-	    self.response, self.num, self.temperature, self.top_percent,
-	    self.frequency_penalty, self.presence_penalty, self.max_completion_tokens,
-	    self.store, self.stream, self.modalities, self.stops, self.content,
-	    self.input_text, self.response, self.completion, self.file, self.path,
-	    self.messages, self.image_url, self.response_format,
-	    self.tools, self.vector_store_ids, self.descriptions, self.assistants
-	
-	    Methods
-	    ------------
-	    create_small_embedding( self, prompt: str, path: str )
+	    model: str='whisper-1'
+	    temperature: float=None
+	    top_p: float=None
+	    frequency: float=None
+	    presence: float=None
+	    max_tokens: int=None
+	    store: bool=None
+	    stream: bool=None
+	    instruct: str=None
+	    audio_file: str=None
+	    format: str=None
+	    language: str=None
 
     """
 	client: Optional[ OpenAI ]
 	target_language: Optional[ str ]
-	include: Optional[ List[ str ] ]
-	tool_choice: Optional[ str ]
-	input: Optional[ List[ Dict[ str, str ] ] ]
-	instructions: Optional[ str ]
-	tools: Optional[ List[ Dict[ str, str ] ] ]
-	reasoning: Optional[ Dict[ str, str ] ]
 	response_format: Optional[ str ]
 	
-	def __init__( self, model: str=None, temperature: float=None, top_p: float=None,
-			frequency: float=None, presence: float=None, max_tokens: int=None, store: bool=None,
-			stream: bool=None, instruct: str=None, audio_file: str=None, format: str=None,
-			language: str=None ):
+	def __init__( self, model: str = 'whisper-1', temperature: float = None, top_p: float = None,
+			frequency: float = None, presence: float = None, max_tokens: int = None, store: bool = None,
+			stream: bool = None, instruct: str = None, audio_file: str = None, format: str = None,
+			language: str = None ):
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
@@ -1935,23 +1902,15 @@ class Translation( GPT ):
 		self.target_language = language
 	
 	@property
-	def model_options( self ) -> str:
+	def model_options( self ) -> List[ str ] | None:
 		'''
 	
 	        Purpose:
 	        --------
-	        Methods that returns a list of small_model names
+	        Method that returns a list of translation model names
 
         '''
-		return [ 'gpt-5',
-		         'gpt-5-mini',
-		         'gpt-5-turbo',
-		         'gpt-4o',
-		         'gpt-4.1',
-		         'gpt-4.1-mini',
-		         'gpt-4.1-turbo',
-		         'gpt-4o',
-		         'gpt-4o-mini', ]
+		return [ 'whisper-1' ]
 	
 	@property
 	def mime_options( self ) -> List[ str ] | None:
@@ -1959,168 +1918,138 @@ class Translation( GPT ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of image formats
+	        Method that returns a list of supported input audio formats
 
         '''
-		return [ 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
-	
+		return [ 'flac', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'wav', 'webm' ]
+		
 	@property
-	def language_options( self ):
+	def language_options( self ) -> List[ str ] | None:
 		'''
 	
 	        Purpose:
 	        --------
-	        Method that returns a list of translatable languages
+	        Method that returns a list of ISO-639-1 language codes
+	        for UI capture of source-language context
 
         '''
-		return [ 'english',
-		         'spanish',
-		         'french',
-		         'german',
-		         'italian',
-		         'portuguese',
-		         'russian',
-		         'ukrainian',
-		         'greek',
-		         'hebrew',
-		         'arabic',
-		         'hindi',
-		         'chinese',
-		         'japanese',
-		         'korean',
-		         'vietnamese',
-		         'thai' ]
+		return [ 'en',
+		         'es',
+		         'fr',
+		         'de',
+		         'it',
+		         'pt',
+		         'ru',
+		         'uk',
+		         'el',
+		         'he',
+		         'ar',
+		         'hi',
+		         'zh',
+		         'ja',
+		         'ko',
+		         'vi',
+		         'th' ]
 	
 	@property
-	def include_options( self ) -> List[ str ] | None:
+	def language_labels( self ) -> Dict[ str, str ] | None:
 		'''
+	
+	        Purpose:
+	        --------
+	        Method that returns a mapping of ISO-639-1 language codes
+	        to human-readable labels for UI display
 
-			Returns:
-			--------
-			A List[ str ] of the includeable options
-
-		'''
-		return [ 'file_search_call.results',
-		         'web_search_call.results',
-		         'web_search_call.action.sources',
-		         'message.input_image.image_url',
-		         'computer_call_output.output.image_url',
-		         'code_interpreter_call.outputs',
-		         'reasoning.encrypted_content',
-		         'message.output_text.logprobs' ]
+        '''
+		return {
+				'en': 'English',
+				'es': 'Spanish',
+				'fr': 'French',
+				'de': 'German',
+				'it': 'Italian',
+				'pt': 'Portuguese',
+				'ru': 'Russian',
+				'uk': 'Ukrainian',
+				'el': 'Greek',
+				'he': 'Hebrew',
+				'ar': 'Arabic',
+				'hi': 'Hindi',
+				'zh': 'Chinese',
+				'ja': 'Japanese',
+				'ko': 'Korean',
+				'vi': 'Vietnamese',
+				'th': 'Thai', }
 	
 	@property
-	def tool_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of available tools options
-
-		'''
-		return [ 'web_search',
-		         'image_generation',
-		         'file_search',
-		         'code_interpreter',
-		         'computer_use_preview' ]
-	
-	@property
-	def choice_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of available tools options
-
-		'''
-		return [ 'auto', 'required', 'none' ]
-	
-	@property
-	def purpose_options( self ) -> List[ str ] | None:
+	def response_format_options( self ) -> List[ str ] | None:
 		'''
 		
 			Returns:
 			--------
-			A List[ str ] of file purposes
+			List[ str ] | None
 
 		'''
-		return [ 'assistants',
-		         'batch',
-		         'fine-tune',
-		         'vision',
-		         'user_data',
-		         'evals' ]
+		return [ 'json', 'text', 'srt', 'verbose_json', 'vtt' ]
 	
-	@property
-	def format_options( self ) -> List[ str ] | None:
-		'''
-		
-			Returns:
-			--------
-			A List[ str ] of file purposes
-
-		'''
-		return [ 'text', 'json_object', 'json_schema' ]
-	
-	@property
-	def reasoning_options( self ) -> List[ str ] | None:
-		'''
-
-			Returns:
-			--------
-			A List[ str ] of reasoning effort options
-
-		'''
-		return [ 'low',
-		         'medium',
-		         'high',
-		         'minimal',
-		         'xhigh' ]
-	
-	@property
-	def modality_options( self ) -> List[ str ] | None:
-		'''
-		
-			Returns:
-			--------
-			A List[ str ] of file purposes
-
-		'''
-		return [ 'text', 'auto', 'image', 'audio' ]
-	
-	def translate( self, prompt: str, filepath: str, model: str=None,
-			temperature: float=None, top_p: float=None, frequency: float=None,
-			presence: float=None, max_tokens: int=None, format: str=None, language: str=None,
-			store: bool=True, stream: bool=True, instruct: str=None ) -> str | None:
+	def translate( self, filepath: str, model: str = 'whisper-1', prompt: str = None,
+			format: str = None, temperature: float = None, language: str = None ) -> str | None:
 		"""
 		
-            Translate non-English speech to English with Whisper.
+            Translate non-English speech to English.
+		
+		
+			Parameters:
+			-----------
+			filepath: str
+			model: str='whisper-1'
+			prompt: str=None
+			format: str=None
+			temperature: float=None
+			language: str=None
+		
+		
+			Returns:
+			--------
+			str | None
         
         """
 		try:
-			throw_if( 'path', filepath )
-			throw_if( 'prompt', prompt )
-			self.model = model
-			self.temperature = temperature
-			self.top_percent = top_p
-			self.frequency_penalty = frequency
-			self.presence_penalty = presence
-			self.max_tokens = max_tokens
-			self.store = store
-			self.stream = stream
-			self.instruct = instruct
+			throw_if( 'filepath', filepath )
+			self.model = model or 'whisper-1'
+			self.prompt = prompt
 			self.response_format = format
+			self.temperature = temperature
 			self.target_language = language
 			self.client = OpenAI( api_key=self.api_key )
+			self.request = {
+					'model': self.model, }
+			
+			if self.prompt:
+				self.request[ 'prompt' ] = self.prompt
+			
+			if self.response_format:
+				self.request[ 'response_format' ] = self.response_format
+			
+			if self.temperature is not None:
+				self.request[ 'temperature' ] = self.temperature
+			
 			with open( filepath, 'rb' ) as audio_file:
-				self.response = self.client.audio.translations.create( model=self.model,
-					file=audio_file )
-			return self.response.text
+				self.response = self.client.audio.translations.create(
+					file=audio_file,
+					**self.request )
+			
+			if hasattr( self.response, 'text' ):
+				return self.response.text
+			
+			if isinstance( self.response, str ):
+				return self.response
+			
+			return str( self.response )
 		except Exception as e:
 			ex = Error( e )
 			ex.module = 'gpt'
 			ex.cause = 'Translation'
-			ex.method = 'translate(self, path)'
+			ex.method = 'translate( self, filepath: str ) -> str | None'
 			raise ex
 	
 	def __dir__( self ) -> List[ str ] | None:
@@ -2139,28 +2068,23 @@ class Translation( GPT ):
 	        List[ str ] | None
 
         '''
-		return [ 'num',
-		         'temperature',
+		return [ 'temperature',
 		         'top_percent',
 		         'frequency_penalty',
 		         'presence_penalty',
-		         'max_completion_tokens',
+		         'max_tokens',
 		         'store',
 		         'stream',
-		         'modalities',
-		         'stops',
 		         'prompt',
 		         'response',
-		         'audio_path',
-		         'path',
-		         'messages',
+		         'audio_file',
 		         'response_format',
-		         'tools',
 		         'api_key',
 		         'client',
 		         'model',
+		         'target_language',
 		         'translate',
-		         'model_options', ]
+		         'model_options' ]
 
 class Embeddings( GPT ):
 	"""
