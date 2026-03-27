@@ -4321,7 +4321,7 @@ elif mode == 'Audio':
 				
 				with aud_c4:
 					audio_rate = st.selectbox( label='Sample Rate', options=cfg.SAMPLE_RATES,
-						key='audio_rate', placeholder='Options', index=None )
+						key='audio_rate', placeholder='Options', index=0 )
 					audio_rate = int( st.session_state[ 'audio_rate' ] )
 				
 				with aud_c5:
