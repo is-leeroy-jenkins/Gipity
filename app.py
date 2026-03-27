@@ -439,9 +439,9 @@ if 'image_frequency_penalty' not in st.session_state:
 
 if 'image_presence_penalty' not in st.session_state:
 	st.session_state[ 'image_presence_penalty' ] = 0.0
-
-if 'image_parallel_tools' not in st.session_state:
-	st.session_state[ 'image_parallel_tools' ] = False
+	
+if 'image_parallel_calls' not in st.session_state:
+	st.session_state[ 'image_parallel_calls' ] = False
 
 if 'image_background' not in st.session_state:
 	st.session_state[ 'image_background' ] = False
@@ -468,7 +468,7 @@ if 'image_previous_response_id' not in st.session_state:
 	st.session_state[ 'image_previous_response_id' ] = ''
 
 if 'image_input' not in st.session_state:
-	st.session_state[ 'image_input' ] = List[ str ]
+	st.session_state[ 'image_input' ] = [ ]
 
 if 'image_include' not in st.session_state:
 	st.session_state[ 'image_include' ] = [ ]
@@ -3222,7 +3222,7 @@ with st.sidebar:
 	
 	st.divider( )
 	
-	st.text( 'Select Mode' )
+	st.text( 'AI Mode' )
 	mode = st.sidebar.radio( 'Select Mode', cfg.GPT_MODES, index=0, label_visibility='collapsed' )
 	
 	st.divider( )
@@ -3759,9 +3759,6 @@ elif mode == 'Images':
 	model_options = [ ]
 	image = Images( )
 	
-	for key in [ 'image_domains', 'image_tools', 'image_stops', 'image_stops_input' ]:
-		if key in st.session_state and isinstance( st.session_state[ key ], list ):
-			del st.session_state[ key ]
 	
 	# ------------------------------------------------------------------
 	# Session State
