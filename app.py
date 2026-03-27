@@ -3190,6 +3190,82 @@ def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_pena
 	output.markdown( buf )
 	return buf.strip( )
 
+def _reset_audio_model_controls( ) -> None:
+	'''
+	
+		Purpose:
+		--------
+		Resets widget-backed Audio model controls using a callback-safe path.
+	
+	
+		Parameters:
+		-----------
+		None
+	
+	
+		Returns:
+		--------
+		None
+
+	'''
+	st.session_state[ 'audio_task' ] = None
+	st.session_state[ 'audio_model' ] = None
+	st.session_state[ 'audio_language' ] = None
+	st.session_state[ 'audio_background' ] = False
+	st.session_state[ 'audio_reasoning' ] = None
+	st.session_state[ 'audio_rate' ] = int( cfg.SAMPLE_RATES[ 0 ] ) if cfg.SAMPLE_RATES else 44100
+	st.session_state[ 'audio_mime_type' ] = None
+
+def _reset_audio_inference_controls( ) -> None:
+	'''
+	
+		Purpose:
+		--------
+		Resets widget-backed Audio inference controls using a callback-safe path.
+	
+	
+		Parameters:
+		-----------
+		None
+	
+	
+		Returns:
+		--------
+		None
+
+	'''
+	st.session_state[ 'audio_top_percent' ] = 0.0
+	st.session_state[ 'audio_temperature' ] = 0.0
+	st.session_state[ 'audio_presence_penalty' ] = 0.0
+	st.session_state[ 'audio_frequency_penalty' ] = 0.0
+	st.session_state[ 'audio_modalities' ] = [ ]
+	st.session_state[ 'audio_response_format' ] = None
+
+def _reset_audio_sound_controls( ) -> None:
+	'''
+	
+		Purpose:
+		--------
+		Resets widget-backed Audio playback controls using a callback-safe path.
+	
+	
+		Parameters:
+		-----------
+		None
+	
+	
+		Returns:
+		--------
+		None
+
+	'''
+	st.session_state[ 'audio_language' ] = None
+	st.session_state[ 'audio_voice' ] = None
+	st.session_state[ 'audio_loop' ] = False
+	st.session_state[ 'audio_autoplay' ] = False
+	st.session_state[ 'audio_start_time' ] = 0.0
+	st.session_state[ 'audio_end_time' ] = 0.0
+	
 # ==============================================================================
 # Init
 # ==============================================================================
@@ -4341,16 +4417,15 @@ elif mode == 'Audio':
 				with aud_c6:
 					st.toggle( label='Background', key='audio_background', help=cfg.BACKGROUND_MODE )
 					audio_background = st.session_state[ 'audio_background' ]
-				
+		
+				# -------- Reset Settings ------------------
 				if st.button( 'Reset', key='audio_model_reset', width='stretch' ):
-					st.session_state[ 'audio_task' ] = ''
-					st.session_state[ 'audio_model' ] = ''
-					st.session_state[ 'audio_language' ] = ''
-					st.session_state[ 'audio_background' ] = False
-					st.session_state[ 'audio_reasoning' ] = ''
-					st.session_state[ 'audio_rate' ] = int(
-						cfg.SAMPLE_RATES[ 0 ] ) if cfg.SAMPLE_RATES else 44100
-					st.session_state[ 'audio_mime_type' ] = ''
+					for key in [ 'audio_task', 'audio_model', 'audio_language',
+					             'audio_background', 'audio_reasoning',
+					             'audio_rate', 'audio_mime_type' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
 					st.rerun( )
 			
 			with st.expander( 'Inference Options', icon='🎚️', expanded=False, width='stretch' ):
@@ -4383,10 +4458,9 @@ elif mode == 'Audio':
 				
 				with prm_c5:
 					modality_options = [ 'auto', 'text', 'image', 'audio' ]
-					set_audio_modalities = st.multiselect( label='Response Modalities',
+					audio_modalities = st.multiselect( label='Response Modalities',
 						options=modality_options, key='audio_modalities',
 						help='Optional. Modality of the response', placeholder='Options' )
-					audio_modalities = [ d.strip( ) for d in set_audio_modalities if d.strip( ) ]
 				
 				with prm_c6:
 					if audio_task == 'Transcribe':
@@ -4405,14 +4479,15 @@ elif mode == 'Audio':
 						help='Optional. Format of the response', placeholder='Options',
 						index=None )
 					audio_response_format = st.session_state[ 'audio_response_format' ]
-				
+		
+				# -------- Reset Settings ------------------
 				if st.button( 'Reset', key='audio_inference_reset', width='stretch' ):
-					st.session_state[ 'audio_top_percent' ] = 0.0
-					st.session_state[ 'audio_temperature' ] = 0.0
-					st.session_state[ 'audio_presence_penalty' ] = 0.0
-					st.session_state[ 'audio_modalities' ] = [ ]
-					st.session_state[ 'audio_frequency_penalty' ] = 0.0
-					st.session_state[ 'audio_response_format' ] = ''
+					for key in [ 'audio_top_percent', 'audio_temperature',
+					             'audio_presence_penalty', 'audio_modalities',
+					             'audio_frequency_penalty', 'audio_response_format' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
 					st.rerun( )
 			
 			with st.expander( 'Sound Options', icon='👂', expanded=False, width='stretch' ):
@@ -4475,14 +4550,15 @@ elif mode == 'Audio':
 						value=float( st.session_state.get( 'audio_end_time', 0.0 ) ),
 						step=0.01, key='audio_end_time' )
 					audio_end = st.session_state[ 'audio_end_time' ]
-				
+		
+				# -------- Reset Settings ------------------
 				if st.button( 'Reset', key='audio_sound_reset', width='stretch' ):
-					st.session_state[ 'audio_language' ] = ''
-					st.session_state[ 'audio_voice' ] = ''
-					st.session_state[ 'audio_loop' ] = False
-					st.session_state[ 'audio_autoplay' ] = False
-					st.session_state[ 'audio_start_time' ] = 0.0
-					st.session_state[ 'audio_end_time' ] = 0.0
+					for key in [ 'audio_language', 'audio_voice', 'audio_loop',
+					             'audio_autoplay', 'audio_start_time',
+					             'audio_end_time' ]:
+						if key in st.session_state:
+							del st.session_state[ key ]
+					
 					st.rerun( )
 		
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
@@ -4614,9 +4690,9 @@ elif mode == 'Audio':
 			data = cfg.AUDIO_TEST_FILE
 			st.caption( 'Local Audio File' )
 			if data is not None:
-				st.audio( data, sample_rate=audio_rate, start_time=audio_start,
-					end_time=audio_end, format='audio/wav', width='stretch',
-					loop=audio_loop, autoplay=audio_autoplay )
+				st.audio( data, start_time=audio_start, end_time=audio_end,
+					format='audio/wav', width='stretch', loop=audio_loop,
+					autoplay=audio_autoplay )
 			else:
 				st.info( 'No local audio file is configured.' )
 		
@@ -4627,7 +4703,7 @@ elif mode == 'Audio':
 				with st.chat_message( msg[ 'role' ], avatar='' ):
 					st.markdown( msg[ 'content' ] )
 		
-		prompt = st.chat_input( 'Gipity Generate …', key='audio_messages_input' )
+		prompt = st.chat_input( 'Enter audio generation prompt …', key='audio_messages_input' )
 		if prompt is not None and isinstance( prompt, str ) and prompt.strip( ):
 			st.session_state.audio_messages.append( { 'role': 'user', 'content': prompt } )
 			st.rerun( )
@@ -4678,9 +4754,9 @@ elif mode == 'Document Q&A':
 	             'docqna_input', 'docqna_tools', 'docqna_modalities',
 	             'docqna_context', 'docqna_messages', 'docqna_active_docs',
 	             'docqna_files' ]:
-		if key in st.session_state and isinstance( key, list ):
+		if key in st.session_state and isinstance( st.session_state[ key ], list ):
 			del st.session_state[ key ]
-	
+			
 	# ------------------------------------------------------------------
 	#  DOCQNA SETTINGS
 	# ------------------------------------------------------------------
