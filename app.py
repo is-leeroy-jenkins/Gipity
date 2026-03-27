@@ -4387,7 +4387,6 @@ elif mode == 'Audio':
 						options=modality_options, key='audio_modalities',
 						help='Optional. Modality of the response', placeholder='Options' )
 					audio_modalities = [ d.strip( ) for d in set_audio_modalities if d.strip( ) ]
-					st.session_state[ 'audio_modalities' ] = audio_modalities
 				
 				with prm_c6:
 					if audio_task == 'Transcribe':
