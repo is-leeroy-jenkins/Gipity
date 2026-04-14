@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="417abfbb-1675-4e0a-b38a-cc87552b3174" name="Changes" comment="update">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/boogr/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/boogr/__init__.py" afterDir="false" />
-    </list>
+    <list default="true" id="417abfbb-1675-4e0a-b38a-cc87552b3174" name="Changes" comment="update" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -89,7 +86,7 @@
       <workItem from="1776187607453" duration="615000" />
       <workItem from="1776189481698" duration="70000" />
       <workItem from="1776190232250" duration="34000" />
-      <workItem from="1776192833542" duration="185000" />
+      <workItem from="1776192833542" duration="472000" />
     </task>
     <task id="LOCAL-00001" summary="update">
       <option name="closed" value="true" />
@@ -179,7 +176,15 @@
       <option name="project" value="LOCAL" />
       <updated>1776190249187</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="update">
+      <option name="closed" value="true" />
+      <created>1776193162738</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1776193162738</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
