@@ -942,7 +942,6 @@ def local_llm_enabled( ) -> bool:
 	except Exception:
 		return False
 
-@st.cache_resource
 def load_llm( ctx: int, threads: int ):
 	"""
 	
@@ -995,7 +994,6 @@ def get_llm( ):
 	
 	return load_llm( cfg.DEFAULT_CTX, cfg.CORES )
 
-@st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
 	"""
 	
