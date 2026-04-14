@@ -26,3 +26,6 @@ tqdm
 fsspec
 packaging
 pyyaml
+streamlit
+streamlit-extras
+streamlit-pdf
