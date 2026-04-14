@@ -74,6 +74,7 @@ XML_BLOCK_PATTERN = re.compile( r'<(?P<tag>[a-zA-Z0-9_:-]+)>(?P<body>.*?)</\1>',
 AUDIO_TEST_FILE = r'resources/audio/conditions.mp3'
 ANALYST = '❓'
 GIPITY = '🧠'
+ENABLE_LOCAL_LLM = False
 
 # ----------------- GPT CONFIG -------------------
 

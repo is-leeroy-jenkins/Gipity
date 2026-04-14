@@ -50,7 +50,6 @@ import io
 from boogr import Error
 import fitz  # pymupdf
 
-from llama_cpp import Llama
 from openai import OpenAI
 import numpy as np
 import pandas as pd
