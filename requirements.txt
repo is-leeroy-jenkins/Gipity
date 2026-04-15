@@ -15,7 +15,6 @@ tiktoken
 pillow
 requests
 sqlite-vec
-llama-cpp-python
 torch
 torchvision
 scikit-learn
@@ -26,6 +25,3 @@ tqdm
 fsspec
 packaging
 pyyaml
-streamlit
-streamlit-extras
-streamlit-pdf

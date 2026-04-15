@@ -924,80 +924,6 @@ if 'token_usage' not in st.session_state:
 	
 # -------------- LLM  UTILITIES -------------------
 
-def local_llm_enabled( ) -> bool:
-	"""
-	
-		Purpose:
-		--------
-		Determine whether the optional local llama.cpp model should be enabled.
-	
-		Parameters:
-		-----------
-		None
-	
-		Returns:
-		--------
-		bool
-			True when local LLM support is enabled in configuration.
-			
-	"""
-	try:
-		return bool( getattr( cfg, 'ENABLE_LOCAL_LLM', False ) )
-	except Exception:
-		return False
-
-def load_llm( ctx: int, threads: int ):
-	"""
-	
-		Purpose:
-		--------
-		Lazily load the optional local llama.cpp model.
-	
-		Parameters:
-		-----------
-		ctx : int
-			Context window size.
-		threads : int
-			Number of CPU threads to allocate.
-	
-		Returns:
-		--------
-		Any
-			Instantiated llama.cpp model object.
-			
-	"""
-	from llama_cpp import Llama
-	
-	return Llama(
-		model_path=str( cfg.MODEL_PATH ),
-		n_ctx=ctx,
-		n_threads=threads,
-		n_batch=512,
-		verbose=False
-	)
-
-def get_llm( ):
-	"""
-	
-		Purpose:
-		--------
-		Return the optional local llama.cpp model only when enabled.
-	
-		Parameters:
-		-----------
-		None
-	
-		Returns:
-		--------
-		Any | None
-			Loaded llama.cpp model instance or None when disabled.
-			
-	"""
-	if not local_llm_enabled( ):
-		return None
-	
-	return load_llm( cfg.DEFAULT_CTX, cfg.CORES )
-
 def load_embedder( ) -> SentenceTransformer:
 	"""
 	
@@ -3153,7 +3079,7 @@ def build_prompt( user_input: str ) -> str:
 	"""
 		Purpose:
 		--------
-		Build a llama.cpp-compatible prompt using the application's system instructions, optional
+		Build a prompt using the application's system instructions, optional
 		retrieval context (semantic + basic RAG), and the current in-memory chat history.
 
 		Parameters:
@@ -3208,80 +3134,6 @@ def build_prompt( user_input: str ) -> str:
 	
 	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
 	return prompt
-
-def run_llm_turn( user_input: str, temperature: float, top_p: float, repeat_penalty: float,
-		max_tokens: int, stream: bool, output: Any | None = None ) -> str:
-	"""
-	
-		Purpose:
-		--------
-		Run a single local LLM turn using the shared prompt builder and either stream or
-		return the full response text.
-	
-		Parameters:
-		-----------
-		user_input : str
-			The user turn (already constructed, including any document/RAG context if applicable).
-		temperature : float
-			Sampling temperature.
-		top_p : float
-			Nucleus sampling probability.
-		repeat_penalty : float
-			Repeat penalty.
-		max_tokens : int
-			Maximum tokens to generate.
-		stream : bool
-			When True, stream tokens to the provided Streamlit placeholder.
-		output : Any | None
-			A Streamlit placeholder used for streaming output.
-	
-		Returns:
-		--------
-		str
-			The assistant response text.
-			
-	"""
-	if user_input is None:
-		return ''
-	
-	llm = get_llm( )
-	if llm is None:
-		return ''
-	
-	prompt = build_prompt( user_input )
-	
-	if not stream:
-		resp = llm(
-			prompt,
-			stream=False,
-			max_tokens=max_tokens,
-			temperature=temperature,
-			top_p=top_p,
-			repeat_penalty=repeat_penalty,
-			stop=[ '</s>' ]
-		)
-		
-		text = (resp.get( 'choices', [ { 'text': '' } ] )[ 0 ].get( 'text', '' ) or '')
-		return text.strip( )
-	
-	buf = ''
-	if output is None:
-		output = st.empty( )
-	
-	for chunk in llm(
-			prompt,
-			stream=True,
-			max_tokens=max_tokens,
-			temperature=temperature,
-			top_p=top_p,
-			repeat_penalty=repeat_penalty,
-			stop=[ '</s>' ]
-	):
-		buf += chunk[ 'choices' ][ 0 ][ 'text' ]
-		output.markdown( buf + '▌' )
-	
-	output.markdown( buf )
-	return buf.strip( )
 
 def _reset_audio_model_controls( ) -> None:
 	'''
