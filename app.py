@@ -48,7 +48,6 @@ import base64
 import hashlib
 import io
 from boogr import Error
-import fitz  # pymupdf
 
 from openai import OpenAI
 import numpy as np
@@ -68,6 +67,11 @@ import tiktoken
 import tempfile
 from typing import List, Dict, Any, Optional, Tuple
 
+try:
+	import fitz
+except Exception:
+	fitz = None
+	
 from gpt import (
 	Chat,
 	Images,

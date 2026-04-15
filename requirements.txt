@@ -3,7 +3,7 @@ numpy
 openpyxl
 pydantic
 typing_extensions
-pymupdf
+PyMuPDF
 httpx
 reportlab
 sentence-transformers
