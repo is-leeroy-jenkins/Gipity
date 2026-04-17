@@ -13,6 +13,7 @@ tokenizers
 safetensors
 tiktoken
 pillow
+plotly
 requests
 sqlite-vec
 torch
