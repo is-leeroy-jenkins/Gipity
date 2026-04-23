@@ -60,10 +60,10 @@ The application is intended to support multimodal workflows across:
 
 For local text-generation fallback, Gipity also points to a GGUF model at:
 
-[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/Gipity)
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
 
 ```text
-models/gipity-3-270m-it-Q4_K_M.gguf
+models/gipity-oss-20b-Q4_K_M.gguf
 ```
 
 This local llm is intended for use with `llama.cpp` / `llama-cpp-python` and provides a small,
