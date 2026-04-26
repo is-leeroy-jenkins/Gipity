@@ -55,8 +55,30 @@ from boogr import Error
 import config as cfg
 import tempfile
 
-def throw_if( name: str, value: object ):
+def throw_if( name: str, value: object ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Raises a ValueError when a required argument is None or empty.
+		
+		Parameters:
+		-----------
+		name: str - Argument name used in the error message.
+		value: object - Argument value to validate.
+		
+		Returns:
+		--------
+		None
+	
+	"""
 	if value is None:
+		raise ValueError( f'Argument "{name}" cannot be empty!' )
+	
+	if isinstance( value, str ) and not value.strip( ):
+		raise ValueError( f'Argument "{name}" cannot be empty!' )
+	
+	if isinstance( value, (list, tuple, dict, set) ) and len( value ) == 0:
 		raise ValueError( f'Argument "{name}" cannot be empty!' )
 
 def encode_image( image_path: str ) -> str:
