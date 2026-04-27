@@ -2440,7 +2440,692 @@ def render_image_output( image_result: str | bytes | list[ str | bytes ] | None,
 				rendered = True
 	
 	return rendered
+
+# ------------- EMBEDDING UTILITIES ---------------------
+
+def ensure_embeddings_mode_state( ) -> None:
+	"""
 	
+		Purpose:
+		--------
+		Ensure Embeddings mode session-state keys exist before widget instantiation.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if 'embedding_model' not in st.session_state:
+		st.session_state[ 'embedding_model' ] = ''
+	
+	if 'embeddings_dimensions' not in st.session_state:
+		st.session_state[ 'embeddings_dimensions' ] = 0
+	
+	if 'embeddings_chunk_size' not in st.session_state:
+		st.session_state[ 'embeddings_chunk_size' ] = 800
+	
+	if 'embeddings_overlap_amount' not in st.session_state:
+		st.session_state[ 'embeddings_overlap_amount' ] = 0
+	
+	if 'embeddings_input_text' not in st.session_state:
+		st.session_state[ 'embeddings_input_text' ] = ''
+	
+	if 'embeddings_encoding_format' not in st.session_state:
+		st.session_state[ 'embeddings_encoding_format' ] = 'float'
+	
+	if 'embeddings_user' not in st.session_state:
+		st.session_state[ 'embeddings_user' ] = ''
+	
+	if 'embeddings' not in st.session_state:
+		st.session_state[ 'embeddings' ] = [ ]
+	
+	if 'embeddings_chunks' not in st.session_state:
+		st.session_state[ 'embeddings_chunks' ] = [ ]
+	
+	if 'embeddings_df' not in st.session_state:
+		st.session_state[ 'embeddings_df' ] = pd.DataFrame( )
+	
+	if 'embedding_metrics' not in st.session_state:
+		st.session_state[ 'embedding_metrics' ] = { }
+	
+	if 'embedding_usage' not in st.session_state:
+		st.session_state[ 'embedding_usage' ] = { }
+
+def get_embedding_model_options( embedding: Embeddings ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return OpenAI embedding model options from the wrapper when available.
+		
+		Parameters:
+		-----------
+		embedding: Embeddings
+			Embeddings wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Embedding model options.
+		
+	"""
+	options = getattr( embedding, 'model_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [
+			'',
+			'text-embedding-3-small',
+			'text-embedding-3-large',
+			'text-embedding-ada-002',
+	]
+
+def get_embedding_encoding_options( embedding: Embeddings ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return OpenAI embedding encoding-format options from the wrapper when available.
+		
+		Parameters:
+		-----------
+		embedding: Embeddings
+			Embeddings wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Encoding format options.
+		
+	"""
+	options = getattr( embedding, 'encoding_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return options
+	
+	return [
+			'float',
+			'base64',
+	]
+
+def get_embedding_max_dimensions( model: str | None, embedding: Embeddings ) -> int:
+	"""
+	
+		Purpose:
+		--------
+		Return the maximum supported dimensions for the selected embedding model.
+		
+		Parameters:
+		-----------
+		model: str | None
+			Selected embedding model.
+		
+		embedding: Embeddings
+			Embeddings wrapper instance.
+		
+		Returns:
+		--------
+		int
+			Maximum supported dimensions.
+		
+	"""
+	if not isinstance( model, str ) or not model.strip( ):
+		return 1536
+	
+	try:
+		return int( embedding.get_max_dimensions( model.strip( ) ) )
+	except Exception:
+		if model == 'text-embedding-3-large':
+			return 3072
+		
+		return 1536
+
+def embedding_model_supports_dimensions( model: str | None, embedding: Embeddings ) -> bool:
+	"""
+	
+		Purpose:
+		--------
+		Determine whether the selected embedding model supports the dimensions parameter.
+		
+		Parameters:
+		-----------
+		model: str | None
+			Selected embedding model.
+		
+		embedding: Embeddings
+			Embeddings wrapper instance.
+		
+		Returns:
+		--------
+		bool
+			True when the model supports the dimensions parameter.
+		
+	"""
+	if not isinstance( model, str ) or not model.strip( ):
+		return False
+	
+	support = getattr( embedding, 'model_dimension_support', { } )
+	if isinstance( support, dict ):
+		return bool( support.get( model.strip( ), False ) )
+	
+	return model.strip( ) in [
+			'text-embedding-3-small',
+			'text-embedding-3-large',
+	]
+
+def normalize_embedding_dimensions( model: str | None, dimensions: int | None,
+		embedding: Embeddings ) -> int | None:
+	"""
+	
+		Purpose:
+		--------
+		Normalize dimensions before calling the OpenAI Embeddings API.
+		
+		Parameters:
+		-----------
+		model: str | None
+			Selected embedding model.
+		
+		dimensions: int | None
+			Requested embedding dimensions.
+		
+		embedding: Embeddings
+			Embeddings wrapper instance.
+		
+		Returns:
+		--------
+		int | None
+			Valid dimensions value or None when the parameter should be omitted.
+		
+	"""
+	if not isinstance( model, str ) or not model.strip( ):
+		return None
+	
+	if dimensions is None:
+		return None
+	
+	try:
+		value = int( dimensions )
+	except Exception:
+		return None
+	
+	if value <= 0:
+		return None
+	
+	if not embedding_model_supports_dimensions( model, embedding ):
+		return None
+	
+	max_dimensions = get_embedding_max_dimensions( model, embedding )
+	if value > max_dimensions:
+		return max_dimensions
+	
+	return value
+
+def normalize_embedding_chunk_settings( chunk_size: int | None,
+		overlap_amount: int | None ) -> tuple[ int, int ]:
+	"""
+	
+		Purpose:
+		--------
+		Normalize chunk size and overlap settings for tokenizer-aware chunking.
+		
+		Parameters:
+		-----------
+		chunk_size: int | None
+			Requested chunk size in tokens.
+		
+		overlap_amount: int | None
+			Requested overlap amount in tokens.
+		
+		Returns:
+		--------
+		tuple[int, int]
+			Normalized chunk size and overlap amount.
+		
+	"""
+	try:
+		chunk_value = int( chunk_size )
+	except Exception:
+		chunk_value = 800
+	
+	try:
+		overlap_value = int( overlap_amount )
+	except Exception:
+		overlap_value = 0
+	
+	if chunk_value <= 0:
+		chunk_value = 800
+	
+	if chunk_value > 8192:
+		chunk_value = 8192
+	
+	if overlap_value < 0:
+		overlap_value = 0
+	
+	if overlap_value >= chunk_value:
+		overlap_value = max( 0, chunk_value // 5 )
+	
+	return chunk_value, overlap_value
+
+def chunk_text_for_embeddings( text: str, chunk_size: int = 800,
+		overlap_amount: int = 0, encoding_name: str = 'cl100k_base' ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Split text into tokenizer-aware chunks for the OpenAI Embeddings API.
+		
+		Parameters:
+		-----------
+		text: str
+			Input text to chunk.
+		
+		chunk_size: int
+			Maximum chunk size in tokens.
+		
+		overlap_amount: int
+			Token overlap between adjacent chunks.
+		
+		encoding_name: str
+			Tiktoken encoding name.
+		
+		Returns:
+		--------
+		list[str]
+			Text chunks.
+		
+	"""
+	if not isinstance( text, str ) or not text.strip( ):
+		return [ ]
+	
+	chunk_value, overlap_value = normalize_embedding_chunk_settings(
+		chunk_size=chunk_size,
+		overlap_amount=overlap_amount )
+	
+	encoding = tiktoken.get_encoding( encoding_name )
+	tokens = encoding.encode( text )
+	
+	if len( tokens ) == 0:
+		return [ ]
+	
+	chunks: list[ str ] = [ ]
+	start = 0
+	step = max( 1, chunk_value - overlap_value )
+	
+	while start < len( tokens ):
+		end = min( start + chunk_value, len( tokens ) )
+		chunk_tokens = tokens[ start:end ]
+		chunk_text_value = encoding.decode( chunk_tokens ).strip( )
+		
+		if chunk_text_value:
+			chunks.append( chunk_text_value )
+		
+		if end >= len( tokens ):
+			break
+		
+		start += step
+	
+	return chunks
+
+def normalize_embedding_vectors( vectors: Any ) -> list[ Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Normalize wrapper embedding output into a list of vectors or base64 strings.
+		
+		Parameters:
+		-----------
+		vectors: Any
+			Embedding output returned by the wrapper.
+		
+		Returns:
+		--------
+		list[Any]
+			Normalized embedding outputs.
+		
+	"""
+	if vectors is None:
+		return [ ]
+	
+	if isinstance( vectors, str ):
+		return [ vectors ]
+	
+	if isinstance( vectors, list ):
+		if len( vectors ) == 0:
+			return [ ]
+		
+		if all( isinstance( value, (int, float) ) for value in vectors ):
+			return [ vectors ]
+		
+		return vectors
+	
+	return [ vectors ]
+
+def build_embeddings_dataframe( chunks: list[ str ], vectors: Any,
+		encoding_format: str = 'float' ) -> pd.DataFrame:
+	"""
+	
+		Purpose:
+		--------
+		Build a display DataFrame from embedding chunks and embedding outputs.
+		
+		Parameters:
+		-----------
+		chunks: list[str]
+			Text chunks submitted to the Embeddings API.
+		
+		vectors: Any
+			Embedding vectors or base64 strings returned by the wrapper.
+		
+		encoding_format: str
+			Embedding encoding format: float or base64.
+		
+		Returns:
+		--------
+		pd.DataFrame
+			Display-ready embeddings DataFrame.
+		
+	"""
+	outputs = normalize_embedding_vectors( vectors )
+	
+	if len( outputs ) == 0:
+		return pd.DataFrame( )
+	
+	rows: list[ dict[ str, Any ] ] = [ ]
+	format_value = encoding_format if isinstance( encoding_format, str ) else 'float'
+	
+	if format_value == 'base64':
+		for index, item in enumerate( outputs ):
+			chunk = chunks[ index ] if index < len( chunks ) else ''
+			rows.append(
+				{
+						'ChunkIndex': index + 1,
+						'Chunk': chunk,
+						'EmbeddingBase64': item if isinstance( item, str ) else str( item ),
+				} )
+		
+		return pd.DataFrame( rows )
+	
+	for index, vector in enumerate( outputs ):
+		chunk = chunks[ index ] if index < len( chunks ) else ''
+		
+		if not isinstance( vector, list ):
+			rows.append(
+				{
+						'ChunkIndex': index + 1,
+						'Chunk': chunk,
+						'Embedding': str( vector ),
+				} )
+			continue
+		
+		row: dict[ str, Any ] = {
+				'ChunkIndex': index + 1,
+				'Chunk': chunk,
+		}
+		
+		for dim_index, value in enumerate( vector ):
+			row[ f'dim_{dim_index}' ] = value
+		
+		rows.append( row )
+	
+	return pd.DataFrame( rows )
+
+def get_embedding_vector_dimension( vectors: Any ) -> int:
+	"""
+	
+		Purpose:
+		--------
+		Return the numeric embedding vector dimension when available.
+		
+		Parameters:
+		-----------
+		vectors: Any
+			Embedding output returned by the wrapper.
+		
+		Returns:
+		--------
+		int
+			Vector dimension count, or zero for non-numeric/base64 output.
+		
+	"""
+	outputs = normalize_embedding_vectors( vectors )
+	if len( outputs ) == 0:
+		return 0
+	
+	first = outputs[ 0 ]
+	if isinstance( first, list ):
+		return len( first )
+	
+	return 0
+
+def extract_embedding_usage( response: Any ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Extract usage metadata from an OpenAI Embeddings API response object.
+		
+		Parameters:
+		-----------
+		response: Any
+			Embeddings API response object.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized usage metadata.
+		
+	"""
+	if response is None:
+		return { }
+	
+	try:
+		raw = getattr( response, 'usage', None )
+	except Exception:
+		raw = None
+	
+	if raw is None:
+		return { }
+	
+	if isinstance( raw, dict ):
+		return raw
+	
+	if hasattr( raw, 'model_dump' ):
+		try:
+			return raw.model_dump( )
+		except Exception:
+			return { 'raw': str( raw ) }
+	
+	return { 'raw': str( raw ) }
+
+def build_embedding_metrics( source_text: str, normalized_text: str, chunks: list[ str ],
+		vectors: Any, usage: dict[ str, Any ] | None = None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Build Embeddings mode metrics for display and session-state storage.
+		
+		Parameters:
+		-----------
+		source_text: str
+			Original input text.
+		
+		normalized_text: str
+			Normalized text submitted to chunking.
+		
+		chunks: list[str]
+			Embedding chunks.
+		
+		vectors: Any
+			Embedding output returned by the wrapper.
+		
+		usage: dict[str, Any] | None
+			Optional usage metadata from the API.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Embedding metrics.
+		
+	"""
+	source_value = source_text if isinstance( source_text, str ) else ''
+	normalized_value = normalized_text if isinstance( normalized_text, str ) else ''
+	outputs = normalize_embedding_vectors( vectors )
+	
+	words = normalized_value.split( )
+	unique_words = set( words )
+	token_total = count_tokens( normalized_value ) if normalized_value else 0
+	vector_dimension = get_embedding_vector_dimension( outputs )
+	
+	metrics: dict[ str, Any ] = {
+			'characters': len( source_value ),
+			'normalized_characters': len( normalized_value ),
+			'words': len( words ),
+			'unique_words': len( unique_words ),
+			'type_token_ratio': round( len( unique_words ) / len( words ), 4 ) if len(
+				words ) else 0.0,
+			'tokens': token_total,
+			'chunks': len( chunks ),
+			'embeddings': len( outputs ),
+			'vector_dimension': vector_dimension,
+			'encoding_format': st.session_state.get( 'embeddings_encoding_format', 'float' ),
+			'usage': usage if isinstance( usage, dict ) else { },
+	}
+	
+	return metrics
+
+def render_embedding_metrics( metrics: dict[ str, Any ] | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render Embeddings mode metrics using Streamlit metric controls.
+		
+		Parameters:
+		-----------
+		metrics: dict[str, Any] | None
+			Embedding metrics dictionary.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if not isinstance( metrics, dict ) or len( metrics ) == 0:
+		return
+	
+	metric_c1, metric_c2, metric_c3, metric_c4, metric_c5 = st.columns(
+		[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+	
+	with metric_c1:
+		st.metric( 'Tokens', metrics.get( 'tokens', 0 ) )
+	
+	with metric_c2:
+		st.metric( 'Chunks', metrics.get( 'chunks', 0 ) )
+	
+	with metric_c3:
+		st.metric( 'Embeddings', metrics.get( 'embeddings', 0 ) )
+	
+	with metric_c4:
+		st.metric( 'Dimensions', metrics.get( 'vector_dimension', 0 ) )
+	
+	with metric_c5:
+		st.metric( 'Words', metrics.get( 'words', 0 ) )
+
+def render_embeddings_dataframe( df_embeddings: pd.DataFrame ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render Embeddings mode output DataFrame safely.
+		
+		Parameters:
+		-----------
+		df_embeddings: pd.DataFrame
+			Embeddings output DataFrame.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if df_embeddings is None or df_embeddings.empty:
+		st.info( 'No embeddings available.' )
+		return
+	
+	st.data_editor( df_embeddings, use_container_width=True, hide_index=True )
+
+def reset_embeddings_controls( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Embeddings mode configuration controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'embedding_model', 'embeddings_dimensions',
+	             'embeddings_chunk_size', 'embeddings_overlap_amount',
+	             'embeddings_encoding_format', 'embeddings_user' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+def clear_embeddings_output( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Embeddings mode outputs while preserving configuration controls.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'embeddings' ] = [ ]
+	st.session_state[ 'embeddings_chunks' ] = [ ]
+	st.session_state[ 'embeddings_df' ] = pd.DataFrame( )
+	st.session_state[ 'embedding_metrics' ] = { }
+	st.session_state[ 'embedding_usage' ] = { }
+
+def reset_embeddings_all( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Embeddings mode configuration, input, and output state.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	reset_embeddings_controls( )
+	clear_embeddings_output( )
+	
+	if 'embeddings_input_text' in st.session_state:
+		del st.session_state[ 'embeddings_input_text' ]
+
 # ----------  DOCQNA UTILITIES ----------
 
 def route_document_query( prompt: str ) -> str:
@@ -6947,193 +7632,307 @@ elif mode == 'Document Q&A':
 # EMBEDDINGS MODE
 # ======================================================================================
 elif mode == 'Embeddings':
-	embedding_model = st.session_state.get( 'embedding_model', '' )
-	embeddings_dimensions = st.session_state.get( 'embeddings_dimensions', 0 )
-	embeddings_chunk_size = st.session_state.get( 'embeddings_chunk_size', 0 )
-	embeddings_overlap_amount = st.session_state.get( 'embeddings_overlap_amount', 0 )
-	embeddings_encoding = st.session_state.get( 'embeddings_encoding_format', '' )
-	embeddings_input = st.session_state.get( 'embeddings_input_text', '' )
+	ensure_embeddings_mode_state( )
 	embedding = Embeddings( )
 	
 	# ------------------------------------------------------------------
-	# Main Chat UI
+	# Session State
 	# ------------------------------------------------------------------
-	emb_left, emb_center, emb_right = st.columns( [ 0.05, 0.9, 0.05 ] )
-	with emb_center:
-		st.subheader( '🔢 Embeddings', help=cfg.EMBEDDINGS_API )
+	if not isinstance( st.session_state.get( 'embeddings_input_text' ), str ):
+		st.session_state[ 'embeddings_input_text' ] = ''
+	
+	if not isinstance( st.session_state.get( 'embeddings_encoding_format' ), str ):
+		st.session_state[ 'embeddings_encoding_format' ] = 'float'
+	
+	if not isinstance( st.session_state.get( 'embeddings_chunks' ), list ):
+		st.session_state[ 'embeddings_chunks' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'embedding_metrics' ), dict ):
+		st.session_state[ 'embedding_metrics' ] = { }
+	
+	if not isinstance( st.session_state.get( 'embedding_usage' ), dict ):
+		st.session_state[ 'embedding_usage' ] = { }
+	
+	if 'embeddings_df' not in st.session_state or not isinstance(
+			st.session_state.get( 'embeddings_df' ), pd.DataFrame ):
+		st.session_state[ 'embeddings_df' ] = pd.DataFrame( )
+	
+	# ------------------------------------------------------------------
+	# Main UI
+	# ------------------------------------------------------------------
+	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
+	with center:
+		st.subheader( '🧬 Embeddings API',
+			help=getattr( cfg, 'EMBEDDINGS_API',
+				'Create vector embeddings from text using the OpenAI Embeddings API.' ) )
 		st.divider( )
-		with st.expander( label='Configuration', icon='🎚️', expanded=False, width='stretch' ):
-			emb_c1, emb_c2, emb_c3, emb_c4, emb_c5 = st.columns(
+		
+		with st.expander( label='Configuration', icon='🧊',
+				expanded=False, width='stretch' ):
+			cfg_c1, cfg_c2, cfg_c3, cfg_c4, cfg_c5 = st.columns(
 				[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
 			
-			# ---------  Model --------
-			with emb_c1:
-				embedding_models = list( embedding.model_options )
-				set_embedding_model = st.selectbox( label='Embedding Model:', options=embedding_models,
-					help='REQUIRED. Embedding model used by the AI', key='embedding_model',
+			# ---------- Model ------------
+			with cfg_c1:
+				model_options = get_embedding_model_options( embedding )
+				if st.session_state.get( 'embedding_model' ) not in model_options:
+					st.session_state[ 'embedding_model' ] = ''
+				
+				embedding_model = st.selectbox( label='Model',
+					options=model_options, key='embedding_model',
+					help='OpenAI embedding model.',
 					index=None, placeholder='Options' )
 				
-				embedding_model = st.session_state[ 'embedding_model' ]
+				embedding_model = st.session_state.get( 'embedding_model', '' )
 			
-			# ---------  Encoding --------
-			with emb_c2:
-				encoding_options = list( embedding.encoding_options )
-				set_encoding_format = st.selectbox( label='Encoding Format:',
+			# Normalize dimension state before the dimension slider is instantiated.
+			max_dimensions = get_embedding_max_dimensions( embedding_model, embedding )
+			supports_dimensions = embedding_model_supports_dimensions(
+				embedding_model, embedding )
+			
+			try:
+				current_dimensions = int( st.session_state.get( 'embeddings_dimensions', 0 ) or 0 )
+			except Exception:
+				current_dimensions = 0
+			
+			if not supports_dimensions:
+				st.session_state[ 'embeddings_dimensions' ] = 0
+			elif current_dimensions > max_dimensions:
+				st.session_state[ 'embeddings_dimensions' ] = max_dimensions
+			elif current_dimensions < 0:
+				st.session_state[ 'embeddings_dimensions' ] = 0
+			
+			# ---------- Encoding Format ------------
+			with cfg_c2:
+				encoding_options = get_embedding_encoding_options( embedding )
+				if st.session_state.get( 'embeddings_encoding_format' ) not in encoding_options:
+					st.session_state[ 'embeddings_encoding_format' ] = 'float'
+				
+				embeddings_encoding_format = st.selectbox( label='Encoding Format',
 					options=encoding_options, key='embeddings_encoding_format',
-					help='REQUIRED: The format to return the embeddings in. float or base64',
+					help='Embedding encoding format returned by the API.',
 					index=None, placeholder='Options' )
 				
-				embeddings_encoding_format = st.session_state[ 'embeddings_encoding_format' ]
+				embeddings_encoding_format = st.session_state.get(
+					'embeddings_encoding_format', 'float' )
 			
-			# ---------  Dimensions --------
-			with emb_c3:
-				set_embedding_dimensions = st.slider( label='Dimensions', min_value=0, max_value=2048,
-					value=int( st.session_state.get( 'embeddings_dimensions' ) ),
-					step=1, key='embeddings_dimensions',
-					help='Optional (large models only): An integer between 1 and 2048',
-					width='stretch' )
+			# ---------- Dimensions ------------
+			with cfg_c3:
+				embeddings_dimensions = st.slider( label='Dimensions',
+					min_value=0, max_value=max_dimensions, step=1,
+					help=('Optional reduced dimensions for text-embedding-3 models. '
+					      'Zero omits the dimensions parameter.'),
+					key='embeddings_dimensions',
+					disabled=not supports_dimensions )
 				
-				embeddings_dimensions = st.session_state[ 'embeddings_dimensions' ]
+				embeddings_dimensions = st.session_state.get( 'embeddings_dimensions', 0 )
+				
+				if not supports_dimensions:
+					st.caption( 'Dimensions are omitted for this model.' )
 			
-			# ---------  Size --------
-			with emb_c4:
-				set_chunk_size = st.slider( label='Chunk Size', min_value=0, max_value=2000,
-					step=50, key='embeddings_chunk_size',
-					value=int( st.session_state.get( 'embeddings_chunk_size' ) ),
-					help='Maximum tokens per chunk for embedding segmentation.' )
+			# ---------- Chunk Size ------------
+			with cfg_c4:
+				try:
+					current_chunk_size = int(
+						st.session_state.get( 'embeddings_chunk_size', 800 ) or 800 )
+				except Exception:
+					current_chunk_size = 800
 				
-				embeddings_chunk_size = st.session_state[ 'embeddings_chunk_size' ]
+				if current_chunk_size <= 0:
+					st.session_state[ 'embeddings_chunk_size' ] = 800
+				elif current_chunk_size > 8192:
+					st.session_state[ 'embeddings_chunk_size' ] = 8192
+				
+				embeddings_chunk_size = st.slider( label='Chunk Size',
+					min_value=1, max_value=8192, step=50,
+					help='Maximum chunk size in tokenizer tokens.',
+					key='embeddings_chunk_size' )
+				
+				embeddings_chunk_size = st.session_state.get( 'embeddings_chunk_size', 800 )
 			
-			# ---------  Overlap --------
-			with emb_c5:
-				set_overlap_amount = st.slider( label='Overlap Amount', min_value=0, max_value=1000,
-					step=50, key='embeddings_overlap_amount',
-					help='The number of tokens spanning two chunks for embedding segmentation.' )
+			# ---------- Overlap Amount ------------
+			with cfg_c5:
+				try:
+					current_overlap = int(
+						st.session_state.get( 'embeddings_overlap_amount', 0 ) or 0 )
+				except Exception:
+					current_overlap = 0
 				
-				embeddings_overlap_amount = st.session_state[ 'embeddings_overlap_amount' ]
+				if current_overlap < 0:
+					st.session_state[ 'embeddings_overlap_amount' ] = 0
+				elif current_overlap >= int( st.session_state.get( 'embeddings_chunk_size', 800 ) ):
+					st.session_state[ 'embeddings_overlap_amount' ] = max(
+						0, int( st.session_state.get( 'embeddings_chunk_size', 800 ) ) // 5 )
+				
+				embeddings_overlap_amount = st.slider( label='Overlap Amount',
+					min_value=0,
+					max_value=max( 0, int( st.session_state.get(
+						'embeddings_chunk_size', 800 ) ) - 1 ),
+					step=10,
+					help='Token overlap between adjacent embedding chunks.',
+					key='embeddings_overlap_amount' )
+				
+				embeddings_overlap_amount = st.session_state.get(
+					'embeddings_overlap_amount', 0 )
 			
-			# ---------  Reset --------
-			if st.button( label='Reset', key='embedding_reset', width='stretch' ):
-				for key in [ 'embedding_model', 'embeddings_dimensions',
-				             'embeddings_encoding_format', 'embeddings_input_text',
-				             'embeddings_overlap_amount', 'embeddings_chunk_size' ]:
-					if key in st.session_state:
-						del st.session_state[ key ]
-				
-				st.rerun( )
+			# ---------- Optional User ------------
+			st.text_input( label='User Identifier',
+				key='embeddings_user',
+				value=st.session_state.get( 'embeddings_user', '' ),
+				help='Optional OpenAI user identifier for abuse monitoring.',
+				width='stretch', placeholder='Optional user identifier' )
+			
+			btn_cfg1, btn_cfg2 = st.columns( [ 0.5, 0.5 ] )
+			with btn_cfg1:
+				st.button( label='Reset Configuration', key='reset_embeddings_config',
+					width='stretch', on_click=reset_embeddings_controls )
+			
+			with btn_cfg2:
+				st.button( label='Clear Output', key='clear_embeddings_output',
+					width='stretch', on_click=clear_embeddings_output )
+		
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ------------------------------------------------------------------
-		# Main UI — Embedding execution (unchanged behavior)
+		# Input
 		# ------------------------------------------------------------------
-		embeddings_input = st.text_area( 'Input Text', key='embeddings_input_text' )
-		btn_left, btn_right = st.columns( [ 0.50, 0.50 ] )
+		st.text_area( label='Input Text', height=260, width='stretch',
+			key='embeddings_input_text',
+			help='Text to normalize, chunk, and submit to the OpenAI Embeddings API.',
+			placeholder='Enter text to embed...' )
 		
-		with btn_left:
-			embed_clicked = st.button( 'Embed', width='stretch', key='embedding_set' )
-			if embed_clicked and embeddings_input and embeddings_input.strip( ):
-				with st.spinner( 'Embedding…' ):
+		action_c1, action_c2 = st.columns( [ 0.5, 0.5 ] )
+		
+		# ------------------------------------------------------------------
+		# Create Embeddings
+		# ------------------------------------------------------------------
+		with action_c1:
+			if st.button( 'Create Embeddings', key='create_embeddings',
+					width='stretch' ):
+				with st.spinner( 'Creating embeddings…' ):
 					try:
-						# ----------------------------------------------------------
-						# Normalize + Chunk
-						# ----------------------------------------------------------
-						chunk_size = st.session_state.get( 'embeddings_chunk_size' )
-						normalized_text = normalize_text( embeddings_input )
-						chunks = chunk_text( normalized_text, max_tokens=chunk_size )
+						source_text = st.session_state.get( 'embeddings_input_text', '' )
+						model = st.session_state.get( 'embedding_model' ) or \
+						        'text-embedding-3-small'
+						encoding_format = st.session_state.get(
+							'embeddings_encoding_format' ) or 'float'
 						
-						# ----------------------------------------------------------
-						# Create Embeddings
-						# ----------------------------------------------------------
-						if embeddings_dimensions is not None:
-							vectors = embedding.create( text=chunks, model=embedding_model,
-								dimensions=embeddings_dimensions )
+						if not isinstance( source_text, str ) or not source_text.strip( ):
+							st.warning( 'Enter text before creating embeddings.' )
 						else:
-							vectors = embedding.create( text=chunks, model=embedding_model )
-						
-						# ----------------------------------------------------------
-						# Persist Results
-						# ----------------------------------------------------------
-						st.session_state[ 'embeddings' ] = vectors
-						st.session_state[ 'embeddings_chunks' ] = chunks
-						
-						# ----------------------------------------------------------
-						# Display Summary
-						# ----------------------------------------------------------
-						try:
-							if isinstance( vectors, list ) and vectors and isinstance(
-									vectors[ 0 ], list ):
-								vector_dimension = len( vectors[ 0 ] )
-								st.write( 'Chunks:', len( vectors ) )
-								st.write( 'Vector dimension:', vector_dimension )
-							elif isinstance( vectors, list ):
-								st.write( 'Vector dimension:', len( vectors ) )
+							normalized_text = normalize_text( source_text )
+							chunk_size, overlap_amount = normalize_embedding_chunk_settings(
+								chunk_size=st.session_state.get( 'embeddings_chunk_size', 800 ),
+								overlap_amount=st.session_state.get(
+									'embeddings_overlap_amount', 0 ) )
+							
+							chunks = chunk_text_for_embeddings(
+								text=normalized_text,
+								chunk_size=chunk_size,
+								overlap_amount=overlap_amount )
+							
+							if len( chunks ) == 0:
+								st.warning( 'No valid chunks were produced from the input text.' )
 							else:
-								st.write( 'Vector result type:', type( vectors ) )
-						except Exception:
-							st.write( 'Vector length:', len( vectors ) )
-						
-						# ----------------------------------------------------------
-						# Token Counters
-						# ----------------------------------------------------------
-						try:
-							update_token_counters( getattr( embedding, 'response', None ) )
-						except Exception:
-							pass
-					
+								dimensions = normalize_embedding_dimensions(
+									model=model,
+									dimensions=st.session_state.get( 'embeddings_dimensions', 0 ),
+									embedding=embedding )
+								
+								user_value = st.session_state.get( 'embeddings_user', '' )
+								user_value = user_value.strip( ) if isinstance(
+									user_value, str ) and user_value.strip( ) else None
+								
+								vectors = embedding.create(
+									text=chunks,
+									model=model,
+									format=encoding_format,
+									dimensions=dimensions,
+									user=user_value )
+								
+								usage = extract_embedding_usage(
+									getattr( embedding, 'response', None ) )
+								
+								df_embeddings = build_embeddings_dataframe(
+									chunks=chunks,
+									vectors=vectors,
+									encoding_format=encoding_format )
+								
+								metrics = build_embedding_metrics(
+									source_text=source_text,
+									normalized_text=normalized_text,
+									chunks=chunks,
+									vectors=vectors,
+									usage=usage )
+								
+								st.session_state[ 'embeddings' ] = normalize_embedding_vectors(
+									vectors )
+								st.session_state[ 'embeddings_chunks' ] = chunks
+								st.session_state[ 'embeddings_df' ] = df_embeddings
+								st.session_state[ 'embedding_metrics' ] = metrics
+								st.session_state[ 'embedding_usage' ] = usage
+								
+								try:
+									update_token_counters( getattr( embedding, 'response', None ) )
+								except Exception:
+									pass
+								
+								st.success( 'Embeddings created successfully.' )
 					except Exception as exc:
-						st.error( f'Embedding failed: {exc}' )
+						err = Error( exc )
+						st.error( f'Embedding creation failed: {err.info}' )
 		
-		with btn_right:
-			if st.button( 'Reset', width='stretch', key='input_text_reset' ):
-				# ----------------------------------------------------------
-				# Clear Embedding State
-				# ----------------------------------------------------------
-				for key in [ 'embeddings', 'embeddings_chunks', 'embeddings_df',
-				             'embeddings_input_text' ]:
-					if key in st.session_state:
-						del st.session_state[ key ]
-				
+		# ------------------------------------------------------------------
+		# Reset All
+		# ------------------------------------------------------------------
+		with action_c2:
+			if st.button( 'Reset All', key='reset_embeddings_all',
+					width='stretch', on_click=reset_embeddings_all ):
 				st.rerun( )
 		
-		st.divider( )
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ------------------------------------------------------------------
-		# TEXT METRICS
+		# Metrics
 		# ------------------------------------------------------------------
-		if st.session_state.get( 'embeddings_input_text' ):
-			embeddings_input = st.session_state.get( 'embeddings_input_text', '' ).strip( )
-		
-		if embeddings_input:
-			words = embeddings_input.split( )
-			total_words = len( words )
-			unique_words = len( set( words ) )
-			char_count = len( embeddings_input )
-			token_count = count_tokens( embeddings_input )
-			ttr = (unique_words / total_words) if total_words > 0 else 0.0
-			col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns( 5, border=True )
-			col_m1.metric( 'Tokens', token_count )
-			col_m2.metric( 'Words', total_words )
-			col_m3.metric( 'Unique Words', unique_words )
-			col_m4.metric( 'TTR', f"{ttr:.3f}" )
-			col_m5.metric( 'Characters', char_count )
-			
-			st.session_state[ 'embedding_metrics' ] = { 'tokens': token_count, 'words': total_words,
-			                                            'unique_words': unique_words, 'ttr': ttr,
-			                                            'characters': char_count }
+		metrics = st.session_state.get( 'embedding_metrics', { } )
+		if isinstance( metrics, dict ) and len( metrics ) > 0:
+			render_embedding_metrics( metrics )
 		
 		# ------------------------------------------------------------------
-		# EMBEDDING DATAFRAME (Dimension-Safe)
+		# Embeddings Output
 		# ------------------------------------------------------------------
-		if 'embeddings' in st.session_state:
-			embedding_vectors = st.session_state[ 'embeddings' ]
-			if isinstance( embedding_vectors, list ) and embedding_vectors:
-				if isinstance( embedding_vectors[ 0 ], float ):
-					embedding_vectors = [ embedding_vectors ]
-				
-				df_embedding = pd.DataFrame( embedding_vectors,
-					columns=[ f"dim_{i}" for i in range( len( embedding_vectors[ 0 ] ) ) ] )
-				
-				st.data_editor( df_embedding, use_container_width=True, hide_index=True,
-					key='embedding_vectors' )
+		df_embeddings = st.session_state.get( 'embeddings_df', pd.DataFrame( ) )
+		if isinstance( df_embeddings, pd.DataFrame ) and not df_embeddings.empty:
+			st.subheader( 'Embedding Output' )
+			render_embeddings_dataframe( df_embeddings )
+		
+		# ------------------------------------------------------------------
+		# Chunks
+		# ------------------------------------------------------------------
+		chunks = st.session_state.get( 'embeddings_chunks', [ ] )
+		if isinstance( chunks, list ) and len( chunks ) > 0:
+			with st.expander( label='Chunks', icon='🧩',
+					expanded=False, width='stretch' ):
+				df_chunks = pd.DataFrame(
+					[
+							{
+									'ChunkIndex': index + 1,
+									'Text': chunk,
+									'Tokens': count_tokens( chunk ),
+							}
+							for index, chunk in enumerate( chunks )
+					] )
+				st.data_editor( df_chunks, use_container_width=True, hide_index=True )
+		
+		# ------------------------------------------------------------------
+		# Usage
+		# ------------------------------------------------------------------
+		usage = st.session_state.get( 'embedding_usage', { } )
+		if isinstance( usage, dict ) and len( usage ) > 0:
+			with st.expander( label='Embedding Usage', icon='📊',
+					expanded=False, width='stretch' ):
+				st.json( usage )
 
 # ======================================================================================
 # FILES API MODE
