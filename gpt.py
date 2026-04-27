@@ -43,6 +43,7 @@
 	******************************************************************************************
 '''
 from __future__ import annotations
+import json
 import os
 from pathlib import Path
 import tiktoken
@@ -140,80 +141,102 @@ class GPT:
 class Chat( GPT ):
 	"""
 	
-	    Purpose
-	    ___________
-	    Class used for interacting with OpenAI's  ChatGPT API
-	
-	
-	    Parameters
-	    ------------
-	    number: int=1
-	    temperature: float=0.8
-	    top_p: float=0.9
-	    frequency: float=0.0
-	    presence: float=0.0
-	    max_tokens: int=10000
-	    store: bool=True
-	    stream: bool=True
-	
-	    Attributes
-	    -----------
-	    number,
-	    temperature,
-	    top_percent,
-	    frequency_penalty,
-	    presence_penalty,
-	    store,
-	    stream,
-	    maximum_completion_tokens,
-	    api_key,
-	    client,
-	    model,
-	    embedding,
-	    response,
-	    modalities,
-	    stops,
-	    content,
-	    prompt,
-	    response,
-	    file_path,
-	    path,
-	    messages,
-	    image_url,
-	    response_format,
-	    tools,
-	    vector_store_ids
-	    
-	    Properties:
-	    -----------
-	    model_options - List[ str ]
-	
-	    Methods
-	    ------------
-	    generate_text( self, prompt: str ) -> str:
-	    analyze_image( self, prompt: str, url: str ) -> str:
-	    summarize_document( self, prompt: str, path: str ) -> str
-	    search_web( self, prompt: str ) -> str
-	    search_files( self, prompt: str ) -> str
-	    dump( self ) -> str
-	    get_data( self ) -> { }
+	    Purpose:
+	    --------
+	    Provides a wrapper around the OpenAI Responses API for text-generation,
+	    retrieval-augmented, and tool-enabled chat workflows.
 
+	    Attributes:
+	    -----------
+	    include:
+	        Optional Responses API include fields.
+
+	    tool_choice:
+	        Optional Responses API tool-choice policy.
+
+	    previous_id:
+	        Optional previous response identifier used for stateful Responses API calls.
+
+	    conversation_id:
+	        Optional Responses API conversation identifier.
+
+	    parallel_tools:
+	        Optional flag allowing parallel tool calls.
+
+	    max_tools:
+	        Optional maximum number of tool calls.
+
+	    input:
+	        Responses API input payload.
+
+	    tools:
+	        Normalized Responses API tool definitions.
+
+	    reasoning:
+	        Optional Responses API reasoning configuration.
+
+	    allowed_domains:
+	        Optional list of web-search allowed domains.
+
+	    output_text:
+	        Text output from the most recent response.
+
+	    vector_store_ids:
+	        Vector store identifiers used for file_search.
+
+	    file_ids:
+	        File identifiers retained for compatibility.
+
+	    response:
+	        Last Responses API response object.
+
+	    Methods:
+	    --------
+	    generate_text:
+	        Generates a text response through the OpenAI Responses API.
+
+	    build_reasoning:
+	        Builds a valid Responses API reasoning object.
+
+	    build_input:
+	        Builds the Responses API input payload.
+
+	    build_tools:
+	        Builds valid built-in Responses API tool objects.
+
+	    build_tool_choice:
+	        Builds a safe tool-choice value based on the final tool list.
+
+	    build_include:
+	        Filters include values to a conservative supported subset.
+
+	    build_text_format:
+	        Builds the Responses API text-format object.
+
+	    build_request:
+	        Builds the full Responses API request dictionary.
+
+	    get_output_text:
+	        Extracts output text from a completed response.
+
+	    get_usage:
+	        Returns usage metadata from the last response.
 
     """
 	include: Optional[ List[ str ] ]
 	tool_choice: Optional[ str ]
 	previous_id: Optional[ str ]
+	conversation_id: Optional[ str ]
 	parallel_tools: Optional[ bool ]
-	max_tools = Optional[ int ]
-	input: Optional[ List[ Dict[ str, str ] ] | str ]
+	max_tools: Optional[ int ]
+	input: Optional[ List[ Dict[ str, Any ] ] | str ]
 	tools: Optional[ List[ Dict[ str, Any ] ] ]
-	reasoning_effort: Optional[ Dict[ str, str ] ]
+	reasoning: Optional[ Dict[ str, str ] ]
 	image_url: Optional[ str ]
 	image_path: Optional[ str ]
 	file_url: Optional[ str ]
 	file_path: Optional[ str ]
 	allowed_domains: Optional[ List[ str ] ]
-	max_tools = Optional[ int ]
 	max_search_results: Optional[ int ]
 	output_text: Optional[ str ]
 	vector_stores: Optional[ Dict[ str, str ] ]
@@ -225,18 +248,129 @@ class Chat( GPT ):
 	file: Optional[ FileObject ]
 	purpose: Optional[ str ]
 	
-	def __init__( self, model: str='gpt-5-nano', prompt: str=None, temperature: float=None,
-			top_p: float=None, presense: float=None, store: bool=None, stream: bool=None,
-			stops: List[ str ]=None, response_format: Dict[ str, str ]=None, number: int=None,
-			instruct: str=None, context: List[ Dict[ str, str ] ]=None,
-			allowed_domains: List[ str ]=None, include: List[ str ]=None,
-			tools: List[ Dict[ str, Any ] ]=None, max_tools: int=None,
-			tool_choice: str=None, file_path: str=None, background: bool=None,
-			is_parallel: bool=None, max_tokens: int=None, frequency: float=None,
-			input: List[ Dict[ str, Any ] ]=None, file_ids: List[ str ]=None,
-			previous_id: str=None, reasoning: Dict[ str, str ] | str=None,
-			output_text: str=None, max_search_results: int=None, content: str=None,
+	def __init__( self, model: str = 'gpt-5-nano', prompt: str = None, temperature: float = None,
+			top_p: float = None, presense: float = None, presence: float = None, store: bool = None,
+			stream: bool = None, stops: List[ str ] = None,
+			response_format: Dict[ str, Any ] = None,
+			number: int = None, instruct: str = None, context: List[ Dict[ str, str ] ] = None,
+			allowed_domains: List[ str ] = None, include: List[ str ] = None,
+			tools: List[ Dict[ str, Any ] ] = None, max_tools: int = None,
+			tool_choice: str = None, file_path: str = None, background: bool = None,
+			is_parallel: bool = None, max_tokens: int = None, frequency: float = None,
+			input: List[ Dict[ str, Any ] ] = None, file_ids: List[ str ] = None,
+			previous_id: str = None, conversation_id: str = None,
+			reasoning: Dict[ str, str ] | str = None, output_text: str = None,
+			max_search_results: int = None, content: str = None,
 			vector_store_ids: List[ str ] = None ):
+		"""
+		
+			Purpose:
+			--------
+			Initialize a Chat wrapper instance with optional Responses API defaults.
+
+			Parameters:
+			-----------
+			model: str
+				Default OpenAI model name.
+
+			prompt: str
+				Optional default user prompt.
+
+			temperature: float
+				Optional sampling temperature.
+
+			top_p: float
+				Optional nucleus sampling value.
+
+			presense: float
+				Backward-compatible misspelled presence penalty argument.
+
+			presence: float
+				Optional presence penalty value.
+
+			store: bool
+				Optional Responses API store flag.
+
+			stream: bool
+				Optional stream flag retained for compatibility.
+
+			stops: List[ str ]
+				Optional stop sequences retained for compatibility.
+
+			response_format: Dict[ str, Any ]
+				Optional Responses API text formatting object.
+
+			number: int
+				Optional number retained for compatibility.
+
+			instruct: str
+				Optional system/developer instructions.
+
+			context: List[ Dict[ str, str ] ]
+				Optional prior message context.
+
+			allowed_domains: List[ str ]
+				Optional web-search allowed-domain list.
+
+			include: List[ str ]
+				Optional include fields.
+
+			tools: List[ Dict[ str, Any ] ]
+				Optional tool definitions or selected tool-name dictionaries.
+
+			max_tools: int
+				Optional maximum tool-call count.
+
+			tool_choice: str
+				Optional tool-choice policy.
+
+			file_path: str
+				Optional file path retained for compatibility.
+
+			background: bool
+				Optional background flag retained for compatibility.
+
+			is_parallel: bool
+				Optional parallel tool-call flag.
+
+			max_tokens: int
+				Optional maximum output token count.
+
+			frequency: float
+				Optional frequency penalty value.
+
+			input: List[ Dict[ str, Any ] ]
+				Optional prebuilt Responses API input payload.
+
+			file_ids: List[ str ]
+				Optional file identifiers retained for compatibility.
+
+			previous_id: str
+				Optional previous response identifier.
+
+			conversation_id: str
+				Optional Responses API conversation identifier.
+
+			reasoning: Dict[ str, str ] | str
+				Optional reasoning configuration.
+
+			output_text: str
+				Optional output text retained for compatibility.
+
+			max_search_results: int
+				Optional maximum search-result count retained for compatibility.
+
+			content: str
+				Optional content retained for compatibility.
+
+			vector_store_ids: List[ str ]
+				Optional vector store identifiers used by file_search.
+
+			Returns:
+			--------
+			None
+		
+		"""
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
@@ -248,7 +382,7 @@ class Chat( GPT ):
 		self.top_percent = top_p
 		self.allowed_domains = allowed_domains if allowed_domains is not None else [ ]
 		self.frequency_penalty = frequency
-		self.presence_penalty = presense
+		self.presence_penalty = presence if presence is not None else presense
 		self.max_tokens = max_tokens
 		self.context = context if context is not None else [ ]
 		self.stream = stream
@@ -256,7 +390,6 @@ class Chat( GPT ):
 		self.instructions = instruct
 		self.stops = stops if stops is not None else [ ]
 		self.background = background
-		self.conetxt = self.context
 		self.input = input if input is not None else [ ]
 		self.include = include if include is not None else [ ]
 		self.output_text = output_text
@@ -265,28 +398,29 @@ class Chat( GPT ):
 		self.file_ids = file_ids if file_ids is not None else [ ]
 		self.tools = tools if tools is not None else [ ]
 		self.previous_id = previous_id
+		self.conversation_id = conversation_id
 		self.reasoning = reasoning
 		self.parallel_tools = is_parallel
 		self.tool_choice = tool_choice
 		self.response = None
 		self.file = None
 		self.file_url = file_path
+		self.file_path = file_path
 		self.image_url = None
 		self.content = content
-		self.output_text = output_text
 		self.max_search_results = max_search_results
 		self.purpose = None
-		self.vector_stores = \
-		{
-			'Guidance': 'vs_712r5W5833G6aLxIYIbuvVcK',
-			'Appropriations': 'vs_8fEoYp1zVvk5D8atfWLbEupN',
+		self.request = { }
+		self.messages = [ ]
+		self.vector_stores = {
+				'Guidance': 'vs_712r5W5833G6aLxIYIbuvVcK',
+				'Appropriations': 'vs_8fEoYp1zVvk5D8atfWLbEupN',
 		}
-		self.files = \
-		{
-			'Account_Balances.csv': 'file-U6wFeRGSeg38Db5uJzo5sj',
-			'SF133.csv': 'file-WT2h2F5SNxqK2CxyAMSDg6',
-			'Authority.csv': 'file-Qi2rw2QsdxKBX1iiaQxY3m',
-			'Outlays.csv': 'file-GHEwSWR7ezMvHrQ3X648wn'
+		self.files = {
+				'Account_Balances.csv': 'file-U6wFeRGSeg38Db5uJzo5sj',
+				'SF133.csv': 'file-WT2h2F5SNxqK2CxyAMSDg6',
+				'Authority.csv': 'file-Qi2rw2QsdxKBX1iiaQxY3m',
+				'Outlays.csv': 'file-GHEwSWR7ezMvHrQ3X648wn',
 		}
 	
 	@property
@@ -295,7 +429,16 @@ class Chat( GPT ):
 
 	        Purpose:
 	        --------
-	        Methods that returns a list of small_model names
+	        Return text-capable model names used by the Text mode selector.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Model option names.
 
         '''
 		return [
@@ -309,111 +452,198 @@ class Chat( GPT ):
 				'gpt-4.1-mini',
 				'gpt-4.1-nano',
 				'gpt-4o',
-				'gpt-4o-mini' ]
+				'gpt-4o-mini',
+		]
 	
 	@property
 	def include_options( self ) -> List[ str ] | None:
 		'''
 
+			Purpose:
+			--------
+			Return conservative Responses API include options supported by Text mode.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of the includeable options
+			List[ str ] | None:
+				Include option names.
 
 		'''
-		return [ 'file_search_call.results',
-		         'web_search_call.results',
-		         'web_search_call.action.sources',
-		         'message.input_image.image_url',
-		         'computer_call_output.output.image_url',
-		         'code_interpreter_call.outputs',
-		         'reasoning.encrypted_content',
-		         'message.output_text.logprobs' ]
+		return [
+				'file_search_call.results',
+				'web_search_call.results',
+				'web_search_call.action.sources',
+				'code_interpreter_call.outputs',
+				'reasoning.encrypted_content',
+				'message.output_text.logprobs',
+		]
 	
 	@property
 	def tool_options( self ) -> List[ str ] | None:
 		'''
 
+			Purpose:
+			--------
+			Return built-in tool options that Text mode can safely configure.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of available tools options
+			List[ str ] | None:
+				Tool option names.
 
 		'''
-		return [ 'web_search', 'image_generation', 'file_search',
-		         'code_interpreter', 'computer_use_preview' ]
+		return [
+				'web_search',
+				'file_search',
+		]
 	
 	@property
 	def choice_options( self ) -> List[ str ] | None:
 		'''
 
+			Purpose:
+			--------
+			Return supported tool-choice policies.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of available tools options
+			List[ str ] | None:
+				Tool-choice option names.
 
 		'''
-		return [ 'auto', 'required', 'none' ]
+		return [
+				'auto',
+				'required',
+				'none',
+		]
 	
 	@property
 	def purpose_options( self ) -> List[ str ] | None:
 		'''
 		
+			Purpose:
+			--------
+			Return file purpose options retained for compatibility.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of file purposes
+			List[ str ] | None:
+				File purpose names.
 
 		'''
-		return [ 'assistants', 'batch', 'fine-tune', 'vision',
-		         'user_data', 'evals' ]
+		return [
+				'assistants',
+				'batch',
+				'fine-tune',
+				'vision',
+				'user_data',
+				'evals',
+		]
 	
 	@property
 	def format_options( self ) -> List[ str ] | None:
 		'''
 		
+			Purpose:
+			--------
+			Return Text mode response-format options.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of file purposes
+			List[ str ] | None:
+				Response-format names.
 
 		'''
-		return [ 'text', 'json_object', 'json_schema' ]
+		return [
+				'text',
+				'json_object',
+				'json_schema',
+		]
 	
 	@property
 	def reasoning_options( self ) -> List[ str ] | None:
 		'''
 
+			Purpose:
+			--------
+			Return conservative reasoning effort options.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of reasoning effort options
+			List[ str ] | None:
+				Reasoning effort names.
 
 		'''
-		return [ 'low','medium', 'high', 'minimal','xhigh' ]
+		return [
+				'none',
+				'minimal',
+				'low',
+				'medium',
+				'high',
+		]
 	
 	@property
 	def modality_options( self ) -> List[ str ] | None:
 		'''
 		
+			Purpose:
+			--------
+			Return modality options retained for compatibility.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of file purposes
+			List[ str ] | None:
+				Modality names.
 
 		'''
-		return [ 'text', 'auto', 'image', 'audio' ]
+		return [
+				'text',
+		]
 	
-	def _build_reasoning( self, reasoning: str | Dict[ str, str ]=None ) -> Dict[ str, str ] | None:
+	def build_reasoning( self, reasoning: str | Dict[ str, str ] = None ) -> Dict[ str, str ] | None:
 		"""
 	
-	        Purpose
-	        _______
-	        Creates a Responses API reasoning object
-	        from a string or dictionary input
-	
-	
-	        Parameters
-	        ----------
+	        Purpose:
+	        --------
+	        Create a valid Responses API reasoning object from a string or dictionary.
+
+	        Parameters:
+	        -----------
 	        reasoning: str | Dict[ str, str ]
-	
-	
-	        Returns
-	        -------
-	        Dict[ str, str ] | None
+	            Reasoning effort string or prebuilt reasoning dictionary.
+
+	        Returns:
+	        --------
+	        Dict[ str, str ] | None:
+	            Reasoning object or None.
 
         """
 		try:
@@ -421,44 +651,60 @@ class Chat( GPT ):
 				return None
 			
 			if isinstance( reasoning, dict ):
-				return reasoning if len( reasoning ) > 0 else None
+				value = reasoning.get( 'effort' )
+				if isinstance( value, str ) and value.strip( ) in self.reasoning_options:
+					if value.strip( ) == 'none':
+						return None
+					
+					return { 'effort': value.strip( ) }
+				
+				return None
 			
 			if isinstance( reasoning, str ) and reasoning.strip( ):
-				return { 'effort': reasoning.strip( ) }
+				value = reasoning.strip( )
+				if value == 'none':
+					return None
+				
+				if value in self.reasoning_options:
+					return { 'effort': value }
 			
 			return None
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Chat'
-			exception.method = '_build_reasoning( self, reasoning: str | Dict[ str, str ] )'
+			exception.method = 'build_reasoning( self, reasoning )'
 			raise exception
 	
-	def _build_input( self, prompt: str, context: List[ Dict[ str, str ] ]=None,
-			input_data: List[ Dict[ str, Any ] ]=None ) -> List[ Dict[ str, Any ] ]:
+	def build_input( self, prompt: str, context: List[ Dict[ str, str ] ] = None,
+			input_data: List[ Dict[ str, Any ] ] = None ) -> List[ Dict[ str, Any ] ]:
 		"""
 	
-	        Purpose
-	        _______
-	        Creates the Responses API input payload
-	        for text generation requests
-	
-	
-	        Parameters
-	        ----------
+	        Purpose:
+	        --------
+	        Create the Responses API input payload for text-generation requests.
+
+	        Parameters:
+	        -----------
 	        prompt: str
+	            User prompt submitted to the Responses API.
+
 	        context: List[ Dict[ str, str ] ]
+	            Prior user/assistant/developer/system messages.
+
 	        input_data: List[ Dict[ str, Any ] ]
-	
-	
-	        Returns
-	        -------
-	        List[ Dict[ str, Any ] ]
+	            Optional prebuilt Responses API input objects.
+
+	        Returns:
+	        --------
+	        List[ Dict[ str, Any ] ]:
+	            Responses API input payload.
 
         """
 		try:
 			throw_if( 'prompt', prompt )
 			self.messages = [ ]
+			
 			if input_data is not None and len( input_data ) > 0:
 				self.messages.extend( input_data )
 			elif context is not None and len( context ) > 0:
@@ -466,51 +712,72 @@ class Chat( GPT ):
 					if not isinstance( item, dict ):
 						continue
 					
-					self.messages.append( item )
+					role = str( item.get( 'role', '' ) or '' ).strip( )
+					content = item.get( 'content', '' )
+					
+					if role not in [ 'user', 'assistant', 'system', 'developer' ]:
+						continue
+					
+					if not isinstance( content, str ) or not content.strip( ):
+						continue
+					
+					self.messages.append(
+						{
+								'role': role,
+								'content': [
+										{
+												'type': 'input_text',
+												'text': content.strip( ),
+										}, ],
+						} )
 			
 			self.messages.append(
-			{
-				'role': 'user',
-				'content': [
 				{
-					'type': 'input_text',
-					'text': prompt,
-				}, ],
-			})
+						'role': 'user',
+						'content': [
+								{
+										'type': 'input_text',
+										'text': prompt,
+								}, ],
+				} )
 			
 			return self.messages
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Chat'
-			exception.method = ('_build_input( self, prompt: str, '
-			                    'context: List[ Dict[ str, str ] ]=None, '
-			                    'input_data: List[ Dict[ str, Any ] ]=None )')
+			exception.method = 'build_input( self, prompt, context, input_data )'
 			raise exception
 	
-	def _build_tools( self, tools: List[ Dict[ str, Any ] ] = None,
-			allowed_domains: List[ str ] = None ) -> List[ Dict[ str, Any ] ] | None:
+	def build_tools( self, tools: List[ Dict[ str, Any ] ] = None,
+			allowed_domains: List[ str ] = None,
+			vector_store_ids: List[ str ] = None ) -> List[ Dict[ str, Any ] ] | None:
 		"""
-	
-	        Purpose
-	        _______
-	        Normalizes built-in Responses API tool objects
-	        for text generation requests
-	
-	
-	        Parameters
-	        ----------
-	        tools: List[ Dict[ str, Any ] ]
-	        allowed_domains: List[ str ]
-	
-	
-	        Returns
-	        -------
-	        List[ Dict[ str, Any ] ] | None
 
-        """
+			Purpose:
+			--------
+			Normalize supported built-in Responses API tool objects for Text mode.
+
+			Parameters:
+			-----------
+			tools: List[ Dict[ str, Any ] ]
+				Tool dictionaries selected by the application UI.
+
+			allowed_domains: List[ str ]
+				Optional list of allowed domains for web_search.
+
+			vector_store_ids: List[ str ]
+				Optional vector store IDs used by file_search.
+
+			Returns:
+			--------
+			List[ Dict[ str, Any ] ] | None:
+				Normalized tool dictionaries or None.
+
+		"""
 		try:
 			self.allowed_domains = allowed_domains if allowed_domains is not None else [ ]
+			self.vector_store_ids = vector_store_ids if vector_store_ids is not None else [ ]
 			if tools is None or len( tools ) == 0:
 				return None
 			
@@ -519,60 +786,285 @@ class Chat( GPT ):
 				if not isinstance( tool, dict ):
 					continue
 				
-				self.tool = dict( tool )
-				self.tool_type = self.tool.get( 'type' )
-				if not self.tool_type:
+				tool_type = str( tool.get( 'type', '' ) or '' ).strip( )
+				if not tool_type:
 					continue
 				
-				if self.tool_type == 'web_search' and len( self.allowed_domains ) > 0:
-					self.filters = self.tool.get( 'filters' )
-					if not isinstance( self.filters, dict ):
-						self.filters = { }
+				if tool_type == 'web_search':
+					built_tool = { 'type': 'web_search' }
+					if len( self.allowed_domains ) > 0:
+						built_tool[ 'filters' ] = { 'allowed_domains': self.allowed_domains }
 					
-					self.filters[ 'allowed_domains' ] = self.allowed_domains
-					self.tool[ 'filters' ] = self.filters
+					self.built_tools.append( built_tool )
+					continue
 				
-				if self.tool_type == 'file_search' and len( self.vector_store_ids ) > 0:
-					self.tool[ 'vector_store_ids' ] = self.vector_store_ids
-				
-				self.built_tools.append( self.tool )
+				if tool_type == 'file_search':
+					if len( self.vector_store_ids ) == 0:
+						continue
+					
+					self.built_tools.append(
+						{
+								'type': 'file_search',
+								'vector_store_ids': self.vector_store_ids,
+						} )
+					continue
+			
 			return self.built_tools if len( self.built_tools ) > 0 else None
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Chat'
-			exception.method = ('_build_tools( self, tools: List[ Dict[ str, Any ] ]=None, '
-			                    'allowed_domains: List[ str ]=None )')
+			exception.method = 'build_tools( self, tools, allowed_domains, vector_store_ids )'
 			raise exception
 	
-	def _build_request( self, prompt: str, model: str, temperature: float = None,
-			format: Dict[ str, Any ] = None, top_p: float = None, frequency: float = None,
-			max_tools: int = None, presence: float = None, max_tokens: int = None, store: bool = None,
-			stream: bool = None, instruct: str = None, background: bool = False, reasoning: str = None,
-			include: List[ str ] = None, tools: List[ Dict[ str, Any ] ] = None,
-			allowed_domains: List[ str ] = None, previous_id: str = None,
-			tool_choice: str = None, is_parallel: bool = None,
-			context: List[ Dict[ str, str ] ] = None,
-			input_data: List[ Dict[ str, Any ] ] = None ) -> Dict[ str, Any ]:
+	def build_tool_choice( self, tool_choice: str = None,
+			tools: List[ Dict[ str, Any ] ] = None ) -> str | None:
 		"""
-	
-	        Purpose
-	        _______
-	        Creates a normalized Responses API request payload
-	        for text generation
-	
-	
-	        Parameters
-	        ----------
-	        prompt: str
-	        model: str
-	
-	
-	        Returns
-	        -------
-	        Dict[ str, Any ]
+		
+			Purpose:
+			--------
+			Build a safe tool-choice value based on the final normalized tool list.
 
-        """
+			Parameters:
+			-----------
+			tool_choice: str
+				Requested tool-choice policy.
+
+			tools: List[ Dict[ str, Any ] ]
+				Final normalized tool list.
+
+			Returns:
+			--------
+			str | None:
+				Tool-choice policy or None.
+
+		"""
+		try:
+			if not isinstance( tool_choice, str ) or not tool_choice.strip( ):
+				return None
+			
+			choice = tool_choice.strip( )
+			if choice not in self.choice_options:
+				return None
+			
+			if choice == 'none':
+				return 'none'
+			
+			if tools is None or len( tools ) == 0:
+				return None
+			
+			return choice
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = 'build_tool_choice( self, tool_choice, tools )'
+			raise exception
+	
+	def build_include( self, include: List[ str ] = None,
+			tools: List[ Dict[ str, Any ] ] = None ) -> List[ str ] | None:
+		"""
+		
+			Purpose:
+			--------
+			Filter include values to a conservative subset supported by selected tools.
+
+			Parameters:
+			-----------
+			include: List[ str ]
+				Requested include values.
+
+			tools: List[ Dict[ str, Any ] ]
+				Final normalized tool list.
+
+			Returns:
+			--------
+			List[ str ] | None:
+				Filtered include values or None.
+
+		"""
+		try:
+			if include is None or len( include ) == 0:
+				return None
+			
+			tool_types = [ ]
+			if isinstance( tools, list ):
+				for tool in tools:
+					if isinstance( tool, dict ) and tool.get( 'type' ):
+						tool_types.append( str( tool.get( 'type' ) ) )
+			
+			allowed = [ ]
+			for value in include:
+				if not isinstance( value, str ) or not value.strip( ):
+					continue
+				
+				name = value.strip( )
+				if name == 'reasoning.encrypted_content':
+					allowed.append( name )
+					continue
+				
+				if name == 'message.output_text.logprobs':
+					allowed.append( name )
+					continue
+				
+				if name.startswith( 'web_search_call.' ) and 'web_search' in tool_types:
+					allowed.append( name )
+					continue
+				
+				if name == 'file_search_call.results' and 'file_search' in tool_types:
+					allowed.append( name )
+					continue
+			
+			return allowed if len( allowed ) > 0 else None
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = 'build_include( self, include, tools )'
+			raise exception
+	
+	def build_text_format( self, format: Dict[ str, Any ] | str = None ) -> Dict[ str, Any ] | None:
+		"""
+		
+			Purpose:
+			--------
+			Build or validate a Responses API text-format object.
+
+			Parameters:
+			-----------
+			format: Dict[ str, Any ] | str
+				Response format dictionary or response format name.
+
+			Returns:
+			--------
+			Dict[ str, Any ] | None:
+				Responses API text-format object or None.
+
+		"""
+		try:
+			if format is None:
+				return None
+			
+			if isinstance( format, dict ) and len( format ) > 0:
+				if 'format' in format and isinstance( format.get( 'format' ), dict ):
+					return format
+				
+				if 'type' in format:
+					return { 'format': format }
+				
+				return None
+			
+			if isinstance( format, str ) and format.strip( ):
+				value = format.strip( )
+				if value == 'text':
+					return { 'format': { 'type': 'text' } }
+				
+				if value == 'json_object':
+					return { 'format': { 'type': 'json_object' } }
+			
+			return None
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Chat'
+			exception.method = 'build_text_format( self, format )'
+			raise exception
+	
+	def build_request( self, prompt: str, model: str, temperature: float = None,
+			format: Dict[ str, Any ] = None, top_p: float = None, frequency: float = None,
+			max_tools: int = None, presence: float = None, max_tokens: int = None,
+			store: bool = None, stream: bool = None, instruct: str = None,
+			background: bool = False, reasoning: str = None, include: List[ str ] = None,
+			tools: List[ Dict[ str, Any ] ] = None, allowed_domains: List[ str ] = None,
+			previous_id: str = None, tool_choice: str = None, is_parallel: bool = None,
+			context: List[ Dict[ str, str ] ] = None, input_data: List[ Dict[ str, Any ] ] = None,
+			vector_store_ids: List[ str ] = None, conversation_id: str = None ) -> Dict[ str, Any ]:
+		"""
+
+			Purpose:
+			--------
+			Create a normalized Responses API request payload for text generation.
+
+			Parameters:
+			-----------
+			prompt: str
+				User prompt submitted to the model.
+
+			model: str
+				OpenAI model identifier.
+
+			temperature: float
+				Optional sampling temperature.
+
+			format: Dict[ str, Any ]
+				Optional Responses API text formatting object.
+
+			top_p: float
+				Optional nucleus sampling value.
+
+			frequency: float
+				Optional frequency penalty.
+
+			max_tools: int
+				Optional maximum number of tool calls.
+
+			presence: float
+				Optional presence penalty.
+
+			max_tokens: int
+				Optional maximum output token count.
+
+			store: bool
+				Optional flag controlling whether OpenAI stores the response.
+
+			stream: bool
+				Optional stream flag retained for compatibility.
+
+			instruct: str
+				Optional system or developer instructions.
+
+			background: bool
+				Optional background flag retained for compatibility.
+
+			reasoning: str
+				Optional reasoning effort value.
+
+			include: List[ str ]
+				Optional Responses API include fields.
+
+			tools: List[ Dict[ str, Any ] ]
+				Optional tool dictionaries.
+
+			allowed_domains: List[ str ]
+				Optional web_search allowed-domain filters.
+
+			previous_id: str
+				Optional previous response ID.
+
+			tool_choice: str
+				Optional tool-choice policy.
+
+			is_parallel: bool
+				Optional flag allowing parallel tool calls.
+
+			context: List[ Dict[ str, str ] ]
+				Optional conversation context.
+
+			input_data: List[ Dict[ str, Any ] ]
+				Optional prebuilt Responses API input items.
+
+			vector_store_ids: List[ str ]
+				Optional vector store IDs for file_search.
+
+			conversation_id: str
+				Optional Responses API conversation identifier.
+
+			Returns:
+			--------
+			Dict[ str, Any ]:
+				Responses API request dictionary.
+
+		"""
 		try:
 			throw_if( 'prompt', prompt )
 			throw_if( 'model', model )
@@ -587,19 +1079,21 @@ class Chat( GPT ):
 			self.stream = stream
 			self.background = background
 			self.instructions = instruct
-			self.response_format = format if format is not None else { }
+			self.response_format = self.build_text_format( format )
 			self.max_tools = max_tools
-			self.include = include if include is not None else [ ]
+			self.vector_store_ids = vector_store_ids if vector_store_ids is not None else [ ]
 			self.previous_id = previous_id if isinstance( previous_id, str ) else None
-			self.tool_choice = tool_choice.strip( ) if isinstance( tool_choice, str ) else None
+			self.conversation_id = conversation_id if isinstance( conversation_id, str ) else None
 			self.parallel_tools = is_parallel
-			self.reasoning = self._build_reasoning( reasoning )
-			self.tools = self._build_tools( tools=tools, allowed_domains=allowed_domains )
-			self.input = self._build_input( prompt=prompt, context=context, input_data=input_data )
-			self.request = \
-			{
-				'model': self.model,
-				'input': self.input,
+			self.reasoning = self.build_reasoning( reasoning )
+			self.tools = self.build_tools( tools=tools, allowed_domains=allowed_domains,
+				vector_store_ids=self.vector_store_ids )
+			self.tool_choice = self.build_tool_choice( tool_choice=tool_choice, tools=self.tools )
+			self.include = self.build_include( include=include, tools=self.tools )
+			self.input = self.build_input( prompt=prompt, context=context, input_data=input_data )
+			self.request = {
+					'model': self.model,
+					'input': self.input,
 			}
 			
 			if self.instructions:
@@ -617,14 +1111,14 @@ class Chat( GPT ):
 			if self.top_percent is not None and not self.model.startswith( 'gpt-5' ):
 				self.request[ 'top_p' ] = self.top_percent
 			
+			if self.frequency_penalty is not None and not self.model.startswith( 'gpt-5' ):
+				self.request[ 'frequency_penalty' ] = self.frequency_penalty
+			
+			if self.presence_penalty is not None and not self.model.startswith( 'gpt-5' ):
+				self.request[ 'presence_penalty' ] = self.presence_penalty
+			
 			if self.store is not None:
 				self.request[ 'store' ] = self.store
-			
-			if self.stream is not None:
-				self.request[ 'stream' ] = self.stream
-			
-			if self.background is not None:
-				self.request[ 'background' ] = self.background
 			
 			if self.include is not None and len( self.include ) > 0:
 				self.request[ 'include' ] = self.include
@@ -635,13 +1129,16 @@ class Chat( GPT ):
 			if self.tool_choice:
 				self.request[ 'tool_choice' ] = self.tool_choice
 			
-			if self.parallel_tools is not None:
+			if self.parallel_tools is not None and self.tools is not None:
 				self.request[ 'parallel_tool_calls' ] = self.parallel_tools
 			
 			if self.previous_id and self.previous_id.strip( ):
 				self.request[ 'previous_response_id' ] = self.previous_id.strip( )
 			
-			if isinstance( self.max_tools, int ) and self.max_tools > 0:
+			if self.conversation_id and self.conversation_id.strip( ):
+				self.request[ 'conversation' ] = self.conversation_id.strip( )
+			
+			if isinstance( self.max_tools, int ) and self.max_tools > 0 and self.tools is not None:
 				self.request[ 'max_tool_calls' ] = self.max_tools
 			
 			if self.response_format is not None and len( self.response_format ) > 0:
@@ -652,27 +1149,24 @@ class Chat( GPT ):
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Chat'
-			exception.method = ('_build_request( self, prompt: str, model: str, '
-			                    'temperature: float=None, format: Dict[ str, Any ]=None )')
+			exception.method = 'build_request( self, **kwargs )'
 			raise exception
 	
 	def get_output_text( self ) -> str | None:
 		"""
 	
-	        Purpose
-	        _______
-	        Returns the text output from the last
-	        Responses API call
-	
-	
-	        Parameters
-	        ----------
-	        self
-	
-	
-	        Returns
-	        -------
-	        str | None
+	        Purpose:
+	        --------
+	        Return text output from the last completed Responses API call.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        str | None:
+	            Output text when available.
 
         """
 		try:
@@ -684,6 +1178,7 @@ class Chat( GPT ):
 				return self.output_text
 			
 			if hasattr( self.response, 'output' ) and self.response.output:
+				text_parts = [ ]
 				for item in self.response.output:
 					if getattr( item, 'type', None ) != 'message':
 						continue
@@ -693,9 +1188,13 @@ class Chat( GPT ):
 					
 					for block in item.content:
 						if getattr( block, 'type', None ) == 'output_text':
-							self.output_text = getattr( block, 'text', None )
-							if self.output_text:
-								return self.output_text
+							text = getattr( block, 'text', None )
+							if text:
+								text_parts.append( text )
+				
+				if len( text_parts ) > 0:
+					self.output_text = ''.join( text_parts ).strip( )
+					return self.output_text
 			
 			return None
 		except Exception as e:
@@ -708,20 +1207,18 @@ class Chat( GPT ):
 	def get_usage( self ) -> Any:
 		"""
 	
-	        Purpose
-	        _______
-	        Returns usage metadata from the last
-	        Responses API call
-	
-	
-	        Parameters
-	        ----------
-	        self
-	
-	
-	        Returns
-	        -------
-	        Any
+	        Purpose:
+	        --------
+	        Return usage metadata from the last Responses API call.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        Any:
+	            Usage metadata when available.
 
         """
 		try:
@@ -738,41 +1235,119 @@ class Chat( GPT ):
 	
 	def generate_text( self, prompt: str, model: str, temperature: float = None,
 			format: Dict[ str, Any ] = None, top_p: float = None, frequency: float = None,
-			max_tools: int = None, presence: float = None, max_tokens: int = None, store: bool = None,
-			stream: bool = None, instruct: str = None, background: bool = False, reasoning: str = None,
-			include: List[ str ] = None, tools: List[ Dict[ str, Any ] ] = None,
-			allowed_domains: List[ str ] = None, previous_id: str = None,
-			tool_choice: str = None, is_parallel: bool = None,
-			context: List[ Dict[ str, str ] ] = None,
-			input_data: List[ Dict[ str, Any ] ] = None ) -> str | None:
+			max_tools: int = None, presence: float = None, max_tokens: int = None,
+			store: bool = None, stream: bool = None, instruct: str = None, background: bool = False,
+			reasoning: str = None, include: List[ str ] = None,
+			tools: List[ Dict[ str, Any ] ] = None,
+			allowed_domains: List[ str ] = None, previous_id: str = None, tool_choice: str = None,
+			is_parallel: bool = None, context: List[ Dict[ str, str ] ] = None,
+			input_data: List[ Dict[ str, Any ] ] = None, vector_store_ids: List[ str ] = None,
+			conversation_id: str = None ) -> str | None:
 		"""
-	
-	        Purpose
-	        _______
-	        Generates a chat completion given a prompt
-	
-	
-	        Parameters
-	        ----------
-	        prompt: str
-	
-	
-	        Returns
-	        -------
-	        str | None
 
-        """
+			Purpose:
+			--------
+			Generate a text response through the OpenAI Responses API.
+
+			Parameters:
+			-----------
+			prompt: str
+				User prompt submitted to the Responses API.
+
+			model: str
+				OpenAI model name.
+
+			temperature: float
+				Optional sampling temperature.
+
+			format: Dict[ str, Any ]
+				Optional Responses API text formatting object.
+
+			top_p: float
+				Optional nucleus sampling value.
+
+			frequency: float
+				Optional frequency penalty value.
+
+			max_tools: int
+				Optional maximum number of tool calls.
+
+			presence: float
+				Optional presence penalty value.
+
+			max_tokens: int
+				Optional maximum output token value.
+
+			store: bool
+				Optional Responses API store flag.
+
+			stream: bool
+				Optional Responses API stream flag. This non-streaming wrapper path does
+				not send stream=True.
+
+			instruct: str
+				Optional system or developer instructions.
+
+			background: bool
+				Optional background execution flag. This immediate wrapper path does not
+				send background=True.
+
+			reasoning: str
+				Optional reasoning effort value.
+
+			include: List[ str ]
+				Optional include fields returned by the Responses API.
+
+			tools: List[ Dict[ str, Any ] ]
+				Optional built-in tool definitions.
+
+			allowed_domains: List[ str ]
+				Optional web-search domain allowlist.
+
+			previous_id: str
+				Optional previous response identifier.
+
+			tool_choice: str
+				Optional tool-choice mode.
+
+			is_parallel: bool
+				Optional parallel tool-call flag.
+
+			context: List[ Dict[ str, str ] ]
+				Optional prior conversation context.
+
+			input_data: List[ Dict[ str, Any ] ]
+				Optional prebuilt Responses API input payload.
+
+			vector_store_ids: List[ str ]
+				Optional vector store identifiers used by the file_search tool.
+
+			conversation_id: str
+				Optional Responses API conversation identifier.
+
+			Returns:
+			--------
+			str | None
+				Assistant output text when available.
+
+		"""
 		try:
 			throw_if( 'prompt', prompt )
 			throw_if( 'model', model )
 			self.client = OpenAI( api_key=self.api_key )
-			self.request = self._build_request( prompt=prompt, model=model,
+			
+			self.stream_requested = bool( stream )
+			self.background_requested = bool( background )
+			
+			self.request = self.build_request( prompt=prompt, model=model,
 				temperature=temperature, format=format, top_p=top_p, frequency=frequency,
 				max_tools=max_tools, presence=presence, max_tokens=max_tokens, store=store,
-				stream=stream, instruct=instruct, background=background, reasoning=reasoning,
+				stream=False, instruct=instruct, background=False, reasoning=reasoning,
 				include=include, tools=tools, allowed_domains=allowed_domains,
 				previous_id=previous_id, tool_choice=tool_choice, is_parallel=is_parallel,
-				context=context, input_data=input_data )
+				context=context, input_data=input_data, vector_store_ids=vector_store_ids,
+				conversation_id=conversation_id )
+			
 			self.response = self.client.responses.create( **self.request )
 			self.previous_id = getattr( self.response, 'id', None )
 			self.output_text = self.get_output_text( )
@@ -781,51 +1356,153 @@ class Chat( GPT ):
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Chat'
-			exception.method = 'generate_text( self, prompt: str )'
+			exception.method = 'generate_text( self, prompt: str ) -> str | None'
 			raise exception
+	
+	def __dir__( self ) -> List[ str ] | None:
+		'''
+	
+	        Purpose:
+	        --------
+	        Return member names for inspection.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Member names.
+
+        '''
+		return [
+				'api_key',
+				'client',
+				'model',
+				'prompt',
+				'temperature',
+				'top_percent',
+				'frequency_penalty',
+				'presence_penalty',
+				'max_tokens',
+				'stops',
+				'store',
+				'stream',
+				'background',
+				'number',
+				'response_format',
+				'context',
+				'instructions',
+				'include',
+				'tool_choice',
+				'previous_id',
+				'conversation_id',
+				'parallel_tools',
+				'max_tools',
+				'input',
+				'tools',
+				'reasoning',
+				'allowed_domains',
+				'max_search_results',
+				'output_text',
+				'vector_store_ids',
+				'file_ids',
+				'response',
+				'file',
+				'purpose',
+				'model_options',
+				'include_options',
+				'tool_options',
+				'choice_options',
+				'purpose_options',
+				'format_options',
+				'reasoning_options',
+				'modality_options',
+				'build_reasoning',
+				'build_input',
+				'build_tools',
+				'build_tool_choice',
+				'build_include',
+				'build_text_format',
+				'build_request',
+				'get_output_text',
+				'get_usage',
+				'generate_text',
+		]
 
 class Images( GPT ):
 	"""
 	
-	    Purpose
-	    ___________
-	    Class used for generating images OpenAI's Images API and dall-e-2
-	
-	
-	    Parameters
-	    ------------
-	    n: int=1
-	    temperature: float=0.8
-	    top_p: float=0.9
-	    frequency: float=0.0
-	    presence: float=0.0
-	    max_tokens: int=10000
-	    store: bool=True
-	    stream: bool=True
-	
-	    Attributes
-	    -----------
-	    self.api_key, self.client, self.small_model,  self.embedding,
-	    self.response, self.num, self.temperature, self.top_percent,
-	    self.frequency_penalty, self.presence_penalty, self.max_completion_tokens,
-	    self.store, self.stream, self.modalities, self.stops, self.content,
-	    self.prompt, self.response, self.completion, self.file, self.path,
-	    self.messages, self.image_url, self.response_format,
-	    self.tools, self.vector_store_ids, self.input_text, self.image_url
-	
-		Properties:
-		----------
-	    detail_options( self ) -> list[ str ]
-	    format_options( self ) -> list[ str ]
-	    size_options( self ) -> list[ str ]
-	    model_options( self ) -> str
-	    
-	    Methods
-	    ------------
-	    generate( self, path: str ) -> str
-	    analyze( self, path: str, text: str ) -> str
+	    Purpose:
+	    --------
+	    Provides OpenAI image generation, image editing, and image analysis functionality.
 
-    """
+	    Attributes:
+	    -----------
+	    api_key:
+	        OpenAI API key loaded from config.py.
+
+	    client:
+	        OpenAI client instance.
+
+	    model:
+	        Image generation/editing model or vision analysis model.
+
+	    prompt:
+	        Prompt used for image generation or image editing.
+
+	    input_text:
+	        Prompt used for image analysis or image editing.
+
+	    response:
+	        Last OpenAI API response object.
+
+	    number:
+	        Number of images requested.
+
+	    size:
+	        Requested output image size.
+
+	    quality:
+	        Requested output image quality.
+
+	    detail:
+	        Vision detail level for image analysis.
+
+	    response_format:
+	        Requested image output format.
+
+	    mime_format:
+	        Requested MIME/output image format.
+
+	    background:
+	        Requested background behavior.
+
+	    compression:
+	        Requested compression value.
+
+	    image_path:
+	        Local image path used for analysis or editing.
+
+	    image_url:
+	        Image URL, when returned by the API.
+
+	    file:
+	        File object returned by the Files API for vision analysis.
+
+	    Methods:
+	    --------
+	    generate:
+	        Generates one or more images from a text prompt.
+
+	    analyze:
+	        Analyzes an uploaded image using a vision-capable Responses API model.
+
+	    edit:
+	        Edits one or more images from an uploaded source image and prompt.
+	
+	"""
 	quality: Optional[ str ]
 	detail: Optional[ str ]
 	size: Optional[ str ]
@@ -851,17 +1528,131 @@ class Images( GPT ):
 	backcolor: Optional[ str ]
 	compression: Optional[ float ]
 	
-	def __init__( self, prompt: str=None, model: str='gpt-image-1', temperature: float=None,
-			top_p: float=None, presence: float=None, frequency: float=None,
-			max_tokens: int=None, store: bool=None, stream: bool=False,  backcolor: str=None,
-			instruct: str=None, background: bool=None, number: int=None,
-			image_format: str=None,  include: List[ Dict[ str, str ] ]=None,
-			tools: List[ Dict[ str, str ] ]=None, max_tools: int=None,
-			respose_format: Dict[ str, str ]=None, tool_choice: str=None, image_path: str=None,
-			is_parallel: bool=None, input: List[ Dict[ str, str ] ]=None, previous_id: str=None,
-			reasoning: Dict[ str, str ]=None,  input_text: str=None, image_url: str=None,
-			content: List[ Dict[ str, str ] ]=None, quality: str=None, size: str=None,
-			detail: str=None, style: str=None, compression: float=None ):
+	def __init__( self, prompt: str = None, model: str = 'gpt-image-1', temperature: float = None,
+			top_p: float = None, presence: float = None, frequency: float = None,
+			max_tokens: int = None, store: bool = None, stream: bool = False, backcolor: str = None,
+			instruct: str = None, background: bool = None, number: int = None,
+			image_format: str = None, include: List[ Dict[ str, str ] ] = None,
+			tools: List[ Dict[ str, str ] ] = None, max_tools: int = None,
+			respose_format: Dict[ str, str ] = None, response_format: Dict[ str, str ] = None,
+			tool_choice: str = None, image_path: str = None, is_parallel: bool = None,
+			input: List[ Dict[ str, str ] ] = None, previous_id: str = None,
+			reasoning: Dict[ str, str ] = None, input_text: str = None, image_url: str = None,
+			content: List[ Dict[ str, str ] ] = None, quality: str = None, size: str = None,
+			detail: str = None, style: str = None, compression: float = None ):
+		"""
+		
+			Purpose:
+			--------
+			Initialize the Images wrapper with optional defaults used by generation,
+			analysis, and editing calls.
+
+			Parameters:
+			-----------
+			prompt: str
+				Optional prompt used as default input text.
+
+			model: str
+				Optional OpenAI image or vision model.
+
+			temperature: float
+				Optional sampling temperature for vision analysis.
+
+			top_p: float
+				Optional top-p value retained for compatibility.
+
+			presence: float
+				Optional presence penalty retained for compatibility.
+
+			frequency: float
+				Optional frequency penalty retained for compatibility.
+
+			max_tokens: int
+				Optional maximum output token count for vision analysis.
+
+			store: bool
+				Optional Responses API store setting.
+
+			stream: bool
+				Optional Responses API stream setting.
+
+			backcolor: str
+				Optional background setting retained for compatibility.
+
+			instruct: str
+				Optional system/developer instructions.
+
+			background: bool
+				Optional background flag retained for compatibility.
+
+			number: int
+				Optional number of images to request.
+
+			image_format: str
+				Optional output image format.
+
+			include: List[ Dict[ str, str ] ]
+				Optional include fields retained for compatibility.
+
+			tools: List[ Dict[ str, str ] ]
+				Optional tools retained for compatibility.
+
+			max_tools: int
+				Optional maximum tool calls retained for compatibility.
+
+			respose_format: Dict[ str, str ]
+				Backward-compatible misspelled response format parameter.
+
+			response_format: Dict[ str, str ]
+				Optional corrected response format parameter.
+
+			tool_choice: str
+				Optional tool-choice setting retained for compatibility.
+
+			image_path: str
+				Optional local image path.
+
+			is_parallel: bool
+				Optional parallel-tool setting retained for compatibility.
+
+			input: List[ Dict[ str, str ] ]
+				Optional Responses API input payload.
+
+			previous_id: str
+				Optional previous response identifier.
+
+			reasoning: Dict[ str, str ]
+				Optional reasoning object retained for compatibility.
+
+			input_text: str
+				Optional prompt text.
+
+			image_url: str
+				Optional image URL.
+
+			content: List[ Dict[ str, str ] ]
+				Optional content payload retained for compatibility.
+
+			quality: str
+				Optional image quality.
+
+			size: str
+				Optional image size.
+
+			detail: str
+				Optional vision detail value.
+
+			style: str
+				Optional style retained for compatibility.
+
+			compression: float
+				Optional output compression value.
+
+			Returns:
+			--------
+			None
+		
+		"""
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
@@ -880,12 +1671,11 @@ class Images( GPT ):
 		self.reasoning = reasoning
 		self.tools = tools
 		self.tool_choice = tool_choice
-		self.input_text = input_text
+		self.input_text = input_text if input_text is not None else prompt
 		self.input = input
 		self.content = content
 		self.background = background
 		self.backcolor = backcolor
-		self.input_text = prompt
 		self.image_path = image_path
 		self.image_url = image_url
 		self.include = include
@@ -894,21 +1684,34 @@ class Images( GPT ):
 		self.size = size
 		self.style = style
 		self.compression = compression
-		self.response_format = respose_format
+		self.response_format = response_format if response_format is not None else respose_format
 		self.mime_format = image_format
 		self.parallel_tools = is_parallel
+		self.response = None
+		self.file = None
 	
 	@property
 	def style_options( self ) -> List[ str ]:
 		'''
 
 	        Purpose:
-	        ________
-	        Methods that returns a list of style options for dall-e-3
+	        --------
+	        Return style options retained for legacy DALL-E compatibility.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ]:
+	            Style option names.
 
         '''
-		return [ 'vivid',
-		         'natural', ]
+		return [
+				'vivid',
+				'natural',
+		]
 	
 	@property
 	def model_options( self ) -> List[ str ] | None:
@@ -916,25 +1719,24 @@ class Images( GPT ):
 
 	        Purpose:
 	        --------
-	        Methods that returns a list of small_model names
+	        Returns GPT image models supported by this OpenAI Images API wrapper.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            List of GPT image model names.
 
         '''
-		return [ 'gpt-image-1',
-		         'gpt-image-1-mini',
-		         'gpt-image-1.5',
-		         'gpt-5',
-		         'gpt-5.2',
-		         'gpt-5-mini',
-		         'gpt-5-nano',
-		         'gpt-5-turbo',
-		         'gpt-4.1',
-		         'gpt-4.1-mini',
-		         'gpt-4o',
-		         'gpt-4o-mini',
-		         "dall-e-2",
-		         "dall-e-3",
-		         "gpt-image-1",
-		         "gpt-image-1-mini" ]
+		return [
+				'gpt-image-2',
+				'gpt-image-1.5',
+				'gpt-image-1',
+				'gpt-image-1-mini',
+		]
 	
 	@property
 	def size_options( self ) -> List[ str ]:
@@ -942,197 +1744,424 @@ class Images( GPT ):
 
 	        Purpose:
 	        --------
-	        Method that returns a  list of sizes
+	        Returns supported image size options for current GPT image workflows.
 
-	        - For gpt-image-1, the size must be one of '1024x1024', '1536x1024' (landscape),
-	        '1024x1536' (portrait), or 'auto' (default value).
+	        Parameters:
+	        -----------
+	        None
 
-	        - For dall-e-2, the size must be one of '256x256', '512x512', or '1024x1024'
-
-	        - For dall-e-3, the sie must be one of '1024x1024', '1792x1024', or '1024x1792'
+	        Returns:
+	        --------
+	        List[ str ]:
+	            Image size options supported by generation and editing controls.
 
         '''
-		return [ 'auto',
-				 '256x256',
-		         '512x512',
-		         '1024x1024',
-		         '1792x1024',
-		         '1024x1792',
-		         '1536x1024', '1024x1536' ]
+		return [
+				'auto',
+				'1024x1024',
+				'1024x1536',
+				'1536x1024',
+		]
+	
+	@property
+	def analysis_model_options( self ) -> List[ str ] | None:
+		'''
+
+	        Purpose:
+	        --------
+	        Returns vision-capable Responses API models for image analysis.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            List of model names suitable for image analysis.
+
+        '''
+		return [
+				'gpt-5.4',
+				'gpt-5.4-mini',
+				'gpt-5',
+				'gpt-5-mini',
+				'gpt-4.1',
+				'gpt-4.1-mini',
+				'gpt-4o',
+				'gpt-4o-mini',
+		]
 	
 	@property
 	def format_options( self ) -> List[ str ]:
 		'''
 	
 	        Purpose:
-	        ________
-	        Method that returns a  list of format options
+	        --------
+	        Return legacy image response format options.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ]:
+	            Legacy response format names.
 
         '''
-		return [ 'url', 'b64_json' ]
+		return [
+				'url',
+				'b64_json',
+		]
 	
 	@property
 	def mime_options( self ) -> List[ str ]:
 		'''
 	
 	        Purpose:
-	        ________
-	        Method that returns a  list of format options
+	        --------
+	        Return supported image output formats.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ]:
+	            Image output formats.
 
         '''
-		return [ 'png',
-		         'jpeg',
-		         'webp' ]
+		return [
+				'png',
+				'jpeg',
+				'webp',
+		]
 	
 	@property
 	def include_options( self ) -> List[ str ] | None:
 		'''
 
+			Purpose:
+			--------
+			Return Responses API include options relevant to image and multimodal calls.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of the includeable options
+			List[ str ] | None:
+				Include option names.
 
 		'''
-		return [ 'file_search_call.results',
-		         'web_search_call.results',
-		         'web_search_call.action.sources',
-		         'message.input_image.image_url',
-		         'computer_call_output.output.image_url',
-		         'code_interpreter_call.outputs',
-		         'reasoning.encrypted_content',
-		         'message.output_text.logprobs' ]
+		return [
+				'file_search_call.results',
+				'web_search_call.results',
+				'web_search_call.action.sources',
+				'message.input_image.image_url',
+				'computer_call_output.output.image_url',
+				'code_interpreter_call.outputs',
+				'reasoning.encrypted_content',
+				'message.output_text.logprobs',
+		]
 	
 	@property
 	def tool_options( self ) -> List[ str ] | None:
 		'''
 
+			Purpose:
+			--------
+			Return Responses API tool options retained for Image mode compatibility.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of available tools options
+			List[ str ] | None:
+				Tool option names.
 
 		'''
-		return [ 'web_search',
-		         'image_generation',
-		         'file_search',
-		         'code_interpreter',
-		         'computer_use_preview' ]
+		return [
+				'web_search',
+				'image_generation',
+				'file_search',
+				'code_interpreter',
+				'computer_use_preview',
+		]
 	
 	@property
 	def choice_options( self ) -> List[ str ] | None:
 		'''
 
+			Purpose:
+			--------
+			Return tool-choice options retained for Image mode compatibility.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of available tools options
+			List[ str ] | None:
+				Tool-choice option names.
 
 		'''
-		return [ 'auto', 'required', 'none' ]
+		return [
+				'auto',
+				'required',
+				'none',
+		]
 	
 	@property
 	def backcolor_options( self ) -> List[ str ]:
 		'''
 	
 	        Purpose:
-	        ________
-	        Method that returns a  list of format options
+	        --------
+	        Return supported background behavior options for image generation/editing.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ]:
+	            Background option names.
 
         '''
-		return [ 'auto', 'transparent', 'opaque', ]
+		return [
+				'auto',
+				'transparent',
+				'opaque',
+		]
 	
 	@property
 	def quality_options( self ) -> List[ str ]:
 		'''
 
 	        Purpose:
-	        ________
-	        Method that returns a  list of quality options
+	        --------
+	        Returns supported GPT image quality options.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ]:
+	            Image quality options supported by GPT image generation and editing.
 
         '''
-		return [ 'auto', 'low', 'medium', 'high', 'standard', 'hd' ]
+		return [
+				'auto',
+				'low',
+				'medium',
+				'high',
+		]
 	
 	@property
 	def detail_options( self ) -> List[ str ]:
 		'''
 
 	        Purpose:
-	        ________
-	        Method that returns a  list of detail options
+	        --------
+	        Return supported vision detail options for image analysis.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ]:
+	            Vision detail options.
 
         '''
-		return [ 'auto', 'low', 'medium', 'high'  ]
+		return [
+				'auto',
+				'low',
+				'high',
+				'original',
+		]
 	
 	@property
 	def reasoning_options( self ) -> List[ str ] | None:
 		'''
 
+			Purpose:
+			--------
+			Return reasoning effort options retained for Image mode compatibility.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of reasoning effort options
+			List[ str ] | None:
+				Reasoning effort names.
 
 		'''
-		return [ 'low',
-		         'medium',
-		         'high',
-		         'none',
-		         'minimal',
-		         'xhigh' ]
+		return [
+				'low',
+				'medium',
+				'high',
+				'none',
+				'minimal',
+				'xhigh',
+		]
 	
 	@property
 	def modality_options( self ) -> List[ str ] | None:
 		'''
 		
+			Purpose:
+			--------
+			Return modality options retained for Image mode compatibility.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			A List[ str ] of file purposes
+			List[ str ] | None:
+				Modality option names.
 
 		'''
-		return [ 'text', 'auto', 'image', 'audio' ]
-		
+		return [
+				'text',
+				'auto',
+				'image',
+				'audio',
+		]
+	
 	def generate( self, prompt: str, number: int = 1, model: str = 'gpt-image-1-mini',
-			size: str = '1024x1024', quality: str = 'auto', fmt: str = '.jpeg',
-			compression: float = None, background: str = None ) -> str | bytes | None:
+			size: str = '1024x1024', quality: str = 'auto', fmt: str = 'jpeg',
+			compression: float = None, background: str = None ) -> str | bytes | list[
+		str | bytes ] | None:
 		'''
-	
-			Purpose
-			_______
-			Generates an image given a prompt
-	
-	
-			Parameters
-			----------
+
+			Purpose:
+			--------
+			Generates one or more images from a text prompt using the OpenAI Images API.
+
+			Parameters:
+			-----------
 			prompt: str
-	
-	
-			Returns
-			-------
-			str | bytes | None
+				Text prompt used to generate the image.
+
+			number: int
+				Number of images to request.
+
+			model: str
+				GPT image model name.
+
+			size: str
+				Requested image size.
+
+			quality: str
+				Requested image quality.
+
+			fmt: str
+				Requested image output format.
+
+			compression: float
+				Optional compression value from 0.0 to 1.0 for jpeg and webp outputs.
+
+			background: str
+				Optional background mode.
+
+			Returns:
+			--------
+			str | bytes | list[ str | bytes ] | None
+				Generated image bytes, URL fallback, list of outputs, or None.
 
 		'''
 		try:
 			throw_if( 'prompt', prompt )
 			self.prompt = prompt
 			self.number = number if isinstance( number, int ) and number > 0 else 1
-			self.model = model
+			self.number = min( 10, max( 1, int( self.number ) ) )
+			self.model = model if isinstance( model,
+				str ) and model.strip( ) else 'gpt-image-1-mini'
 			self.size = size if isinstance( size, str ) and size.strip( ) else '1024x1024'
 			self.quality = quality if isinstance( quality, str ) and quality.strip( ) else 'auto'
-			self.response_format = fmt if isinstance( fmt, str ) and fmt.strip( ) else '.jpeg'
-			self.client = OpenAI( api_key=self.api_key )
+			self.response_format = fmt if isinstance( fmt, str ) and fmt.strip( ) else 'jpeg'
 			self.output_format = self.response_format.lower( ).replace( '.', '' )
-			if self.output_format not in [ 'png', 'jpeg', 'webp' ]:
+			self.background = background if isinstance( background, str ) else None
+			self.client = OpenAI( api_key=self.api_key )
+			
+			valid_models = [
+					'gpt-image-2',
+					'gpt-image-1.5',
+					'gpt-image-1',
+					'gpt-image-1-mini',
+			]
+			
+			valid_sizes = [
+					'auto',
+					'1024x1024',
+					'1024x1536',
+					'1536x1024',
+			]
+			
+			valid_qualities = [
+					'auto',
+					'low',
+					'medium',
+					'high',
+			]
+			
+			valid_formats = [
+					'png',
+					'jpeg',
+					'webp',
+			]
+			
+			valid_backgrounds = [
+					'auto',
+					'transparent',
+					'opaque',
+			]
+			
+			if self.model not in valid_models:
+				raise ValueError( f'Unsupported GPT image generation model: {self.model}' )
+			
+			if self.size not in valid_sizes:
+				self.size = '1024x1024'
+			
+			if self.quality not in valid_qualities:
+				self.quality = 'auto'
+			
+			if self.output_format not in valid_formats:
 				self.output_format = 'jpeg'
 			
-			self.request = \
-				{
-						'model': self.model,
-						'prompt': self.prompt,
-						'n': self.number,
-						'size': self.size,
-						'quality': self.quality,
-						'output_format': self.output_format,
-				}
+			if self.background not in valid_backgrounds:
+				self.background = None
 			
-			if isinstance( background, str ) and background.strip( ):
-				self.request[ 'background' ] = background.strip( )
+			if self.model == 'gpt-image-2' and self.background == 'transparent':
+				self.background = 'auto'
+			
+			self.request = {
+					'model': self.model,
+					'prompt': self.prompt,
+					'n': self.number,
+					'size': self.size,
+					'quality': self.quality,
+					'output_format': self.output_format,
+			}
+			
+			if self.background:
+				self.request[ 'background' ] = self.background
 			
 			if compression is not None and self.output_format in [ 'jpeg', 'webp' ]:
 				self.output_compression = max( 0, min( 100, int( round( compression * 100 ) ) ) )
@@ -1140,64 +2169,131 @@ class Images( GPT ):
 			
 			self.response = self.client.images.generate( **self.request )
 			self.data = getattr( self.response, 'data', None )
+			self.outputs = [ ]
+			
 			if self.data and len( self.data ) > 0:
-				self.item = self.data[ 0 ]
-				self.b64_json = getattr( self.item, 'b64_json', None )
-				self.url = getattr( self.item, 'url', None )
-				if self.b64_json:
-					return base64.b64decode( self.b64_json )
+				for item in self.data:
+					self.b64_json = getattr( item, 'b64_json', None )
+					self.url = getattr( item, 'url', None )
+					
+					if self.b64_json:
+						self.outputs.append( base64.b64decode( self.b64_json ) )
+					elif self.url:
+						self.outputs.append( self.url )
 				
-				if self.url:
-					return self.url
+				if len( self.outputs ) == 1:
+					return self.outputs[ 0 ]
+				
+				if len( self.outputs ) > 1:
+					return self.outputs
 			
 			return None
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Image'
-			exception.method = ('generate( self, prompt: str, number: int=1, '
-			                    'model: str="gpt-image-1-mini" ) -> str | bytes | None')
+			exception.method = 'generate( self, prompt: str ) -> str | bytes | list[ str | bytes ] | None'
 			raise exception
 	
-	def analyze( self, text: str, path: str, instruct: str = None,
-			model: str = 'gpt-4o-mini' ) -> str | None:
+	def analyze( self, text: str, path: str, instruct: str = None, model: str = 'gpt-4o-mini',
+			max_tokens: int = None, temperature: float = None, include: List[ str ] = None,
+			store: bool = None, stream: bool = None, detail: str = 'auto' ) -> str | None:
 		'''
-	
-	        Purpose:
-	        ________
-	        Method providing image analysis functionality given a prompt and path
-	
-	
-	        Parameters:
-	        ----------
-	        text: str
-	        path: str
-	
-	
-	        Returns:
-	        --------
-	        str | None
 
-        '''
+			Purpose:
+			--------
+			Analyzes an uploaded image using a vision-capable Responses API model.
+
+			Parameters:
+			-----------
+			text: str
+				Analysis prompt.
+
+			path: str
+				Local image path.
+
+			instruct: str
+				Optional system or developer instructions.
+
+			model: str
+				Vision-capable model name.
+
+			max_tokens: int
+				Optional maximum output token count.
+
+			temperature: float
+				Optional sampling temperature.
+
+			include: List[ str ]
+				Optional Responses API include fields.
+
+			store: bool
+				Optional Responses API store flag.
+
+			stream: bool
+				Optional Responses API stream flag.
+
+			detail: str
+				Optional vision detail level: auto, low, high, or original.
+
+			Returns:
+			--------
+			str | None
+				Text analysis result.
+
+		'''
 		try:
 			throw_if( 'text', text )
 			throw_if( 'path', path )
 			self.instructions = instruct if isinstance( instruct, str ) else ''
 			self.input_text = text
-			self.model = model
+			self.model = model if isinstance( model, str ) and model.strip( ) else 'gpt-4o-mini'
+			if self.model.startswith( 'gpt-image' ) or self.model.startswith( 'dall-e' ):
+				self.model = 'gpt-4o-mini'
+			
+			self.max_tokens = max_tokens
+			self.temperature = temperature
+			self.include = include if include is not None else [ ]
+			self.store = store
+			self.stream = stream
+			self.detail = detail if isinstance( detail, str ) and detail.strip( ) else 'auto'
 			self.file_path = path
 			self.client = OpenAI( api_key=self.api_key )
+			
+			valid_details = [
+					'auto',
+					'low',
+					'high',
+					'original',
+			]
+			
+			if self.detail not in valid_details:
+				self.detail = 'auto'
+			
 			with open( self.file_path, 'rb' ) as source:
 				self.file = self.client.files.create( file=source, purpose='vision' )
 			
-			self.input = \
-			[ { 'role': 'user', 'content':[ { 'type': 'input_text', 'text': self.input_text },
-					              { 'type': 'input_image', 'file_id': self.file.id } ] } ]
+			self.image_content = {
+					'type': 'input_image',
+					'file_id': self.file.id,
+			}
 			
-			self.request = \
-			{
-				'model': self.model,
-				'input': self.input,
+			if self.detail:
+				self.image_content[ 'detail' ] = self.detail
+			
+			self.input = [
+					{
+							'role': 'user',
+							'content': [
+									{ 'type': 'input_text', 'text': self.input_text },
+									self.image_content,
+							],
+					}
+			]
+			
+			self.request = {
+					'model': self.model,
+					'input': self.input,
 			}
 			
 			if self.instructions and self.instructions.strip( ):
@@ -1206,11 +2302,8 @@ class Images( GPT ):
 			if isinstance( self.max_tokens, int ) and self.max_tokens > 0:
 				self.request[ 'max_output_tokens' ] = self.max_tokens
 			
-			if self.temperature is not None:
+			if self.temperature is not None and not self.model.startswith( 'gpt-5' ):
 				self.request[ 'temperature' ] = self.temperature
-			
-			if self.tool_choice is not None and str( self.tool_choice ).strip( ):
-				self.request[ 'tool_choice' ] = str( self.tool_choice ).strip( )
 			
 			if self.include is not None and len( self.include ) > 0:
 				self.request[ 'include' ] = self.include
@@ -1222,7 +2315,26 @@ class Images( GPT ):
 				self.request[ 'store' ] = self.store
 			
 			self.response = self.client.responses.create( **self.request )
-			return getattr( self.response, 'output_text', None )
+			self.output_text = getattr( self.response, 'output_text', None )
+			
+			if self.output_text:
+				return self.output_text
+			
+			if hasattr( self.response, 'output' ) and self.response.output:
+				for item in self.response.output:
+					if getattr( item, 'type', None ) != 'message':
+						continue
+					
+					if not hasattr( item, 'content' ) or item.content is None:
+						continue
+					
+					for block in item.content:
+						if getattr( block, 'type', None ) == 'output_text':
+							self.output_text = getattr( block, 'text', None )
+							if self.output_text:
+								return self.output_text
+			
+			return None
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
@@ -1231,49 +2343,130 @@ class Images( GPT ):
 			raise exception
 	
 	def edit( self, prompt: str, path: str, model: str = 'gpt-image-1-mini',
-			size: str = '1024x1024', quality: str = 'auto', fmt: str = '.jpeg',
-			compression: float = None ) -> str | bytes | None:
+			size: str = '1024x1024', quality: str = 'auto', fmt: str = 'jpeg',
+			compression: float = None, background: str = None,
+			number: int = None ) -> str | bytes | list[ str | bytes ] | None:
 		"""
-	
-	        Purpose
-	        _______
-	        Creates an edited image given a prompt and source image path
-	
-	
-	        Parameters
-	        ----------
-	        prompt: str
-	        path: str
-	
-	
-	        Returns
-	        -------
-	        str | bytes | None
 
-        """
+			Purpose:
+			--------
+			Edits an uploaded image using the OpenAI Images API.
+
+			Parameters:
+			-----------
+			prompt: str
+				Image editing instruction.
+
+			path: str
+				Local source image path.
+
+			model: str
+				GPT image model name.
+
+			size: str
+				Requested output image size.
+
+			quality: str
+				Requested output image quality.
+
+			fmt: str
+				Requested output image format.
+
+			compression: float
+				Optional compression value from 0.0 to 1.0 for jpeg and webp outputs.
+
+			background: str
+				Optional background mode.
+
+			number: int
+				Optional number of edited images to request.
+
+			Returns:
+			--------
+			str | bytes | list[ str | bytes ] | None
+				Edited image bytes, URL fallback, list of outputs, or None.
+
+		"""
 		try:
 			throw_if( 'prompt', prompt )
 			throw_if( 'path', path )
+			
 			self.input_text = prompt
 			self.file_path = path
-			self.model = model
+			self.model = model if isinstance( model,
+				str ) and model.strip( ) else 'gpt-image-1-mini'
 			self.size = size if isinstance( size, str ) and size.strip( ) else '1024x1024'
 			self.quality = quality if isinstance( quality, str ) and quality.strip( ) else 'auto'
-			self.response_format = fmt if isinstance( fmt, str ) and fmt.strip( ) else '.jpeg'
-			self.client = OpenAI( api_key=self.api_key )
+			self.response_format = fmt if isinstance( fmt, str ) and fmt.strip( ) else 'jpeg'
 			self.output_format = self.response_format.lower( ).replace( '.', '' )
-			if self.output_format not in [ 'png', 'jpeg', 'webp' ]:
+			self.background = background if isinstance( background, str ) else None
+			self.number = number if isinstance( number, int ) and number > 0 else self.number
+			self.number = self.number if isinstance( self.number, int ) and self.number > 0 else 1
+			self.number = min( 10, max( 1, int( self.number ) ) )
+			self.client = OpenAI( api_key=self.api_key )
+			
+			valid_models = [
+					'gpt-image-2',
+					'gpt-image-1.5',
+					'gpt-image-1',
+					'gpt-image-1-mini',
+			]
+			
+			valid_sizes = [
+					'auto',
+					'1024x1024',
+					'1024x1536',
+					'1536x1024',
+			]
+			
+			valid_qualities = [
+					'auto',
+					'low',
+					'medium',
+					'high',
+			]
+			
+			valid_formats = [
+					'png',
+					'jpeg',
+					'webp',
+			]
+			
+			valid_backgrounds = [
+					'auto',
+					'opaque',
+					'transparent',
+			]
+			
+			if self.model not in valid_models:
+				raise ValueError( f'Unsupported GPT image edit model: {self.model}' )
+			
+			if self.size not in valid_sizes:
+				self.size = '1024x1024'
+			
+			if self.quality not in valid_qualities:
+				self.quality = 'auto'
+			
+			if self.output_format not in valid_formats:
 				self.output_format = 'jpeg'
 			
-			self.request = \
-			{
-				'model': self.model,
-				'prompt': self.input_text,
-				'size': self.size,
-				'quality': self.quality,
-				'output_format': self.output_format,
-				'n': self.number if isinstance( self.number, int ) and self.number > 0 else 1,
+			if self.background not in valid_backgrounds:
+				self.background = None
+			
+			if self.model == 'gpt-image-2' and self.background == 'transparent':
+				self.background = 'auto'
+			
+			self.request = {
+					'model': self.model,
+					'prompt': self.input_text,
+					'size': self.size,
+					'quality': self.quality,
+					'output_format': self.output_format,
+					'n': self.number,
 			}
+			
+			if self.background:
+				self.request[ 'background' ] = self.background
 			
 			if compression is not None and self.output_format in [ 'jpeg', 'webp' ]:
 				self.output_compression = max( 0, min( 100, int( round( compression * 100 ) ) ) )
@@ -1283,22 +2476,30 @@ class Images( GPT ):
 				self.response = self.client.images.edit( image=source, **self.request )
 			
 			self.data = getattr( self.response, 'data', None )
+			self.outputs = [ ]
+			
 			if self.data and len( self.data ) > 0:
-				self.item = self.data[ 0 ]
-				self.b64_json = getattr( self.item, 'b64_json', None )
-				self.url = getattr( self.item, 'url', None )
-				if self.b64_json:
-					return base64.b64decode( self.b64_json )
+				for item in self.data:
+					self.b64_json = getattr( item, 'b64_json', None )
+					self.url = getattr( item, 'url', None )
+					
+					if self.b64_json:
+						self.outputs.append( base64.b64decode( self.b64_json ) )
+					elif self.url:
+						self.outputs.append( self.url )
 				
-				if self.url:
-					return self.url
+				if len( self.outputs ) == 1:
+					return self.outputs[ 0 ]
+				
+				if len( self.outputs ) > 1:
+					return self.outputs
 			
 			return None
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
 			exception.cause = 'Image'
-			exception.method = 'edit( self, prompt: str, path: str, model: str="gpt-image-1-mini" )'
+			exception.method = 'edit( self, **kwargs ) -> str | bytes | list[ str | bytes ] | None'
 			raise exception
 	
 	def __dir__( self ) -> List[ str ] | None:
@@ -1306,18 +2507,19 @@ class Images( GPT ):
 	
 	        Purpose:
 	        --------
-	        Method returns a list of strings representing members
-	
+	        Method returns a list of strings representing members.
+
 	        Parameters:
 	        ----------
-	        self
-	
+	        None
+
 	        Returns:
-	        ---------
-	        List[ str ] | None
+	        --------
+	        List[ str ] | None:
+	            Member names.
 
         '''
-		return [  # Attributes
+		return [
 				'number',
 				'temperature',
 				'top_percent',
@@ -1337,53 +2539,66 @@ class Images( GPT ):
 				'quality',
 				'detail',
 				'model',
-				# Properties
 				'style_options',
 				'model_options',
+				'analysis_model_options',
 				'detail_options',
 				'format_options',
+				'mime_options',
 				'size_options',
-				# Methods
+				'quality_options',
+				'backcolor_options',
 				'generate',
 				'analyze',
-				'edit', ]
+				'edit',
+		]
 
 class TTS( ):
 	"""
-	
-	    Purpose
-	    ___________
-	    Class used for interacting with OpenAI's TTS API (TTS)
-	
-	
-	    Parameters
-	    ------------
-	    input: str=None
-	    model: str='gpt-4o-mini-tts'
-	    format: str=None
-	    instruct: str=None
-	    voice: str=None
-	    speed: float=None
-	    file_path: str=None
-	
-	
-	    Attributes
+
+	    Purpose:
+	    --------
+	    Provides text-to-speech functionality through the OpenAI Audio Speech API.
+
+	    Attributes:
 	    -----------
-	    self.api_key
-	    self.client
-	    self.speed
-	    self.voice
-	    self.input
-	    self.instructions
-	    self.response
-	    self.response_format
-	    self.file_path
-	    self.model
-	
-	
-	    Methods
-	    ------------
-	    create_speech( self, text: str ) -> bytes | None
+	    api_key:
+	        OpenAI API key loaded from config.py.
+
+	    client:
+	        OpenAI client instance.
+
+	    speed:
+	        Speech playback speed.
+
+	    voice:
+	        Voice name used for speech generation.
+
+	    input:
+	        Text input to synthesize.
+
+	    instructions:
+	        Optional voice/style instructions for supported models.
+
+	    response:
+	        Last OpenAI API response object.
+
+	    response_format:
+	        Audio output format.
+
+	    file_path:
+	        Optional destination path for generated audio.
+
+	    model:
+	        Text-to-speech model name.
+
+	    audio_bytes:
+	        Last generated audio byte output.
+
+	    Methods:
+	    --------
+	    create_speech:
+	        Generate speech audio from input text.
 
     """
 	api_key: Optional[ str ]
@@ -1396,16 +2611,45 @@ class TTS( ):
 	response_format: Optional[ str ]
 	file_path: Optional[ str ]
 	model: Optional[ str ]
+	audio_bytes: Optional[ bytes ]
+	request: Optional[ Dict[ str, Any ] ]
 	
 	def __init__( self, input: str = None, model: str = 'gpt-4o-mini-tts', format: str = None,
 			instruct: str = None, voice: str = None, speed: float = None, file_path: str = None ):
-		'''
+		"""
 
 	        Purpose:
 	        --------
-	        Constructor to create TTS objects
+	        Initialize a text-to-speech wrapper instance.
 
-        '''
+	        Parameters:
+	        -----------
+	        input: str
+	            Optional text input to synthesize.
+
+	        model: str
+	            Optional text-to-speech model name.
+
+	        format: str
+	            Optional audio output format.
+
+	        instruct: str
+	            Optional speech instructions for supported models.
+
+	        voice: str
+	            Optional voice name.
+
+	        speed: float
+	            Optional speech speed.
+
+	        file_path: str
+	            Optional destination path for generated audio.
+
+	        Returns:
+	        --------
+	        None
+
+        """
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
 		self.input = input
@@ -1416,20 +2660,33 @@ class TTS( ):
 		self.file_path = file_path
 		self.speed = speed
 		self.response = None
+		self.audio_bytes = None
+		self.request = None
 	
 	@property
 	def model_options( self ) -> List[ str ] | None:
 		'''
-	
+
 	        Purpose:
 	        --------
-	        Method that returns a list of TTS model names
+	        Return supported text-to-speech model names.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Text-to-speech model names.
 
         '''
-		return [ 'gpt-4o-mini-tts',
-		         'gpt-4o-mini-tts-2025-12-15',
-		         'tts-1',
-		         'tts-1-hd' ]
+		return [
+				'gpt-4o-mini-tts',
+				'gpt-4o-mini-tts-2025-12-15',
+				'tts-1',
+				'tts-1-hd',
+		]
 	
 	@property
 	def mime_options( self ) -> List[ str ] | None:
@@ -1437,10 +2694,26 @@ class TTS( ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of audio output formats
+	        Return supported text-to-speech output formats.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Audio output format names.
 
         '''
-		return [ 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
+		return [
+				'mp3',
+				'opus',
+				'aac',
+				'flac',
+				'wav',
+				'pcm',
+		]
 	
 	@property
 	def voice_options( self ) -> List[ str ] | None:
@@ -1448,22 +2721,33 @@ class TTS( ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of voice names
+	        Return supported text-to-speech voice names.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Voice names.
 
         '''
-		return [ 'alloy',
-		         'ash',
-		         'ballad',
-		         'coral',
-		         'echo',
-		         'fable',
-		         'nova',
-		         'onyx',
-		         'sage',
-		         'shimmer',
-		         'verse',
-		         'marin',
-		         'cedar' ]
+		return [
+				'alloy',
+				'ash',
+				'ballad',
+				'coral',
+				'echo',
+				'fable',
+				'nova',
+				'onyx',
+				'sage',
+				'shimmer',
+				'verse',
+				'marin',
+				'cedar',
+		]
 	
 	@property
 	def speed_options( self ) -> List[ float ] | None:
@@ -1471,52 +2755,213 @@ class TTS( ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of floats
-	        representing different audio speeds
+	        Return supported text-to-speech speed values.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ float ] | None:
+	            Speech speed values.
 
         '''
-		return [ 0.25, 0.50, 0.75, 1.0, 1.25, 1.50, 2.0, 3.0, 4.0 ]
+		return [
+				0.25,
+				0.50,
+				0.75,
+				1.0,
+				1.25,
+				1.50,
+				2.0,
+				3.0,
+				4.0,
+		]
+	
+	def validate_model( self, model: str = None ) -> str:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the text-to-speech model name.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Requested text-to-speech model name.
+
+	        Returns:
+	        --------
+	        str:
+	            Valid text-to-speech model name.
+
+        """
+		try:
+			value = model if isinstance( model, str ) and model.strip( ) else 'gpt-4o-mini-tts'
+			value = value.strip( )
+			if value not in self.model_options:
+				raise ValueError( f'Unsupported TTS model: {value}' )
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'TTS'
+			exception.method = 'validate_model( self, model: str=None ) -> str'
+			raise exception
+	
+	def validate_format( self, format: str = None ) -> str:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the text-to-speech output format.
+
+	        Parameters:
+	        -----------
+	        format: str
+	            Requested audio output format.
+
+	        Returns:
+	        --------
+	        str:
+	            Valid audio output format.
+
+        """
+		try:
+			value = format if isinstance( format, str ) and format.strip( ) else 'mp3'
+			value = value.strip( ).lower( )
+			if value not in self.mime_options:
+				raise ValueError( f'Unsupported TTS output format: {value}' )
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'TTS'
+			exception.method = 'validate_format( self, format: str=None ) -> str'
+			raise exception
+	
+	def validate_voice( self, voice: str = None ) -> str:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the text-to-speech voice name.
+
+	        Parameters:
+	        -----------
+	        voice: str
+	            Requested voice name.
+
+	        Returns:
+	        --------
+	        str:
+	            Valid voice name.
+
+        """
+		try:
+			value = voice if isinstance( voice, str ) and voice.strip( ) else 'alloy'
+			value = value.strip( )
+			if value not in self.voice_options:
+				raise ValueError( f'Unsupported TTS voice: {value}' )
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'TTS'
+			exception.method = 'validate_voice( self, voice: str=None ) -> str'
+			raise exception
+	
+	def validate_speed( self, speed: float = None ) -> float:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the text-to-speech speed value.
+
+	        Parameters:
+	        -----------
+	        speed: float
+	            Requested speech speed.
+
+	        Returns:
+	        --------
+	        float:
+	            Valid speech speed from 0.25 through 4.0.
+
+        """
+		try:
+			value = 1.0 if speed is None else float( speed )
+			if value < 0.25:
+				return 0.25
+			
+			if value > 4.0:
+				return 4.0
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'TTS'
+			exception.method = 'validate_speed( self, speed: float=None ) -> float'
+			raise exception
 	
 	def create_speech( self, text: str, model: str = 'gpt-4o-mini-tts', format: str = 'mp3',
 			speed: float = 1.0, voice: str = 'alloy', instruct: str = None,
 			file_path: str = None ) -> bytes | None:
 		"""
-	
-	        Purpose
-	        _______
-	        Generates audio from input text and returns
-	        the audio bytes. Optionally writes them to a file.
-	
-	
-	        Parameters
-	        ----------
+
+	        Purpose:
+	        --------
+	        Generate speech audio from text and return the generated audio bytes.
+
+	        Parameters:
+	        -----------
 	        text: str
-	        model: str='gpt-4o-mini-tts'
-	        format: str='mp3'
-	        speed: float=1.0
-	        voice: str='alloy'
-	        instruct: str=None
-	        file_path: str=None
-	
-	
-	        Returns
-	        -------
-	        bytes | None
+	            Text input to synthesize.
+
+	        model: str
+	            Text-to-speech model name.
+
+	        format: str
+	            Audio output format.
+
+	        speed: float
+	            Speech speed from 0.25 through 4.0.
+
+	        voice: str
+	            Voice name.
+
+	        instruct: str
+	            Optional voice/style instructions for supported models.
+
+	        file_path: str
+	            Optional destination path for generated audio.
+
+	        Returns:
+	        --------
+	        bytes | None:
+	            Generated audio bytes, or None if no bytes are produced.
 
         """
 		try:
 			throw_if( 'text', text )
 			self.input = text
-			self.model = model or 'gpt-4o-mini-tts'
-			self.response_format = format or 'mp3'
-			self.voice = voice or 'alloy'
-			self.speed = speed if speed is not None else 1.0
+			self.model = self.validate_model( model )
+			self.response_format = self.validate_format( format )
+			self.voice = self.validate_voice( voice )
+			self.speed = self.validate_speed( speed )
 			self.instructions = instruct
 			self.file_path = file_path
 			self.client = OpenAI( api_key=self.api_key )
 			self.response = None
+			self.audio_bytes = None
 			
-			with tempfile.NamedTemporaryFile( suffix=f'.{self.response_format}', delete=False ) as tmp:
+			with tempfile.NamedTemporaryFile(
+					suffix=f'.{self.response_format}', delete=False ) as tmp:
 				temp_path = tmp.name
 			
 			try:
@@ -1525,7 +2970,8 @@ class TTS( ):
 						'voice': self.voice,
 						'input': self.input,
 						'response_format': self.response_format,
-						'speed': self.speed, }
+						'speed': self.speed,
+				}
 				
 				if self.instructions and self.model not in ('tts-1', 'tts-1-hd'):
 					self.request[ 'instructions' ] = self.instructions
@@ -1561,90 +3007,154 @@ class TTS( ):
 
 	        Purpose:
 	        --------
-	        Method returns a list of strings representing members
-	
+	        Return member names for inspection.
+
 	        Parameters:
-	        ----------
-	        self
-	
+	        -----------
+	        None
+
 	        Returns:
-	        ---------
-	        List[ str ] | None
+	        --------
+	        List[ str ] | None:
+	            Member names.
 
         '''
-		return [ 'input',
-		         'file_path',
-		         'voice',
-		         'client',
-		         'response_format',
-		         'speed',
-		         'model',
-		         'instructions',
-		         'response',
-		         'create_speech' ]
+		return [
+				'input',
+				'file_path',
+				'voice',
+				'client',
+				'response_format',
+				'speed',
+				'model',
+				'instructions',
+				'response',
+				'audio_bytes',
+				'request',
+				'model_options',
+				'mime_options',
+				'voice_options',
+				'speed_options',
+				'validate_model',
+				'validate_format',
+				'validate_voice',
+				'validate_speed',
+				'create_speech',
+		]
 
 class Transcription( GPT ):
 	"""
-	
-	    Purpose
-	    ___________
-	    Class used for interacting with OpenAI's transcription API
-	
-	
-	    Parameters
-	    ------------
-	    model: str='gpt-4o-transcribe'
-	    temperature: float=None
-	    prompt: str=None
-	    number: int=None
-	    top_p: float=None
-	    frequency: float=None
-	    presence: float=None
-	    max_tokens: int=None
-	    stream: bool=None
-	    store: bool=None
-	    language: str=None
-	    instruct: str=None
-	    format: str=None
-	    background: bool=None
-	    messages: List[ Dict[ str, str ] ]=None
-	    stops: List[ str ]=None
-	
-	
-	    Attributes
+
+	    Purpose:
+	    --------
+	    Provides audio transcription functionality through the OpenAI Audio
+	    Transcriptions API.
+
+	    Attributes:
 	    -----------
-	    self.api_key
-	    self.prompt
-	    self.temperature
-	    self.top_percent
-	    self.frequency_penalty
-	    self.presence_penalty
-	    self.max_tokens
-	    self.stream
-	    self.response_format
-	    self.background
-	    self.message
-	    self.stops
-	    self.store
-	    self.language
-	    self.instructions
-	    self.model
-	    self.number
-	    self.input_text
-	    self.audio_file
-	    self.transcript
-	    self.response
+	    client:
+	        OpenAI client instance.
+
+	    language:
+	        Optional source-language hint.
+
+	    instructions:
+	        Optional prompt/instructions text.
+
+	    response_format:
+	        Requested transcription response format.
+
+	    include:
+	        Optional transcription include fields such as logprobs.
+
+	    transcript:
+	        Extracted transcript text.
+
+	    normalized_result:
+	        Normalized transcription output containing text, segments, and raw content.
+
+	    Methods:
+	    --------
+	    transcribe:
+	        Transcribe audio into text or structured transcription output.
 
     """
 	client: Optional[ OpenAI ]
 	language: Optional[ str ]
 	instructions: Optional[ str ]
+	include: Optional[ List[ str ] ]
+	normalized_result: Optional[ Dict[ str, Any ] ]
 	
-	def __init__( self, model: str = 'gpt-4o-transcribe', temperature: float = None, prompt: str = None,
-			number: int = None, top_p: float = None, frequency: float = None, presence: float = None,
-			max_tokens: int = None, stream: bool = None, store: bool = None, language: str = None,
-			instruct: str = None, format: str = None, background: bool = None,
-			messages: List[ Dict[ str, str ] ] = None, stops: List[ str ] = None ):
+	def __init__( self, model: str = 'gpt-4o-transcribe', temperature: float = None,
+			prompt: str = None, number: int = None, top_p: float = None, frequency: float = None,
+			presence: float = None, max_tokens: int = None, stream: bool = None, store: bool = None,
+			language: str = None, instruct: str = None, format: str = None, background: bool = None,
+			messages: List[ Dict[ str, str ] ] = None, stops: List[ str ] = None,
+			include: List[ str ] = None ):
+		"""
+
+	        Purpose:
+	        --------
+	        Initialize an audio transcription wrapper instance.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Optional transcription model name.
+
+	        temperature: float
+	            Optional transcription temperature.
+
+	        prompt: str
+	            Optional prompt text.
+
+	        number: int
+	            Optional number retained for compatibility.
+
+	        top_p: float
+	            Optional top-p value retained for compatibility.
+
+	        frequency: float
+	            Optional frequency penalty retained for compatibility.
+
+	        presence: float
+	            Optional presence penalty retained for compatibility.
+
+	        max_tokens: int
+	            Optional maximum token value retained for compatibility.
+
+	        stream: bool
+	            Optional stream flag retained for compatibility.
+
+	        store: bool
+	            Optional store flag retained for compatibility.
+
+	        language: str
+	            Optional source-language hint.
+
+	        instruct: str
+	            Optional instruction/prompt text.
+
+	        format: str
+	            Optional response format.
+
+	        background: bool
+	            Optional background flag retained for compatibility.
+
+	        messages: List[ Dict[ str, str ] ]
+	            Optional message list retained for compatibility.
+
+	        stops: List[ str ]
+	            Optional stop values retained for compatibility.
+
+	        include: List[ str ]
+	            Optional include fields.
+
+	        Returns:
+	        --------
+	        None
+
+        """
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.prompt = prompt
@@ -1667,6 +3177,9 @@ class Transcription( GPT ):
 		self.audio_file = None
 		self.transcript = None
 		self.response = None
+		self.include = include if include is not None else [ ]
+		self.normalized_result = None
+		self.request = None
 	
 	@property
 	def model_options( self ) -> List[ str ] | None:
@@ -1674,14 +3187,25 @@ class Transcription( GPT ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of transcription model names
+	        Return supported transcription model names.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Transcription model names.
 
         '''
-		return [ 'gpt-4o-transcribe',
-		         'gpt-4o-mini-transcribe',
-		         'gpt-4o-mini-transcribe-2025-12-15',
-		         'whisper-1',
-		         'gpt-4o-transcribe-diarize' ]
+		return [
+				'gpt-4o-transcribe',
+				'gpt-4o-mini-transcribe',
+				'gpt-4o-mini-transcribe-2025-12-15',
+				'whisper-1',
+				'gpt-4o-transcribe-diarize',
+		]
 	
 	@property
 	def mime_options( self ) -> List[ str ] | None:
@@ -1689,47 +3213,84 @@ class Transcription( GPT ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of supported input audio formats
+	        Return supported input audio file formats.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Audio input format names.
 
         '''
-		return [ 'flac', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'wav', 'webm' ]
-		
+		return [
+				'flac',
+				'mp3',
+				'mp4',
+				'mpeg',
+				'mpga',
+				'm4a',
+				'ogg',
+				'wav',
+				'webm',
+		]
+	
 	@property
 	def language_options( self ) -> List[ str ] | None:
 		'''
-	
+
 	        Purpose:
 	        --------
-	        Method that returns a list of ISO-639-1 language codes
-	        supported for UI selection and API submission
+	        Return common ISO-639-1 language codes for transcription hints.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Language code values.
 
         '''
-		return [ 'en',
-		         'es',
-		         'fr',
-		         'de',
-		         'it',
-		         'pt',
-		         'ru',
-		         'uk',
-		         'el',
-		         'he',
-		         'ar',
-		         'hi',
-		         'zh',
-		         'ja',
-		         'ko',
-		         'vi',
-		         'th' ]
+		return [
+				'en',
+				'es',
+				'fr',
+				'de',
+				'it',
+				'pt',
+				'ru',
+				'uk',
+				'el',
+				'he',
+				'ar',
+				'hi',
+				'zh',
+				'ja',
+				'ko',
+				'vi',
+				'th',
+		]
 	
 	@property
 	def language_labels( self ) -> Dict[ str, str ] | None:
 		'''
-	
+
 	        Purpose:
 	        --------
-	        Method that returns a mapping of ISO-639-1 language codes
-	        to human-readable labels for UI display
+	        Return human-readable labels for language code options.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        Dict[ str, str ] | None:
+	            Mapping of language codes to labels.
 
         '''
 		return {
@@ -1749,58 +3310,323 @@ class Transcription( GPT ):
 				'ja': 'Japanese',
 				'ko': 'Korean',
 				'vi': 'Vietnamese',
-				'th': 'Thai', }
+				'th': 'Thai',
+		}
+	
+	@property
+	def include_options( self ) -> List[ str ] | None:
+		'''
+
+	        Purpose:
+	        --------
+	        Return optional transcription include fields.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Include field names.
+
+        '''
+		return [
+				'logprobs',
+		]
 	
 	@property
 	def response_format_options( self ) -> Dict[ str, List[ str ] ]:
 		'''
 		
+			Purpose:
+			--------
+			Return transcription response formats by model.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			Dict[ str, List[ str ] ]
+			Dict[ str, List[ str ] ]:
+				Response formats keyed by model name.
 
 		'''
 		return {
-				'whisper-1': [ 'json', 'text', 'srt', 'verbose_json', 'vtt' ],
-				'gpt-4o-transcribe': [ 'json', 'text' ],
-				'gpt-4o-mini-transcribe': [ 'json', 'text' ],
-				'gpt-4o-mini-transcribe-2025-12-15': [ 'json', 'text' ],
-				'gpt-4o-transcribe-diarize': [ 'json', 'text', 'diarized_json' ], }
+				'whisper-1': [
+						'json',
+						'text',
+						'srt',
+						'verbose_json',
+						'vtt',
+				],
+				'gpt-4o-transcribe': [
+						'json',
+				],
+				'gpt-4o-mini-transcribe': [
+						'json',
+				],
+				'gpt-4o-mini-transcribe-2025-12-15': [
+						'json',
+				],
+				'gpt-4o-transcribe-diarize': [
+						'json',
+						'text',
+						'diarized_json',
+				],
+		}
+	
+	def validate_model( self, model: str = None ) -> str:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the transcription model name.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Requested transcription model name.
+
+	        Returns:
+	        --------
+	        str:
+	            Valid transcription model name.
+
+        """
+		try:
+			value = model if isinstance( model, str ) and model.strip( ) else 'gpt-4o-transcribe'
+			value = value.strip( )
+			if value not in self.model_options:
+				raise ValueError( f'Unsupported transcription model: {value}' )
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Transcription'
+			exception.method = 'validate_model( self, model: str=None ) -> str'
+			raise exception
+	
+	def validate_format( self, model: str, format: str = None ) -> str | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the transcription response format for a model.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Valid transcription model name.
+
+	        format: str
+	            Requested response format.
+
+	        Returns:
+	        --------
+	        str | None:
+	            Valid response format or None when omitted.
+
+        """
+		try:
+			options = self.response_format_options.get( model, [ 'json' ] )
+			if not isinstance( format, str ) or not format.strip( ):
+				return options[ 0 ] if len( options ) > 0 else None
+			
+			value = format.strip( )
+			if value not in options:
+				return options[ 0 ] if len( options ) > 0 else None
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Transcription'
+			exception.method = 'validate_format( self, model: str, format: str=None ) -> str | None'
+			raise exception
+	
+	def validate_include( self, model: str, include: List[ str ] = None ) -> List[ str ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate optional transcription include fields for the selected model.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Valid transcription model name.
+
+	        include: List[ str ]
+	            Requested include fields.
+
+	        Returns:
+	        --------
+	        List[ str ]:
+	            Valid include fields.
+
+        """
+		try:
+			if include is None or len( include ) == 0:
+				return [ ]
+			
+			if model not in [ 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe',
+			                  'gpt-4o-mini-transcribe-2025-12-15' ]:
+				return [ ]
+			
+			values = [ ]
+			for item in include:
+				if isinstance( item, str ) and item.strip( ) in self.include_options:
+					values.append( item.strip( ) )
+			
+			return values
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Transcription'
+			exception.method = 'validate_include( self, model: str, include: List[ str ]=None )'
+			raise exception
+	
+	def normalize_response( self, response: Any ) -> Dict[ str, Any ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Normalize transcription responses into a dictionary with text, segments,
+	        language, duration, and raw content where available.
+
+	        Parameters:
+	        -----------
+	        response: Any
+	            OpenAI transcription response object or string.
+
+	        Returns:
+	        --------
+	        Dict[ str, Any ]:
+	            Normalized transcription result.
+
+        """
+		try:
+			result: Dict[ str, Any ] = {
+					'text': '',
+					'segments': [ ],
+					'language': None,
+					'duration': None,
+					'raw': None,
+			}
+			
+			if response is None:
+				return result
+			
+			if isinstance( response, str ):
+				result[ 'text' ] = response
+				result[ 'raw' ] = response
+				return result
+			
+			if hasattr( response, 'model_dump' ):
+				try:
+					result[ 'raw' ] = response.model_dump( )
+				except Exception:
+					result[ 'raw' ] = str( response )
+			else:
+				result[ 'raw' ] = str( response )
+			
+			text = getattr( response, 'text', None )
+			if isinstance( text, str ):
+				result[ 'text' ] = text
+			
+			segments = getattr( response, 'segments', None )
+			if isinstance( segments, list ):
+				normalized_segments = [ ]
+				for segment in segments:
+					if hasattr( segment, 'model_dump' ):
+						normalized_segments.append( segment.model_dump( ) )
+					elif isinstance( segment, dict ):
+						normalized_segments.append( segment )
+					else:
+						normalized_segments.append( { 'text': str( segment ) } )
+				
+				result[ 'segments' ] = normalized_segments
+			
+			language = getattr( response, 'language', None )
+			if language:
+				result[ 'language' ] = language
+			
+			duration = getattr( response, 'duration', None )
+			if duration:
+				result[ 'duration' ] = duration
+			
+			if not result[ 'text' ] and len( result[ 'segments' ] ) > 0:
+				parts = [ ]
+				for segment in result[ 'segments' ]:
+					if isinstance( segment, dict ) and segment.get( 'text' ):
+						parts.append( str( segment.get( 'text' ) ) )
+				
+				result[ 'text' ] = '\n'.join( parts ).strip( )
+			
+			if not result[ 'text' ]:
+				result[ 'text' ] = str( response )
+			
+			return result
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Transcription'
+			exception.method = 'normalize_response( self, response: Any ) -> Dict[ str, Any ]'
+			raise exception
 	
 	def transcribe( self, path: str, model: str = 'gpt-4o-transcribe', language: str = None,
-			prompt: str = None, format: str = None, temperature: float = None ) -> str | None:
+			prompt: str = None, format: str = None, temperature: float = None,
+			include: List[ str ] = None ) -> str | None:
 		"""
-		
+
 			Purpose:
-			----------
-			Transcribes audio into the input language.
-		
-		
+			--------
+			Transcribe an audio file into text or structured transcription output.
+
 			Parameters:
 			-----------
 			path: str
-			model: str='gpt-4o-transcribe'
-			language: str=None
-			prompt: str=None
-			format: str=None
-			temperature: float=None
-		
-		
+				Local path to the audio file.
+
+			model: str
+				Transcription model name.
+
+			language: str
+				Optional source-language hint.
+
+			prompt: str
+				Optional transcription prompt.
+
+			format: str
+				Optional response format.
+
+			temperature: float
+				Optional transcription temperature.
+
+			include: List[ str ]
+				Optional transcription include fields such as logprobs.
+
 			Returns:
 			--------
-			str | None
-        
+			str | None:
+				Extracted transcript text, or None if unavailable.
+
         """
 		try:
 			throw_if( 'path', path )
-			self.model = model or 'gpt-4o-transcribe'
-			self.language = language
-			self.prompt = prompt
-			self.response_format = format
+			self.model = self.validate_model( model )
+			self.language = language if isinstance( language, str ) and language.strip( ) else None
+			self.prompt = prompt if isinstance( prompt, str ) and prompt.strip( ) else None
+			self.response_format = self.validate_format( self.model, format )
 			self.temperature = temperature
+			self.include = self.validate_include( self.model, include )
 			self.client = OpenAI( api_key=cfg.OPENAI_API_KEY )
 			self.request = {
-					'model': self.model, }
+					'model': self.model,
+			}
 			
 			if self.language:
 				self.request[ 'language' ] = self.language
@@ -1811,25 +3637,21 @@ class Transcription( GPT ):
 			if self.response_format:
 				self.request[ 'response_format' ] = self.response_format
 			
-			if self.temperature is not None and self.model == 'whisper-1':
-				self.request[ 'temperature' ] = self.temperature
+			if self.include:
+				self.request[ 'include' ] = self.include
+			
+			if self.temperature is not None:
+				if self.model == 'whisper-1':
+					self.request[ 'temperature' ] = self.temperature
 			
 			with open( path, 'rb' ) as self.audio_file:
 				self.response = self.client.audio.transcriptions.create(
 					file=self.audio_file,
 					**self.request )
 			
-			self.transcript = getattr( self.response, 'text', None )
-			if isinstance( self.response, str ):
-				self.transcript = self.response
-			
-			if self.transcript is not None:
-				return self.transcript
-			
-			if hasattr( self.response, 'text' ):
-				return self.response.text
-			
-			return str( self.response )
+			self.normalized_result = self.normalize_response( self.response )
+			self.transcript = self.normalized_result.get( 'text' )
+			return self.transcript
 		except Exception as e:
 			ex = Error( e )
 			ex.module = 'gpt'
@@ -1839,73 +3661,131 @@ class Transcription( GPT ):
 	
 	def __dir__( self ) -> List[ str ] | None:
 		'''
-	
+
 	        Purpose:
 	        --------
-	        Method returns a list of strings representing members
-	
+	        Return member names for inspection.
+
 	        Parameters:
-	        ----------
-	        self
-	
+	        -----------
+	        None
+
 	        Returns:
-	        ---------
-	        List[ str ] | None
+	        --------
+	        List[ str ] | None:
+	            Member names.
 
         '''
-		return [ 'number',
-		         'temperature',
-		         'top_percent',
-		         'frequency_penalty',
-		         'presence_penalty',
-		         'max_tokens',
-		         'store',
-		         'stream',
-		         'stops',
-		         'prompt',
-		         'response',
-		         'audio_file',
-		         'messages',
-		         'response_format',
-		         'api_key',
-		         'client',
-		         'input_text',
-		         'transcript',
-		         'language',
-		         'model' ]
+		return [
+				'number',
+				'temperature',
+				'top_percent',
+				'frequency_penalty',
+				'presence_penalty',
+				'max_tokens',
+				'store',
+				'stream',
+				'stops',
+				'prompt',
+				'response',
+				'audio_file',
+				'messages',
+				'response_format',
+				'api_key',
+				'client',
+				'input_text',
+				'transcript',
+				'language',
+				'model',
+				'include',
+				'normalized_result',
+				'model_options',
+				'mime_options',
+				'language_options',
+				'language_labels',
+				'include_options',
+				'response_format_options',
+				'validate_model',
+				'validate_format',
+				'validate_include',
+				'normalize_response',
+				'transcribe',
+		]
 
 class Translation( GPT ):
 	"""
 
-	    Purpose
-	    ___________
-	    Class used for interacting with OpenAI's translation API
-	
-	
-	    Parameters
-	    ------------
-	    model: str='whisper-1'
-	    temperature: float=None
-	    top_p: float=None
-	    frequency: float=None
-	    presence: float=None
-	    max_tokens: int=None
-	    store: bool=None
-	    stream: bool=None
-	    instruct: str=None
-	    audio_file: str=None
-	    format: str=None
-	    language: str=None
+	    Purpose:
+	    --------
+	    Provides audio translation functionality through the OpenAI Audio
+	    Translations API.
+
+	    Notes:
+	    ------
+	    OpenAI audio translation translates non-English speech to English. The language
+	    parameter is retained only as optional local/source-language context and is not
+	    sent as a target-language control.
 
     """
 	client: Optional[ OpenAI ]
 	target_language: Optional[ str ]
 	response_format: Optional[ str ]
+	normalized_result: Optional[ Dict[ str, Any ] ]
 	
 	def __init__( self, model: str = 'whisper-1', temperature: float = None, top_p: float = None,
-			frequency: float = None, presence: float = None, max_tokens: int = None, store: bool = None,
+			frequency: float = None, presence: float = None, max_tokens: int = None,
+			store: bool = None,
 			stream: bool = None, instruct: str = None, audio_file: str = None, format: str = None,
 			language: str = None ):
+		"""
+
+	        Purpose:
+	        --------
+	        Initialize an audio translation wrapper instance.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Optional translation model name.
+
+	        temperature: float
+	            Optional translation temperature.
+
+	        top_p: float
+	            Optional top-p value retained for compatibility.
+
+	        frequency: float
+	            Optional frequency penalty retained for compatibility.
+
+	        presence: float
+	            Optional presence penalty retained for compatibility.
+
+	        max_tokens: int
+	            Optional maximum token value retained for compatibility.
+
+	        store: bool
+	            Optional store flag retained for compatibility.
+
+	        stream: bool
+	            Optional stream flag retained for compatibility.
+
+	        instruct: str
+	            Optional prompt/instruction text.
+
+	        audio_file: str
+	            Optional audio file path.
+
+	        format: str
+	            Optional response format.
+
+	        language: str
+	            Optional source-language context retained for compatibility.
+
+	        Returns:
+	        --------
+	        None
+
+        """
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
@@ -1922,17 +3802,30 @@ class Translation( GPT ):
 		self.response = None
 		self.response_format = format
 		self.target_language = language
+		self.normalized_result = None
+		self.request = None
 	
 	@property
 	def model_options( self ) -> List[ str ] | None:
 		'''
-	
+
 	        Purpose:
 	        --------
-	        Method that returns a list of translation model names
+	        Return supported audio translation model names.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Translation model names.
 
         '''
-		return [ 'whisper-1' ]
+		return [
+				'whisper-1',
+		]
 	
 	@property
 	def mime_options( self ) -> List[ str ] | None:
@@ -1940,47 +3833,84 @@ class Translation( GPT ):
 
 	        Purpose:
 	        --------
-	        Method that returns a list of supported input audio formats
+	        Return supported input audio formats.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Audio input format names.
 
         '''
-		return [ 'flac', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'wav', 'webm' ]
-		
+		return [
+				'flac',
+				'mp3',
+				'mp4',
+				'mpeg',
+				'mpga',
+				'm4a',
+				'ogg',
+				'wav',
+				'webm',
+		]
+	
 	@property
 	def language_options( self ) -> List[ str ] | None:
 		'''
-	
+
 	        Purpose:
 	        --------
-	        Method that returns a list of ISO-639-1 language codes
-	        for UI capture of source-language context
+	        Return common ISO-639-1 language codes retained for source-language context.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[ str ] | None:
+	            Language code values.
 
         '''
-		return [ 'en',
-		         'es',
-		         'fr',
-		         'de',
-		         'it',
-		         'pt',
-		         'ru',
-		         'uk',
-		         'el',
-		         'he',
-		         'ar',
-		         'hi',
-		         'zh',
-		         'ja',
-		         'ko',
-		         'vi',
-		         'th' ]
+		return [
+				'en',
+				'es',
+				'fr',
+				'de',
+				'it',
+				'pt',
+				'ru',
+				'uk',
+				'el',
+				'he',
+				'ar',
+				'hi',
+				'zh',
+				'ja',
+				'ko',
+				'vi',
+				'th',
+		]
 	
 	@property
 	def language_labels( self ) -> Dict[ str, str ] | None:
 		'''
-	
+
 	        Purpose:
 	        --------
-	        Method that returns a mapping of ISO-639-1 language codes
-	        to human-readable labels for UI display
+	        Return human-readable labels for source-language context codes.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        Dict[ str, str ] | None:
+	            Mapping of language codes to labels.
 
         '''
 		return {
@@ -2000,51 +3930,235 @@ class Translation( GPT ):
 				'ja': 'Japanese',
 				'ko': 'Korean',
 				'vi': 'Vietnamese',
-				'th': 'Thai', }
+				'th': 'Thai',
+		}
 	
 	@property
 	def response_format_options( self ) -> List[ str ] | None:
 		'''
 		
+			Purpose:
+			--------
+			Return audio translation response format options.
+
+			Parameters:
+			-----------
+			None
+
 			Returns:
 			--------
-			List[ str ] | None
+			List[ str ] | None:
+				Response format names.
 
 		'''
-		return [ 'json', 'text', 'srt', 'verbose_json', 'vtt' ]
+		return [
+				'json',
+				'text',
+				'srt',
+				'verbose_json',
+				'vtt',
+		]
+	
+	def validate_model( self, model: str = None ) -> str:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the audio translation model name.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Requested translation model name.
+
+	        Returns:
+	        --------
+	        str:
+	            Valid translation model name.
+
+        """
+		try:
+			value = model if isinstance( model, str ) and model.strip( ) else 'whisper-1'
+			value = value.strip( )
+			if value not in self.model_options:
+				raise ValueError( f'Unsupported translation model: {value}' )
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Translation'
+			exception.method = 'validate_model( self, model: str=None ) -> str'
+			raise exception
+	
+	def validate_format( self, format: str = None ) -> str | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the audio translation response format.
+
+	        Parameters:
+	        -----------
+	        format: str
+	            Requested response format.
+
+	        Returns:
+	        --------
+	        str | None:
+	            Valid response format or None.
+
+        """
+		try:
+			if not isinstance( format, str ) or not format.strip( ):
+				return 'json'
+			
+			value = format.strip( )
+			if value not in self.response_format_options:
+				return 'json'
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Translation'
+			exception.method = 'validate_format( self, format: str=None ) -> str | None'
+			raise exception
+	
+	def normalize_response( self, response: Any ) -> Dict[ str, Any ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Normalize audio translation responses into a dictionary with text,
+	        segments, language, duration, and raw content where available.
+
+	        Parameters:
+	        -----------
+	        response: Any
+	            OpenAI translation response object or string.
+
+	        Returns:
+	        --------
+	        Dict[ str, Any ]:
+	            Normalized translation result.
+
+        """
+		try:
+			result: Dict[ str, Any ] = {
+					'text': '',
+					'segments': [ ],
+					'language': None,
+					'duration': None,
+					'raw': None,
+			}
+			
+			if response is None:
+				return result
+			
+			if isinstance( response, str ):
+				result[ 'text' ] = response
+				result[ 'raw' ] = response
+				return result
+			
+			if hasattr( response, 'model_dump' ):
+				try:
+					result[ 'raw' ] = response.model_dump( )
+				except Exception:
+					result[ 'raw' ] = str( response )
+			else:
+				result[ 'raw' ] = str( response )
+			
+			text = getattr( response, 'text', None )
+			if isinstance( text, str ):
+				result[ 'text' ] = text
+			
+			segments = getattr( response, 'segments', None )
+			if isinstance( segments, list ):
+				normalized_segments = [ ]
+				for segment in segments:
+					if hasattr( segment, 'model_dump' ):
+						normalized_segments.append( segment.model_dump( ) )
+					elif isinstance( segment, dict ):
+						normalized_segments.append( segment )
+					else:
+						normalized_segments.append( { 'text': str( segment ) } )
+				
+				result[ 'segments' ] = normalized_segments
+			
+			language = getattr( response, 'language', None )
+			if language:
+				result[ 'language' ] = language
+			
+			duration = getattr( response, 'duration', None )
+			if duration:
+				result[ 'duration' ] = duration
+			
+			if not result[ 'text' ] and len( result[ 'segments' ] ) > 0:
+				parts = [ ]
+				for segment in result[ 'segments' ]:
+					if isinstance( segment, dict ) and segment.get( 'text' ):
+						parts.append( str( segment.get( 'text' ) ) )
+				
+				result[ 'text' ] = '\n'.join( parts ).strip( )
+			
+			if not result[ 'text' ]:
+				result[ 'text' ] = str( response )
+			
+			return result
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Translation'
+			exception.method = 'normalize_response( self, response: Any ) -> Dict[ str, Any ]'
+			raise exception
 	
 	def translate( self, filepath: str, model: str = 'whisper-1', prompt: str = None,
 			format: str = None, temperature: float = None, language: str = None ) -> str | None:
 		"""
-		
+
+            Purpose:
+            --------
             Translate non-English speech to English.
-		
-		
+
 			Parameters:
 			-----------
 			filepath: str
-			model: str='whisper-1'
-			prompt: str=None
-			format: str=None
-			temperature: float=None
-			language: str=None
-		
-		
+				Local path to the audio file.
+
+			model: str
+				Translation model name.
+
+			prompt: str
+				Optional prompt text.
+
+			format: str
+				Optional response format.
+
+			temperature: float
+				Optional translation temperature.
+
+			language: str
+				Optional source-language context retained for compatibility. This is not
+				sent as a target-language parameter.
+
 			Returns:
 			--------
-			str | None
-        
+			str | None:
+				Translated English text, or None if unavailable.
+
         """
 		try:
 			throw_if( 'filepath', filepath )
-			self.model = model or 'whisper-1'
-			self.prompt = prompt
-			self.response_format = format
+			self.model = self.validate_model( model )
+			self.prompt = prompt if isinstance( prompt, str ) and prompt.strip( ) else None
+			self.response_format = self.validate_format( format )
 			self.temperature = temperature
 			self.target_language = language
 			self.client = OpenAI( api_key=self.api_key )
 			self.request = {
-					'model': self.model, }
+					'model': self.model,
+			}
 			
 			if self.prompt:
 				self.request[ 'prompt' ] = self.prompt
@@ -2060,13 +4174,8 @@ class Translation( GPT ):
 					file=audio_file,
 					**self.request )
 			
-			if hasattr( self.response, 'text' ):
-				return self.response.text
-			
-			if isinstance( self.response, str ):
-				return self.response
-			
-			return str( self.response )
+			self.normalized_result = self.normalize_response( self.response )
+			return self.normalized_result.get( 'text' )
 		except Exception as e:
 			ex = Error( e )
 			ex.module = 'gpt'
@@ -2079,34 +4188,45 @@ class Translation( GPT ):
 
 	        Purpose:
 	        --------
-	        Method returns a list of strings representing members
-	
+	        Return member names for inspection.
+
 	        Parameters:
-	        ----------
-	        self
-	
+	        -----------
+	        None
+
 	        Returns:
-	        ---------
-	        List[ str ] | None
+	        --------
+	        List[ str ] | None:
+	            Member names.
 
         '''
-		return [ 'temperature',
-		         'top_percent',
-		         'frequency_penalty',
-		         'presence_penalty',
-		         'max_tokens',
-		         'store',
-		         'stream',
-		         'prompt',
-		         'response',
-		         'audio_file',
-		         'response_format',
-		         'api_key',
-		         'client',
-		         'model',
-		         'target_language',
-		         'translate',
-		         'model_options' ]
+		return [
+				'temperature',
+				'top_percent',
+				'frequency_penalty',
+				'presence_penalty',
+				'max_tokens',
+				'store',
+				'stream',
+				'prompt',
+				'response',
+				'audio_file',
+				'response_format',
+				'api_key',
+				'client',
+				'model',
+				'target_language',
+				'normalized_result',
+				'model_options',
+				'mime_options',
+				'language_options',
+				'language_labels',
+				'response_format_options',
+				'validate_model',
+				'validate_format',
+				'normalize_response',
+				'translate',
+		]
 
 class Embeddings( GPT ):
 	"""

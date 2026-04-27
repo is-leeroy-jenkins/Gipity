@@ -416,6 +416,12 @@ if 'text_messages' not in st.session_state:
 
 # --------IMAGE-GENERATION PARAMETERS--------------------
 
+if 'image_analysis_model' not in st.session_state:
+	st.session_state[ 'image_analysis_model' ] = ''
+
+if 'image_analysis_detail' not in st.session_state:
+	st.session_state[ 'image_analysis_detail' ] = 'auto'
+	
 if 'image_max_tokens' not in st.session_state:
 	st.session_state[ 'image_max_tokens' ] = 0
 
@@ -495,29 +501,18 @@ if 'image_content' not in st.session_state:
 	st.session_state[ 'image_content' ] = [ ]
 
 # ------- IMAGE-SPECIFIC PARAMETER---------------
-if 'image_mode' not in st.session_state:
-	st.session_state[ 'image_mode' ] = ''
 
-if 'image_style' not in st.session_state:
-	st.session_state[ 'image_style' ] = ''
+if 'image_analysis_model' not in st.session_state:
+	st.session_state[ 'image_analysis_model' ] = ''
 
-if 'image_detail' not in st.session_state:
-	st.session_state[ 'image_detail' ] = ''
+if 'image_output_bytes' not in st.session_state:
+	st.session_state[ 'image_output_bytes' ] = None
 
-if 'image_backcolor' not in st.session_state:
-	st.session_state[ 'image_backcolor' ] = ''
+if 'image_messages' not in st.session_state:
+	st.session_state[ 'image_messages' ] = [ ]
 
-if 'image_output' not in st.session_state:
-	st.session_state[ 'image_output' ] = ''
-
-if 'image_url' not in st.session_state:
-	st.session_state[ 'image_url' ] = ''
-
-if 'image_size' not in st.session_state:
-	st.session_state[ 'image_size' ] = ''
-
-if 'image_quality' not in st.session_state:
-	st.session_state[ 'image_quality' ] = ''
+if 'image_input' not in st.session_state:
+	st.session_state[ 'image_input' ] = [ ]
 
 # --------AUDIO-GENERATION PARAMETERS--------------------
 
@@ -924,6 +919,7 @@ if 'token_usage' not in st.session_state:
 	
 # -------------- LLM  UTILITIES -------------------
 
+@st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
 	"""
 	
@@ -1548,6 +1544,903 @@ def clear_history( ) -> None:
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( "DELETE FROM chat_history" )
 
+def ensure_text_mode_state( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Ensure Text mode session-state keys used by API request helpers exist before
+		widget instantiation.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if 'text_vector_store_ids' not in st.session_state:
+		st.session_state[ 'text_vector_store_ids' ] = ''
+	
+	if 'text_json_schema_name' not in st.session_state:
+		st.session_state[ 'text_json_schema_name' ] = 'structured_response'
+	
+	if 'text_json_schema' not in st.session_state:
+		st.session_state[ 'text_json_schema' ] = ''
+	
+	if 'text_json_schema_strict' not in st.session_state:
+		st.session_state[ 'text_json_schema_strict' ] = True
+	
+	if 'text_conversation_id' not in st.session_state:
+		st.session_state[ 'text_conversation_id' ] = ''
+	
+	if 'text_stream' not in st.session_state:
+		st.session_state[ 'text_stream' ] = False
+	
+	if 'text_background' not in st.session_state:
+		st.session_state[ 'text_background' ] = False
+
+def parse_text_vector_store_ids( value: str | list[ str ] | None ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Parse comma-delimited or list-based vector store identifiers for OpenAI file_search.
+		
+		Parameters:
+		-----------
+		value: str | list[str] | None
+			Comma-delimited vector store IDs or an existing list of IDs.
+		
+		Returns:
+		--------
+		list[str]
+			Clean vector store IDs.
+		
+	"""
+	if value is None:
+		return [ ]
+	
+	if isinstance( value, list ):
+		return [ str( item ).strip( ) for item in value if str( item ).strip( ) ]
+	
+	if not isinstance( value, str ) or not value.strip( ):
+		return [ ]
+	
+	return [ item.strip( ) for item in value.split( ',' ) if item.strip( ) ]
+
+def build_text_response_format( response_format: str | None, schema_name: str | None = None,
+		schema_text: str | None = None, strict: bool = True ) -> dict[ str, Any ] | None:
+	"""
+	
+		Purpose:
+		--------
+		Build the Responses API text.format object from Text mode response-format
+		controls.
+		
+		Parameters:
+		-----------
+		response_format: str | None
+			Selected response format: text, json_object, or json_schema.
+		
+		schema_name: str | None
+			Schema name used when response_format is json_schema.
+		
+		schema_text: str | None
+			JSON Schema text used when response_format is json_schema.
+		
+		strict: bool
+			Whether schema adherence should be strict for json_schema output.
+		
+		Returns:
+		--------
+		dict[str, Any] | None
+			Responses API text-format object, or None when no format should be sent.
+		
+	"""
+	if not isinstance( response_format, str ) or not response_format.strip( ):
+		return None
+	
+	format_name = response_format.strip( )
+	
+	if format_name == 'text':
+		return {
+				'format': {
+						'type': 'text',
+				}
+		}
+	
+	if format_name == 'json_object':
+		return {
+				'format': {
+						'type': 'json_object',
+				}
+		}
+	
+	if format_name == 'json_schema':
+		if not isinstance( schema_text, str ) or not schema_text.strip( ):
+			st.warning( 'JSON Schema output requires a schema. Falling back to plain text.' )
+			return {
+					'format': {
+							'type': 'text',
+					}
+			}
+		
+		try:
+			schema = json.loads( schema_text )
+		except Exception as exc:
+			st.warning( f'JSON Schema could not be parsed. Falling back to plain text: {exc}' )
+			return {
+					'format': {
+							'type': 'text',
+					}
+			}
+		
+		name = schema_name if isinstance( schema_name, str ) and schema_name.strip( ) else \
+			'structured_response'
+		
+		return {
+				'format': {
+						'type': 'json_schema',
+						'name': name.strip( ),
+						'schema': schema,
+						'strict': bool( strict ),
+				}
+		}
+	
+	return None
+
+def build_text_tools( selected_tools: list[ str ] | None,
+		vector_store_ids: list[ str ] | None = None ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Build a safe list of Text mode tool dictionaries for the Chat wrapper.
+		
+		Parameters:
+		-----------
+		selected_tools: list[str] | None
+			Tool names selected in the Text mode UI.
+		
+		vector_store_ids: list[str] | None
+			Vector store IDs used by the file_search tool.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Tool dictionaries suitable for Chat.generate_text().
+		
+	"""
+	tools: list[ dict[ str, Any ] ] = [ ]
+	vector_ids = vector_store_ids if vector_store_ids is not None else [ ]
+	
+	if selected_tools is None or len( selected_tools ) == 0:
+		return tools
+	
+	for name in selected_tools:
+		if not isinstance( name, str ) or not name.strip( ):
+			continue
+		
+		tool_name = name.strip( )
+		
+		if tool_name == 'web_search':
+			tools.append( { 'type': 'web_search' } )
+			continue
+		
+		if tool_name == 'file_search':
+			if len( vector_ids ) == 0:
+				st.warning( 'File Search was selected, but no vector store IDs were provided.' )
+				continue
+			
+			tools.append( { 'type': 'file_search' } )
+			continue
+	
+	return tools
+
+def build_text_include( selected_include: list[ str ] | None,
+		selected_tools: list[ dict[ str, Any ] ] | None = None ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Filter Text mode include fields so they correspond to the selected tool context.
+		
+		Parameters:
+		-----------
+		selected_include: list[str] | None
+			Include values selected in the UI.
+		
+		selected_tools: list[dict[str, Any]] | None
+			Normalized tool dictionaries selected for the request.
+		
+		Returns:
+		--------
+		list[str]
+			Filtered include values.
+		
+	"""
+	if selected_include is None or len( selected_include ) == 0:
+		return [ ]
+	
+	tool_types: list[ str ] = [ ]
+	if isinstance( selected_tools, list ):
+		for tool in selected_tools:
+			if isinstance( tool, dict ) and tool.get( 'type' ):
+				tool_types.append( str( tool.get( 'type' ) ) )
+	
+	include_values: list[ str ] = [ ]
+	
+	for value in selected_include:
+		if not isinstance( value, str ) or not value.strip( ):
+			continue
+		
+		include_name = value.strip( )
+		
+		if include_name == 'reasoning.encrypted_content':
+			include_values.append( include_name )
+			continue
+		
+		if include_name == 'message.output_text.logprobs':
+			include_values.append( include_name )
+			continue
+		
+		if include_name.startswith( 'web_search_call.' ) and 'web_search' in tool_types:
+			include_values.append( include_name )
+			continue
+		
+		if include_name == 'file_search_call.results' and 'file_search' in tool_types:
+			include_values.append( include_name )
+			continue
+	
+	return include_values
+
+def build_text_tool_choice( tool_choice: str | None,
+		selected_tools: list[ dict[ str, Any ] ] | None = None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Safely pass tool_choice only when it is compatible with the final tool list.
+		
+		Parameters:
+		-----------
+		tool_choice: str | None
+			Selected tool-choice option.
+		
+		selected_tools: list[dict[str, Any]] | None
+			Final tool dictionaries selected for the request.
+		
+		Returns:
+		--------
+		str | None
+			Tool-choice value or None.
+		
+	"""
+	if not isinstance( tool_choice, str ) or not tool_choice.strip( ):
+		return None
+	
+	choice = tool_choice.strip( )
+	if choice not in [ 'auto', 'required', 'none' ]:
+		return None
+	
+	if choice == 'none':
+		return 'none'
+	
+	if selected_tools is None or len( selected_tools ) == 0:
+		return None
+	
+	return choice
+
+def build_text_context( messages: list[ dict[ str, Any ] ] | None,
+		include_last_message: bool = False ) -> list[ dict[ str, str ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Build clean Text mode conversation context from Streamlit message state.
+		
+		Parameters:
+		-----------
+		messages: list[dict[str, Any]] | None
+			Text mode messages stored in session state.
+		
+		include_last_message: bool
+			Whether the final message should be included in context.
+		
+		Returns:
+		--------
+		list[dict[str, str]]
+			Clean message context for the Responses API wrapper.
+		
+	"""
+	if messages is None or not isinstance( messages, list ):
+		return [ ]
+	
+	items = messages if include_last_message else messages[ :-1 ]
+	context: list[ dict[ str, str ] ] = [ ]
+	
+	for item in items:
+		if not isinstance( item, dict ):
+			continue
+		
+		role = str( item.get( 'role', '' ) or '' ).strip( )
+		content = item.get( 'content', '' )
+		
+		if role not in [ 'user', 'assistant', 'system', 'developer' ]:
+			continue
+		
+		if not isinstance( content, str ) or not content.strip( ):
+			continue
+		
+		context.append(
+			{
+					'role': role,
+					'content': content.strip( ),
+			} )
+	
+	return context
+
+def get_text_conversation_id( input_mode: str | None, conversation_id: str | None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Return a conversation identifier only when Text mode explicitly selects API
+		conversation state.
+		
+		Parameters:
+		-----------
+		input_mode: str | None
+			Text mode input behavior selection.
+		
+		conversation_id: str | None
+			OpenAI conversation identifier.
+		
+		Returns:
+		--------
+		str | None
+			Conversation identifier or None.
+		
+	"""
+	if input_mode != 'conversation':
+		return None
+	
+	if not isinstance( conversation_id, str ) or not conversation_id.strip( ):
+		return None
+	
+	return conversation_id.strip( )
+
+def get_text_previous_response_id( input_mode: str | None, previous_id: str | None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Return previous_response_id only when the current input mode allows response
+		chaining.
+		
+		Parameters:
+		-----------
+		input_mode: str | None
+			Text mode input behavior selection.
+		
+		previous_id: str | None
+			Prior Responses API response identifier.
+		
+		Returns:
+		--------
+		str | None
+			Previous response identifier or None.
+		
+	"""
+	if input_mode == 'single_turn':
+		return None
+	
+	if input_mode == 'conversation':
+		return None
+	
+	if not isinstance( previous_id, str ) or not previous_id.strip( ):
+		return None
+	
+	return previous_id.strip( )
+
+def get_text_stream_value( stream_value: bool | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Suppress streaming for the current non-streaming Text mode execution path.
+		
+		Parameters:
+		-----------
+		stream_value: bool | None
+			Stream toggle value.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if bool( stream_value ):
+		st.info(
+			'Streaming is not sent in this Text mode path until stream-event rendering is added.' )
+	
+	return None
+
+def get_text_background_value( background_value: bool | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Suppress background execution for the current immediate-response Text mode path.
+		
+		Parameters:
+		-----------
+		background_value: bool | None
+			Background toggle value.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if bool( background_value ):
+		st.info( 'Background mode is not sent in this Text mode path until polling is added.' )
+	
+	return None
+
+def reset_text_structured_output_controls( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Text mode structured-output controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'text_json_schema_name', 'text_json_schema',
+	             'text_json_schema_strict' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+def reset_text_api_state_controls( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Text mode API state controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'text_previous_response_id', 'text_conversation_id' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+# ------------ IMAGE UTILITIES -----------
+
+def clear_image_messages( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Image Mode message and output state.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'image_input' ] = [ ]
+	st.session_state[ 'image_messages' ] = [ ]
+	st.session_state[ 'image_output_bytes' ] = None
+
+def clear_image_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Image Mode system instructions and the selected prompt template.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'image_system_instructions' ] = ''
+	st.session_state[ 'instructions' ] = ''
+
+def append_image_message( role: str, content: str ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Append a message to Image Mode state.
+		
+		Parameters:
+		-----------
+		role: str
+			Message role.
+		
+		content: str
+			Message content.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if 'image_input' not in st.session_state or not isinstance(
+			st.session_state[ 'image_input' ], list ):
+		st.session_state[ 'image_input' ] = [ ]
+	
+	if 'image_messages' not in st.session_state or not isinstance(
+			st.session_state[ 'image_messages' ], list ):
+		st.session_state[ 'image_messages' ] = [ ]
+	
+	message = {
+			'role': role,
+			'content': content,
+	}
+	
+	st.session_state[ 'image_input' ].append( message )
+	st.session_state[ 'image_messages' ].append( message )
+
+def load_image_instruction_template( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Load the selected prompt template into Image Mode system instructions.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	name = st.session_state.get( 'instructions' )
+	if name and name != 'No Templates Found':
+		text = fetch_prompt_text( cfg.DB_PATH, name )
+		if text is not None:
+			st.session_state[ 'image_system_instructions' ] = text
+
+def convert_image_system_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Convert Image Mode system instructions between XML-like delimiters and Markdown
+		headings.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	text = st.session_state.get( 'image_system_instructions', '' )
+	if not isinstance( text, str ) or not text.strip( ):
+		return
+	
+	source = text.strip( )
+	if cfg.XML_BLOCK_PATTERN.search( source ):
+		converted = convert_xml( source )
+	else:
+		converted = convert_markdown( source )
+	
+	st.session_state[ 'image_system_instructions' ] = converted
+
+def reset_image_llm_settings( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Image Mode model-selection controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'image_mode', 'image_model', 'image_analysis_model', 'image_number' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+def reset_image_visual_settings( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Image Mode visual controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'image_mime_type', 'image_size', 'image_quality', 'image_backcolor',
+	             'image_compression' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+def get_image_models( image: Images ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return GPT Image model options for generation and editing.
+		
+		Parameters:
+		-----------
+		image: Images
+			Image wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Image model options.
+		
+	"""
+	options = getattr( image, 'model_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [
+			'',
+			'gpt-image-2',
+			'gpt-image-1.5',
+			'gpt-image-1',
+			'gpt-image-1-mini',
+	]
+
+def get_image_analysis_models( image: Images = None ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return vision-capable Responses API model options for image analysis.
+		
+		Parameters:
+		-----------
+		image: Images
+			Optional Image wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Image-analysis model options.
+		
+	"""
+	if image is not None:
+		options = getattr( image, 'analysis_model_options', None )
+		if isinstance( options, list ) and len( options ) > 0:
+			return [ '' ] + options
+	
+	return [
+			'',
+			'gpt-4o-mini',
+			'gpt-4o',
+			'gpt-4.1-mini',
+			'gpt-4.1',
+			'gpt-5-mini',
+			'gpt-5',
+	]
+
+def get_image_size_options( image: Images ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return image size options from the wrapper when available.
+		
+		Parameters:
+		-----------
+		image: Images
+			Image wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Image size options.
+		
+	"""
+	options = getattr( image, 'size_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [ '', 'auto', '1024x1024', '1024x1536', '1536x1024' ]
+
+def get_image_quality_options( image: Images ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return image quality options from the wrapper when available.
+		
+		Parameters:
+		-----------
+		image: Images
+			Image wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Image quality options.
+		
+	"""
+	options = getattr( image, 'quality_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [ '', 'auto', 'low', 'medium', 'high' ]
+
+def get_image_mime_options( image: Images ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return image output format options from the wrapper when available.
+		
+		Parameters:
+		-----------
+		image: Images
+			Image wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Image output format options.
+		
+	"""
+	options = getattr( image, 'mime_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [ '', 'png', 'jpeg', 'webp' ]
+
+def get_image_background_options( image: Images ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return image background options from the wrapper when available.
+		
+		Parameters:
+		-----------
+		image: Images
+			Image wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Image background options.
+		
+	"""
+	options = getattr( image, 'backcolor_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [ '', 'auto', 'transparent', 'opaque' ]
+
+def get_image_detail_options( image: Images ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return image-analysis detail options from the wrapper when available.
+		
+		Parameters:
+		-----------
+		image: Images
+			Image wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Image-analysis detail options.
+		
+	"""
+	options = getattr( image, 'detail_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [ '', 'auto', 'low', 'high', 'original' ]
+
+def render_image_output( image_result: str | bytes | list[ str | bytes ] | None,
+		caption: str = 'Image output' ) -> bool:
+	"""
+	
+		Purpose:
+		--------
+		Render image output returned from the Images wrapper, including single outputs
+		and multi-image output lists.
+		
+		Parameters:
+		-----------
+		image_result: str | bytes | list[ str | bytes ] | None
+			Image bytes, image URL, list of image outputs, or None.
+		
+		caption: str
+			Base caption used when rendering one or more images.
+		
+		Returns:
+		--------
+		bool
+			True when at least one image output is rendered; otherwise False.
+		
+	"""
+	if image_result is None:
+		return False
+	
+	outputs: list[ str | bytes ] = image_result if isinstance( image_result, list ) else [
+			image_result ]
+	rendered = False
+	
+	for index, item in enumerate( outputs, start=1 ):
+		if item is None:
+			continue
+		
+		if isinstance( item, bytes ) and len( item ) > 0:
+			if len( outputs ) > 1:
+				st.image( item, caption=f'{caption} {index}', use_column_width=True )
+			else:
+				st.image( item, caption=caption, use_column_width=True )
+			
+			rendered = True
+			continue
+		
+		if isinstance( item, str ) and item.strip( ):
+			if item.strip( ).lower( ).startswith( ('http://', 'https://') ):
+				if len( outputs ) > 1:
+					st.image( item.strip( ), caption=f'{caption} {index}', use_column_width=True )
+				else:
+					st.image( item.strip( ), caption=caption, use_column_width=True )
+				
+				rendered = True
+			else:
+				st.markdown( item.strip( ) )
+				rendered = True
+	
+	return rendered
+	
 # ----------  DOCQNA UTILITIES ----------
 
 def route_document_query( prompt: str ) -> str:
@@ -3135,7 +4028,7 @@ def build_prompt( user_input: str ) -> str:
 	prompt += f"<|user|>\n{user_input}\n</s>\n<|assistant|>\n"
 	return prompt
 
-def _reset_audio_model_controls( ) -> None:
+def reset_audio_model_controls( ) -> None:
 	'''
 	
 		Purpose:
@@ -3161,7 +4054,7 @@ def _reset_audio_model_controls( ) -> None:
 	st.session_state[ 'audio_rate' ] = int( cfg.SAMPLE_RATES[ 0 ] ) if cfg.SAMPLE_RATES else 44100
 	st.session_state[ 'audio_mime_type' ] = None
 
-def _reset_audio_inference_controls( ) -> None:
+def reset_audio_inference_controls( ) -> None:
 	'''
 	
 		Purpose:
@@ -3186,7 +4079,7 @@ def _reset_audio_inference_controls( ) -> None:
 	st.session_state[ 'audio_modalities' ] = [ ]
 	st.session_state[ 'audio_response_format' ] = None
 
-def _reset_audio_sound_controls( ) -> None:
+def reset_audio_sound_controls( ) -> None:
 	'''
 	
 		Purpose:
@@ -3210,7 +4103,849 @@ def _reset_audio_sound_controls( ) -> None:
 	st.session_state[ 'audio_autoplay' ] = False
 	st.session_state[ 'audio_start_time' ] = 0.0
 	st.session_state[ 'audio_end_time' ] = 0.0
+
+# ------------ AUDIO MODE UTILITIES -----------------
+
+def ensure_audio_mode_state( ) -> None:
+	"""
 	
+		Purpose:
+		--------
+		Ensure Audio mode session-state keys used by API request helpers exist before
+		widget instantiation.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if 'audio_task' not in st.session_state:
+		st.session_state[ 'audio_task' ] = ''
+	
+	if 'audio_model' not in st.session_state:
+		st.session_state[ 'audio_model' ] = ''
+	
+	if 'audio_language' not in st.session_state:
+		st.session_state[ 'audio_language' ] = ''
+	
+	if 'audio_response_format' not in st.session_state:
+		st.session_state[ 'audio_response_format' ] = ''
+	
+	if 'audio_mime_type' not in st.session_state:
+		st.session_state[ 'audio_mime_type' ] = ''
+	
+	if 'audio_include' not in st.session_state:
+		st.session_state[ 'audio_include' ] = [ ]
+	
+	if 'audio_speed' not in st.session_state:
+		st.session_state[ 'audio_speed' ] = 1.0
+	
+	if 'audio_voice' not in st.session_state:
+		st.session_state[ 'audio_voice' ] = ''
+	
+	if 'audio_temperature' not in st.session_state:
+		st.session_state[ 'audio_temperature' ] = 0.0
+	
+	if 'audio_system_instructions' not in st.session_state:
+		st.session_state[ 'audio_system_instructions' ] = ''
+	
+	if 'audio_output' not in st.session_state:
+		st.session_state[ 'audio_output' ] = ''
+	
+	if 'audio_output_bytes' not in st.session_state:
+		st.session_state[ 'audio_output_bytes' ] = None
+	
+	if 'audio_last_result' not in st.session_state:
+		st.session_state[ 'audio_last_result' ] = { }
+	
+	if 'audio_last_usage' not in st.session_state:
+		st.session_state[ 'audio_last_usage' ] = { }
+	
+	if 'audio_messages' not in st.session_state:
+		st.session_state.audio_messages = [ ]
+
+def get_audio_task_options( ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return Audio mode task options.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		list[str]
+			Audio task names.
+		
+	"""
+	return [
+			'',
+			'Transcribe',
+			'Translate',
+			'Text-to-Speech',
+	]
+
+def get_audio_model_options( task: str | None, transcriber: Transcription,
+		translator: Translation, tts: TTS ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return task-aware Audio API model options.
+		
+		Parameters:
+		-----------
+		task: str | None
+			Selected Audio mode task.
+		
+		transcriber: Transcription
+			Transcription wrapper instance.
+		
+		translator: Translation
+			Translation wrapper instance.
+		
+		tts: TTS
+			Text-to-speech wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Model option names.
+		
+	"""
+	if task == 'Transcribe':
+		options = getattr( transcriber, 'model_options', [ ] )
+	elif task == 'Translate':
+		options = getattr( translator, 'model_options', [ ] )
+	elif task == 'Text-to-Speech':
+		options = getattr( tts, 'model_options', [ ] )
+	else:
+		options = [ ]
+	
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [ '' ]
+
+def get_audio_language_options( transcriber: Transcription ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return language options for transcription source-language hints.
+		
+		Parameters:
+		-----------
+		transcriber: Transcription
+			Transcription wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Language code options.
+		
+	"""
+	options = getattr( transcriber, 'language_options', [ ] )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [ '' ]
+
+def get_audio_voice_options( tts: TTS ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return text-to-speech voice options.
+		
+		Parameters:
+		-----------
+		tts: TTS
+			Text-to-speech wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Voice option names.
+		
+	"""
+	options = getattr( tts, 'voice_options', [ ] )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [ '' ]
+
+def get_audio_speed_options( tts: TTS ) -> list[ float ]:
+	"""
+	
+		Purpose:
+		--------
+		Return text-to-speech speed options.
+		
+		Parameters:
+		-----------
+		tts: TTS
+			Text-to-speech wrapper instance.
+		
+		Returns:
+		--------
+		list[float]
+			Speech speed options.
+		
+	"""
+	options = getattr( tts, 'speed_options', [ ] )
+	if isinstance( options, list ) and len( options ) > 0:
+		return options
+	
+	return [
+			0.25,
+			0.50,
+			0.75,
+			1.0,
+			1.25,
+			1.50,
+			2.0,
+			3.0,
+			4.0,
+	]
+
+def get_audio_response_format_options( task: str | None, model: str | None,
+		transcriber: Transcription, translator: Translation, tts: TTS ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return task-aware response/output format options for Audio mode.
+		
+		Parameters:
+		-----------
+		task: str | None
+			Selected Audio mode task.
+		
+		model: str | None
+			Selected Audio API model.
+		
+		transcriber: Transcription
+			Transcription wrapper instance.
+		
+		translator: Translation
+			Translation wrapper instance.
+		
+		tts: TTS
+			Text-to-speech wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Response/output format options.
+		
+	"""
+	if task == 'Transcribe':
+		format_map = getattr( transcriber, 'response_format_options', { } )
+		if isinstance( format_map, dict ):
+			options = format_map.get( model, [ 'json' ] )
+			return [ '' ] + options
+		
+		return [ '', 'json' ]
+	
+	if task == 'Translate':
+		options = getattr( translator, 'response_format_options', [ ] )
+		if isinstance( options, list ) and len( options ) > 0:
+			return [ '' ] + options
+		
+		return [ '', 'json', 'text', 'srt', 'verbose_json', 'vtt' ]
+	
+	if task == 'Text-to-Speech':
+		options = getattr( tts, 'mime_options', [ ] )
+		if isinstance( options, list ) and len( options ) > 0:
+			return [ '' ] + options
+		
+		return [ '', 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
+	
+	return [ '' ]
+
+def get_audio_include_options( task: str | None, model: str | None,
+		transcriber: Transcription ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return task-aware Audio API include options.
+		
+		Parameters:
+		-----------
+		task: str | None
+			Selected Audio mode task.
+		
+		model: str | None
+			Selected Audio API model.
+		
+		transcriber: Transcription
+			Transcription wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Include option names.
+		
+	"""
+	if task != 'Transcribe':
+		return [ ]
+	
+	if model not in [
+			'gpt-4o-transcribe',
+			'gpt-4o-mini-transcribe',
+			'gpt-4o-mini-transcribe-2025-12-15',
+	]:
+		return [ ]
+	
+	options = getattr( transcriber, 'include_options', [ ] )
+	if isinstance( options, list ) and len( options ) > 0:
+		return options
+	
+	return [ 'logprobs' ]
+
+def get_audio_response_format_value( task: str | None, selected_format: str | None,
+		selected_mime_type: str | None = None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Return the correct API format value for the selected Audio mode task.
+		
+		Parameters:
+		-----------
+		task: str | None
+			Selected Audio mode task.
+		
+		selected_format: str | None
+			Selected response-format value.
+		
+		selected_mime_type: str | None
+			Legacy MIME/output format value.
+		
+		Returns:
+		--------
+		str | None
+			Format value for the wrapper call.
+		
+	"""
+	if task == 'Text-to-Speech':
+		if isinstance( selected_format, str ) and selected_format.strip( ):
+			return selected_format.strip( )
+		
+		if isinstance( selected_mime_type, str ) and selected_mime_type.strip( ):
+			return selected_mime_type.strip( )
+		
+		return 'mp3'
+	
+	if isinstance( selected_format, str ) and selected_format.strip( ):
+		return selected_format.strip( )
+	
+	return None
+
+def get_audio_prompt_value( task: str | None, prompt: str | None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Return prompt/instruction text only when it is meaningful for the selected task.
+		
+		Parameters:
+		-----------
+		task: str | None
+			Selected Audio mode task.
+		
+		prompt: str | None
+			System instruction or task prompt text.
+		
+		Returns:
+		--------
+		str | None
+			Clean prompt text or None.
+		
+	"""
+	if not isinstance( prompt, str ) or not prompt.strip( ):
+		return None
+	
+	if task in [ 'Transcribe', 'Translate', 'Text-to-Speech' ]:
+		return prompt.strip( )
+	
+	return None
+
+def save_audio_upload( upload: Any ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Save a Streamlit UploadedFile or audio recording object to a temporary file.
+		
+		Parameters:
+		-----------
+		upload: Any
+			Uploaded or recorded audio file object.
+		
+		Returns:
+		--------
+		str | None
+			Temporary file path, or None when no valid audio object exists.
+		
+	"""
+	if upload is None:
+		return None
+	
+	try:
+		name = getattr( upload, 'name', '' )
+		_, ext = os.path.splitext( name )
+		if not ext:
+			ext = '.wav'
+		
+		with tempfile.NamedTemporaryFile( delete=False, suffix=ext ) as tmp:
+			if hasattr( upload, 'getbuffer' ):
+				tmp.write( upload.getbuffer( ) )
+			elif hasattr( upload, 'read' ):
+				tmp.write( upload.read( ) )
+			else:
+				return None
+			
+			return tmp.name
+	except Exception:
+		return None
+
+def render_audio_segments( result: dict[ str, Any ] | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render verbose or diarized audio segments when the wrapper exposes them.
+		
+		Parameters:
+		-----------
+		result: dict[str, Any] | None
+			Normalized audio result containing optional segments.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if not isinstance( result, dict ):
+		return
+	
+	segments = result.get( 'segments' )
+	if not isinstance( segments, list ) or len( segments ) == 0:
+		return
+	
+	rows: list[ dict[ str, Any ] ] = [ ]
+	for index, segment in enumerate( segments, start=1 ):
+		if not isinstance( segment, dict ):
+			continue
+		
+		rows.append(
+			{
+					'Index': index,
+					'Speaker': segment.get( 'speaker' ) or segment.get( 'speaker_id' ) or '',
+					'Start': segment.get( 'start' ) or segment.get( 'start_time' ) or '',
+					'End': segment.get( 'end' ) or segment.get( 'end_time' ) or '',
+					'Text': segment.get( 'text' ) or '',
+			} )
+	
+	if len( rows ) == 0:
+		return
+	
+	df_segments = pd.DataFrame( rows )
+	st.caption( 'Segments' )
+	st.data_editor( df_segments, use_container_width=True, hide_index=True )
+
+def render_audio_text_result( title: str, result_text: str | None,
+		result: dict[ str, Any ] | None = None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render Audio mode text output and any available structured segment output.
+		
+		Parameters:
+		-----------
+		title: str
+			Display label for the text result.
+		
+		result_text: str | None
+			Text result to render.
+		
+		result: dict[str, Any] | None
+			Optional normalized result dictionary.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	text_value = result_text if isinstance( result_text, str ) else ''
+	st.text_area( title, value=text_value, height=250, width='stretch' )
+	
+	if isinstance( result, dict ):
+		language = result.get( 'language' )
+		duration = result.get( 'duration' )
+		
+		if language or duration:
+			m1, m2 = st.columns( [ 0.5, 0.5 ] )
+			with m1:
+				st.metric( 'Language', language or '—' )
+			
+			with m2:
+				st.metric( 'Duration', duration or '—' )
+		
+		render_audio_segments( result )
+
+def extract_audio_usage( response: Any ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Extract token or duration usage metadata from an Audio API response when
+		available.
+		
+		Parameters:
+		-----------
+		response: Any
+			Audio API response object.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized usage metadata.
+		
+	"""
+	usage: dict[ str, Any ] = { }
+	if response is None:
+		return usage
+	
+	try:
+		raw = getattr( response, 'usage', None )
+	except Exception:
+		raw = None
+	
+	if raw is None:
+		return usage
+	
+	if isinstance( raw, dict ):
+		return raw
+	
+	if hasattr( raw, 'model_dump' ):
+		try:
+			return raw.model_dump( )
+		except Exception:
+			return { 'raw': str( raw ) }
+	
+	return { 'raw': str( raw ) }
+
+def run_audio_file_task( task: str | None, file_path: str | None,
+		transcriber: Transcription, translator: Translation ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Run the selected file-based Audio mode task against a temporary audio file.
+		
+		Parameters:
+		-----------
+		task: str | None
+			Selected Audio mode task.
+		
+		file_path: str | None
+			Temporary audio file path.
+		
+		transcriber: Transcription
+			Transcription wrapper instance.
+		
+		translator: Translation
+			Translation wrapper instance.
+		
+		Returns:
+		--------
+		str | None
+			Text output from transcription or translation.
+		
+	"""
+	if not isinstance( task, str ) or not task.strip( ):
+		st.warning( 'Select an audio task before processing audio.' )
+		return None
+	
+	if not isinstance( file_path, str ) or not file_path.strip( ):
+		st.warning( 'Upload or record audio before processing.' )
+		return None
+	
+	prompt = get_audio_prompt_value( task,
+		st.session_state.get( 'audio_system_instructions', '' ) )
+	
+	response_format = get_audio_response_format_value(
+		task=task,
+		selected_format=st.session_state.get( 'audio_response_format' ),
+		selected_mime_type=st.session_state.get( 'audio_mime_type' ) )
+	
+	model = st.session_state.get( 'audio_model' )
+	language = st.session_state.get( 'audio_language' )
+	temperature = st.session_state.get( 'audio_temperature' )
+	include = st.session_state.get( 'audio_include', [ ] )
+	
+	if task == 'Transcribe':
+		result_text = transcriber.transcribe(
+			path=file_path,
+			model=model or 'gpt-4o-transcribe',
+			language=language or None,
+			prompt=prompt,
+			format=response_format,
+			temperature=temperature,
+			include=include )
+		
+		result = getattr( transcriber, 'normalized_result', { } )
+		st.session_state[ 'audio_output' ] = result_text or ''
+		st.session_state[ 'audio_last_result' ] = result if isinstance( result, dict ) else { }
+		st.session_state[ 'audio_last_usage' ] = extract_audio_usage(
+			getattr( transcriber, 'response', None ) )
+		
+		return result_text
+	
+	if task == 'Translate':
+		result_text = translator.translate(
+			filepath=file_path,
+			model=model or 'whisper-1',
+			prompt=prompt,
+			format=response_format,
+			temperature=temperature,
+			language=language or None )
+		
+		result = getattr( translator, 'normalized_result', { } )
+		st.session_state[ 'audio_output' ] = result_text or ''
+		st.session_state[ 'audio_last_result' ] = result if isinstance( result, dict ) else { }
+		st.session_state[ 'audio_last_usage' ] = extract_audio_usage(
+			getattr( translator, 'response', None ) )
+		
+		return result_text
+	
+	if task == 'Text-to-Speech':
+		st.info( 'Use the Text-to-Speech input area to generate speech from text.' )
+		return None
+	
+	return None
+
+def run_audio_tts_task( text: str | None, tts: TTS ) -> bytes | None:
+	"""
+	
+		Purpose:
+		--------
+		Run the selected Text-to-Speech task and store generated audio bytes.
+		
+		Parameters:
+		-----------
+		text: str | None
+			Text to synthesize.
+		
+		tts: TTS
+			Text-to-speech wrapper instance.
+		
+		Returns:
+		--------
+		bytes | None
+			Generated audio bytes.
+		
+	"""
+	if not isinstance( text, str ) or not text.strip( ):
+		st.warning( 'Enter text before generating speech.' )
+		return None
+	
+	model = st.session_state.get( 'audio_model' ) or 'gpt-4o-mini-tts'
+	voice = st.session_state.get( 'audio_voice' ) or 'alloy'
+	speed = st.session_state.get( 'audio_speed', 1.0 )
+	response_format = get_audio_response_format_value(
+		task='Text-to-Speech',
+		selected_format=st.session_state.get( 'audio_response_format' ),
+		selected_mime_type=st.session_state.get( 'audio_mime_type' ) )
+	
+	instructions = get_audio_prompt_value(
+		task='Text-to-Speech',
+		prompt=st.session_state.get( 'audio_system_instructions', '' ) )
+	
+	audio_bytes = tts.create_speech(
+		text=text.strip( ),
+		model=model,
+		format=response_format or 'mp3',
+		speed=speed,
+		voice=voice,
+		instruct=instructions )
+	
+	st.session_state[ 'audio_output_bytes' ] = audio_bytes
+	st.session_state[ 'audio_output' ] = text.strip( )
+	st.session_state[ 'audio_last_result' ] = {
+			'text': text.strip( ),
+			'format': response_format or 'mp3',
+			'voice': voice,
+			'speed': speed,
+	}
+	st.session_state[ 'audio_last_usage' ] = extract_audio_usage(
+		getattr( tts, 'response', None ) )
+	
+	return audio_bytes
+
+def clear_audio_outputs( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Audio mode output state.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'audio_output' ] = ''
+	st.session_state[ 'audio_output_bytes' ] = None
+	st.session_state[ 'audio_last_result' ] = { }
+	st.session_state[ 'audio_last_usage' ] = { }
+
+def clear_audio_messages( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Audio mode message and output state.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state.audio_messages = [ ]
+	clear_audio_outputs( )
+
+def clear_audio_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Audio mode system instructions and selected prompt template.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'audio_system_instructions' ] = ''
+	st.session_state[ 'instructions' ] = ''
+
+def load_audio_instruction_template( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Load the selected prompt template into Audio mode system instructions.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	name = st.session_state.get( 'instructions' )
+	if name and name != 'No Templates Found':
+		text = fetch_prompt_text( cfg.DB_PATH, name )
+		if text is not None:
+			st.session_state[ 'audio_system_instructions' ] = text
+
+def convert_audio_system_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Convert Audio mode system instructions between XML-like delimiters and Markdown
+		headings.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	text = st.session_state.get( 'audio_system_instructions', '' )
+	if not isinstance( text, str ) or not text.strip( ):
+		return
+	
+	source = text.strip( )
+	if cfg.XML_BLOCK_PATTERN.search( source ):
+		converted = convert_xml( source )
+	else:
+		converted = convert_markdown( source )
+	
+	st.session_state[ 'audio_system_instructions' ] = converted
+
+def reset_audio_task_controls( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset task/model/format Audio mode controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'audio_task', 'audio_model', 'audio_language',
+	             'audio_response_format', 'audio_include' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+def reset_audio_tts_controls( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Text-to-Speech Audio mode controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'audio_voice', 'audio_speed', 'audio_mime_type' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+			
 # ==============================================================================
 # Init
 # ==============================================================================
@@ -3241,7 +4976,6 @@ init_state( )
 # ======================================================================================
 # Sidebar
 # ======================================================================================
-
 with st.sidebar:
 	style_subheaders( )
 	st.logo( cfg.LOGO_PATH, size='large' )
@@ -3301,6 +5035,12 @@ with st.sidebar:
 # TEXT MODE
 # ======================================================================================
 if mode == 'Text':
+	ensure_text_mode_state( )
+	text = Chat( )
+	
+	# ------------------------------------------------------------------
+	# Session State
+	# ------------------------------------------------------------------
 	text_model = st.session_state.get( 'text_model', '' )
 	text_reasoning = st.session_state.get( 'text_reasoning', '' )
 	text_response_format = st.session_state.get( 'text_response_format', '' )
@@ -3308,6 +5048,7 @@ if mode == 'Text':
 	text_content = st.session_state.get( 'text_content', '' )
 	text_input = st.session_state.get( 'text_input', '' )
 	text_previous_response_id = st.session_state.get( 'text_previous_response_id', '' )
+	text_conversation_id = st.session_state.get( 'text_conversation_id', '' )
 	text_max_calls = st.session_state.get( 'text_max_calls', 0 )
 	text_max_tokens = st.session_state.get( 'text_max_tokens', 0 )
 	text_top_percent = st.session_state.get( 'text_top_percent', 0.0 )
@@ -3322,7 +5063,148 @@ if mode == 'Text':
 	text_context = st.session_state.get( 'text_context', [ ] )
 	text_include = st.session_state.get( 'text_include', [ ] )
 	text_domains = st.session_state.get( 'text_domains', [ ] )
-	text = Chat( )
+	text_vector_store_ids = st.session_state.get( 'text_vector_store_ids', '' )
+	text_json_schema_name = st.session_state.get( 'text_json_schema_name', 'structured_response' )
+	text_json_schema = st.session_state.get( 'text_json_schema', '' )
+	text_json_schema_strict = st.session_state.get( 'text_json_schema_strict', True )
+	
+	# ------------------------------------------------------------------
+	# Reset Callbacks
+	# ------------------------------------------------------------------
+	def reset_text_llm_controls( ) -> None:
+		"""
+		
+			Purpose:
+			--------
+			Reset Text mode LLM controls through a widget-safe callback.
+			
+			Parameters:
+			-----------
+			None
+			
+			Returns:
+			--------
+			None
+			
+		"""
+		for key in [ 'text_model', 'text_temperature', 'text_presence_penalty',
+		             'text_reasoning', 'text_top_percent', 'text_frequency_penalty' ]:
+			if key in st.session_state:
+				del st.session_state[ key ]
+	
+	def reset_text_tool_controls( ) -> None:
+		"""
+		
+			Purpose:
+			--------
+			Reset Text mode tool controls through a widget-safe callback.
+			
+			Parameters:
+			-----------
+			None
+			
+			Returns:
+			--------
+			None
+			
+		"""
+		for key in [ 'text_max_calls', 'text_tool_choice', 'text_include',
+		             'text_tools', 'text_domains_input', 'text_domains',
+		             'text_parallel_calls', 'text_vector_store_ids' ]:
+			if key in st.session_state:
+				del st.session_state[ key ]
+	
+	def reset_text_response_controls( ) -> None:
+		"""
+		
+			Purpose:
+			--------
+			Reset Text mode response controls through a widget-safe callback.
+			
+			Parameters:
+			-----------
+			None
+			
+			Returns:
+			--------
+			None
+			
+		"""
+		for key in [ 'text_stream', 'text_store', 'text_max_tokens',
+		             'text_background', 'text_response_format', 'text_input',
+		             'text_previous_response_id', 'text_conversation_id' ]:
+			if key in st.session_state:
+				del st.session_state[ key ]
+	
+	def clear_text_instructions( ) -> None:
+		"""
+		
+			Purpose:
+			--------
+			Clear Text mode system instructions and selected prompt template.
+			
+			Parameters:
+			-----------
+			None
+			
+			Returns:
+			--------
+			None
+			
+		"""
+		st.session_state[ 'text_system_instructions' ] = ''
+		st.session_state[ 'instructions' ] = ''
+	
+	def convert_text_system_instructions( ) -> None:
+		"""
+		
+			Purpose:
+			--------
+			Convert Text mode system instructions between XML-like delimiters and
+			Markdown headings.
+			
+			Parameters:
+			-----------
+			None
+			
+			Returns:
+			--------
+			None
+			
+		"""
+		text_value = st.session_state.get( 'text_system_instructions', '' )
+		if not isinstance( text_value, str ) or not text_value.strip( ):
+			return
+		
+		source = text_value.strip( )
+		if cfg.XML_BLOCK_PATTERN.search( source ):
+			converted = convert_xml( source )
+		else:
+			converted = convert_markdown( source )
+		
+		st.session_state[ 'text_system_instructions' ] = converted
+	
+	def load_text_instruction_template( ) -> None:
+		"""
+		
+			Purpose:
+			--------
+			Load the selected prompt template into Text mode system instructions.
+			
+			Parameters:
+			-----------
+			None
+			
+			Returns:
+			--------
+			None
+			
+		"""
+		name = st.session_state.get( 'instructions' )
+		if name and name != 'No Templates Found':
+			prompt_text = fetch_prompt_text( cfg.DB_PATH, name )
+			if prompt_text is not None:
+				st.session_state[ 'text_system_instructions' ] = prompt_text
 	
 	# ------------------------------------------------------------------
 	# Main Chat UI
@@ -3331,17 +5213,17 @@ if mode == 'Text':
 	with center:
 		st.subheader( "💬 Text Generation", help=cfg.TEXT_GENERATION )
 		st.divider( )
+		
 		if st.session_state.get( 'clear_instructions' ):
 			st.session_state[ 'text_system_instructions' ] = ''
 			st.session_state[ 'instructions_last_loaded' ] = ''
 			st.session_state[ 'clear_instructions' ] = False
 		
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
-			
 			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
 					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-			
+				
 				# ---------- Model ------------
 				with llm_c1:
 					model_options = list( text.model_options )
@@ -3369,129 +5251,130 @@ if mode == 'Text':
 				
 				# ---------- Temperature ------------
 				with llm_c4:
-					set_text_temperature = st.slider( label='Temperature', min_value=-2.0, max_value=2.0,
-						step=0.01,
-						help=cfg.TEMPERATURE, key='text_temperature' )
+					set_text_temperature = st.slider( label='Temperature', min_value=0.0,
+						max_value=2.0, step=0.01, help=cfg.TEMPERATURE,
+						key='text_temperature' )
 					
 					text_temperature = st.session_state[ 'text_temperature' ]
 				
-				# ---------- Presense ------------
+				# ---------- Presence ------------
 				with llm_c5:
-					set_text_presence = st.slider( label='Presense Penalty', min_value=-2.0, max_value=2.0,
-						step=0.01, help=cfg.PRESENCE_PENALTY, key='text_presence_penalty' )
+					set_text_presence = st.slider( label='Presense Penalty',
+						min_value=-2.0, max_value=2.0, step=0.01,
+						help=cfg.PRESENCE_PENALTY, key='text_presence_penalty' )
 					
 					text_presence = st.session_state[ 'text_presence_penalty' ]
 				
 				# ---------- Frequency ------------
 				with llm_c6:
-					set_text_freq = st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
-						step=0.01, help=cfg.FREQUENCY_PENALTY, key='text_frequency_penalty' )
+					set_text_freq = st.slider( label='Frequency Penalty',
+						min_value=-2.0, max_value=2.0, step=0.01,
+						help=cfg.FREQUENCY_PENALTY, key='text_frequency_penalty' )
 					
-					text_fequency = st.session_state[ 'text_frequency_penalty' ]
+					text_frequency = st.session_state[ 'text_frequency_penalty' ]
 				
 				# ---------- Reset Model ------------
-				if st.button( label='Reset', key='reset_text_model', width='stretch' ):
-					for key in [ 'text_model', 'text_temperature', 'text_presence_penalty',
-					             'text_reasoning', 'text_top_percent', 'text_frequency_penalty' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
-					
+				st.button( label='Reset', key='reset_text_model',
+					width='stretch', on_click=reset_text_llm_controls )
+			
 			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
-					tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
-						[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
+					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+				
+				# ---------- Max Calls ------------
+				with tool_c1:
+					set_text_calls = st.slider( label='Max Calls', min_value=0, max_value=10,
+						step=1, help=cfg.MAX_TOOL_CALLS, key='text_max_calls' )
 					
-					# ---------- Max Calls ------------
-					with tool_c1:
-						set_text_calls = st.slider( label='Max Calls', min_value=0, max_value=10,
-							value=int( st.session_state.get( 'text_max_calls', 0 ) ), step=1,
-							help=cfg.MAX_TOOL_CALLS, key='text_max_calls' )
-						
-						text_max_calls = st.session_state[ 'text_max_calls' ]
-						
-					# ---------- Choice ------------
-					with tool_c2:
-						choice_options = list( text.choice_options )
-						set_text_choice = st.selectbox( label='Choice', options=choice_options,
-							key='text_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
-						
-						text_tool_choice = st.session_state[ 'text_tool_choice' ]
+					text_max_calls = st.session_state[ 'text_max_calls' ]
+				
+				# ---------- Choice ------------
+				with tool_c2:
+					choice_options = list( text.choice_options )
+					set_text_choice = st.selectbox( label='Choice', options=choice_options,
+						key='text_tool_choice', help=cfg.CHOICE, index=None,
+						placeholder='Options' )
 					
-					# ---------- Include ------------
-					with tool_c3:
-						include_options = list( text.include_options )
-						set_text_include = st.multiselect( label='Include', options=include_options,
-							key='text_include', help=cfg.INCLUDE, placeholder='Options' )
-						
-						text_include = [ d.strip( ) for d in set_text_include
-						                 if d.strip( ) ]
-						
-						text_include = st.session_state[ 'text_include' ]
+					text_tool_choice = st.session_state[ 'text_tool_choice' ]
+				
+				# ---------- Include ------------
+				with tool_c3:
+					include_options = list( text.include_options )
+					set_text_include = st.multiselect( label='Include', options=include_options,
+						key='text_include', help=cfg.INCLUDE, placeholder='Options' )
 					
-					# ---------- Domains ------------
-					with tool_c4:
-						set_text_domains = st.text_input( label='Allowed Domains', key='text_domains_input',
-							value=','.join( st.session_state.get( 'text_domains', [ ] ) ),
-							help=cfg.ALLOWED_DOMAINS, width='stretch', placeholder='Enter Domains' )
-						
-						text_domains = [ d.strip( ) for d in set_text_domains.split( ',' )
-						                 if d.strip( ) ]
-						
-						st.session_state[ 'text_domains' ] = text_domains
+					text_include = st.session_state[ 'text_include' ]
+				
+				# ---------- Domains ------------
+				with tool_c4:
+					set_text_domains = st.text_input( label='Allowed Domains',
+						key='text_domains_input',
+						value=','.join( st.session_state.get( 'text_domains', [ ] ) ),
+						help=cfg.ALLOWED_DOMAINS, width='stretch',
+						placeholder='Enter Domains' )
 					
-					# ---------- Tools ------------
-					with tool_c5:
-						tool_options = list( text.tool_options )
-						set_text_tools = st.multiselect( label='Tools', options=tool_options,
-							key='text_tools', help=cfg.TOOLS, placeholder='Options' )
-						
-						text_tools = [ d.strip( ) for d in set_text_tools
-						               if d.strip( ) ]
-						
-						text_tools = st.session_state[ 'text_tools' ]
+					text_domains = [ d.strip( ) for d in set_text_domains.split( ',' )
+					                 if d.strip( ) ]
 					
-					# ---------- Parallel ------------
-					with tool_c6:
-						set_text_parallel = st.toggle( label='Allow Parallel', key='text_parallel_calls',
-							help=cfg.PARALLEL_TOOL_CALLS )
-						
-						text_parallel_calls = st.session_state[ 'text_parallel_calls' ]
+					st.session_state[ 'text_domains' ] = text_domains
+				
+				# ---------- Tools ------------
+				with tool_c5:
+					tool_options = list( text.tool_options )
+					set_text_tools = st.multiselect( label='Tools', options=tool_options,
+						key='text_tools', help=cfg.TOOLS, placeholder='Options' )
 					
-					# ---------- Reset Tools ------------
-					if st.button( label='Reset', key='reset_text_tools', width='stretch' ):
-						for key in [ 'text_max_calls', 'text_tool_choice', 'text_include',
-						             'text_tools', 'text_domains', 'text_parallel_calls' ]:
-							if key in st.session_state:
-								del st.session_state[ key ]
-						
-						st.rerun( )
-						
-			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
+					text_tools = st.session_state[ 'text_tools' ]
+				
+				# ---------- Parallel ------------
+				with tool_c6:
+					set_text_parallel = st.toggle( label='Allow Parallel',
+						key='text_parallel_calls', help=cfg.PARALLEL_TOOL_CALLS )
+					
+					text_parallel_calls = st.session_state[ 'text_parallel_calls' ]
+				
+				# ---------- Vector Store IDs ------------
+				set_text_vector_store_ids = st.text_input( label='Vector Store IDs',
+					key='text_vector_store_ids',
+					value=st.session_state.get( 'text_vector_store_ids', '' ),
+					help=('Required when the file_search tool is selected. Enter one or more '
+					      'vector store IDs separated by commas.'),
+					width='stretch', placeholder='vs_...' )
+				
+				text_vector_store_ids = st.session_state.get( 'text_vector_store_ids', '' )
+				
+				# ---------- Reset Tools ------------
+				st.button( label='Reset', key='reset_text_tools',
+					width='stretch', on_click=reset_text_tool_controls )
+			
+			with st.expander( label='Response Settings', icon='↔️', expanded=False,
+					width='stretch' ):
 				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6, resp_c7 = st.columns(
-					[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ], border=True, gap='xxsmall' )
+					[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ],
+					border=True, gap='xxsmall' )
 				
 				# ---------- Input Mode ------------
 				with resp_c1:
 					input_mode_options = [ '', 'conversation', 'single_turn' ]
 					set_text_input = st.selectbox( label='Input Mode', options=input_mode_options,
-						key='text_input', help=('Optional. Controls whether prior chat messages are '
-						                        'sent back to the Responses API as context.'),
+						key='text_input',
+						help=('Optional. Controls whether prior chat messages are '
+						      'sent back to the Responses API as context.'),
 						placeholder='Options' )
 					
 					text_input = st.session_state.get( 'text_input', '' )
 				
 				# ---------- Max Tokens ------------
 				with resp_c2:
-					set_text_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
-						value=int( st.session_state.get( 'text_max_tokens', 0 ) ), step=500,
-						help=cfg.MAX_OUTPUT_TOKENS, key='text_max_tokens' )
+					set_text_tokens = st.slider( label='Max Tokens', min_value=0,
+						max_value=100000, step=500, help=cfg.MAX_OUTPUT_TOKENS,
+						key='text_max_tokens' )
 					
 					text_tokens = st.session_state[ 'text_max_tokens' ]
 				
 				# ---------- Response Format ------------
 				with resp_c3:
-					format_options = [ '', 'text' ]
+					format_options = list( text.format_options )
 					set_text_response_format = st.selectbox( label='Response Format',
 						options=format_options, key='text_response_format',
 						help=('Optional. Responses API text.format setting. '
@@ -3505,11 +5388,12 @@ if mode == 'Text':
 					set_text_previous_id = st.text_input( label='Previous Response ID',
 						key='text_previous_response_id',
 						value=st.session_state.get( 'text_previous_response_id', '' ),
-						help=('Optional. Responses API conversation-state identifier. '
-						      'Leave blank to start a new chain.'),
+						help=('Optional. Responses API previous_response_id. '
+						      'Ignored in single_turn and conversation modes.'),
 						width='stretch', placeholder='Enter Previous Response ID' )
 					
-					text_previous_response_id = st.session_state.get( 'text_previous_response_id', '' )
+					text_previous_response_id = st.session_state.get(
+						'text_previous_response_id', '' )
 				
 				# ---------- Store ------------
 				with resp_c5:
@@ -3526,22 +5410,65 @@ if mode == 'Text':
 				
 				# ---------- Background ------------
 				with resp_c7:
-					set_text_background = st.toggle( label='Background', key='text_background',
-						help=cfg.BACKGROUND_MODE )
+					set_text_background = st.toggle( label='Background',
+						key='text_background', help=cfg.BACKGROUND_MODE )
 					
 					text_background = st.session_state[ 'text_background' ]
 				
-				# ---------- Reset Response ------------
-				if st.button( label='Reset', key='reset_text_response', width='stretch' ):
-					for key in [ 'text_stream', 'text_store', 'text_max_tokens',
-					             'text_background', 'text_response_format',
-					             'text_input', 'text_previous_response_id' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
+				# ---------- Conversation ID ------------
+				set_text_conversation_id = st.text_input( label='Conversation ID',
+					key='text_conversation_id',
+					value=st.session_state.get( 'text_conversation_id', '' ),
+					help=('Optional. Only used when Input Mode is conversation. '
+					      'Leave blank to use local message context instead.'),
+					width='stretch', placeholder='conv_...' )
 				
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
+				text_conversation_id = st.session_state.get( 'text_conversation_id', '' )
+				
+				# ---------- Reset Response ------------
+				st.button( label='Reset', key='reset_text_response',
+					width='stretch', on_click=reset_text_response_controls )
+			
+			with st.expander( label='Structured Output Settings', icon='🧾',
+					expanded=False, width='stretch' ):
+				struct_c1, struct_c2 = st.columns( [ 0.6, 0.4 ], border=True, gap='xxsmall' )
+				
+				# ---------- Schema Name ------------
+				with struct_c1:
+					set_text_json_schema_name = st.text_input( label='Schema Name',
+						key='text_json_schema_name',
+						value=st.session_state.get( 'text_json_schema_name',
+							'structured_response' ),
+						help='Used only when Response Format is json_schema.',
+						width='stretch', placeholder='structured_response' )
+					
+					text_json_schema_name = st.session_state.get(
+						'text_json_schema_name', 'structured_response' )
+				
+				# ---------- Strict ------------
+				with struct_c2:
+					set_text_json_schema_strict = st.toggle( label='Strict Schema',
+						key='text_json_schema_strict',
+						help='Used only when Response Format is json_schema.' )
+					
+					text_json_schema_strict = st.session_state.get(
+						'text_json_schema_strict', True )
+				
+				# ---------- JSON Schema ------------
+				set_text_json_schema = st.text_area( label='JSON Schema',
+					height=160, width='stretch', key='text_json_schema',
+					help=('Used only when Response Format is json_schema. Enter the JSON Schema '
+					      'object, not a Python dictionary.'),
+					placeholder='{ "type": "object", "properties": { ... }, "required": [ ... ] }' )
+				
+				text_json_schema = st.session_state.get( 'text_json_schema', '' )
+				
+				# ---------- Reset Structured Output ------------
+				st.button( label='Reset', key='reset_text_structured_output',
+					width='stretch', on_click=reset_text_structured_output_controls )
+		
+		with st.expander( label='System Instructions', icon='🖥️',
+				expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -3552,47 +5479,19 @@ if mode == 'Text':
 				st.text_area( label='Enter Text', height=50, width='stretch',
 					help=cfg.SYSTEM_INSTRUCTIONS, key='text_system_instructions' )
 			
-			def _on_template_change( ) -> None:
-				name = st.session_state.get( 'instructions' )
-				if name and name != 'No Templates Found':
-					text = fetch_prompt_text( cfg.DB_PATH, name )
-					if text is not None:
-						st.session_state[ 'text_system_instructions' ] = text
-			
 			with in_right:
 				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=_on_template_change )
-			
-			def _on_clear( ) -> None:
-				st.session_state[ 'text_system_instructions' ] = ''
-				st.session_state[ 'instructions' ] = ''
-			
-			def _on_convert_system_instructions( ) -> None:
-				text = st.session_state.get( 'text_system_instructions', '' )
-				if not isinstance( text, str ) or not text.strip( ):
-					return
-				
-				src = text.strip( )
-				
-				# XML-delimited prompt blocks -> Markdown headings
-				if cfg.XML_BLOCK_PATTERN.search( src ):
-					converted = convert_xml( src )
-				
-				# Markdown headings <-> simple <hN> tags handled by existing helper
-				else:
-					converted = convert_markdown( src )
-				
-				st.session_state[ 'text_system_instructions' ] = converted
+					key='instructions', on_change=load_text_instruction_template )
 			
 			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
 			with btn_c1:
 				st.button( label='Clear Instructions', width='stretch',
-					on_click=_on_clear )
+					on_click=clear_text_instructions )
 			
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=_on_convert_system_instructions )
-	
+					on_click=convert_text_system_instructions )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ---------------------------------------------------
@@ -3608,10 +5507,10 @@ if mode == 'Text':
 		if prompt is not None and str( prompt ).strip( ):
 			prompt = str( prompt ).strip( )
 			st.session_state.text_messages.append(
-			{
-				'role': 'user',
-				'content': prompt,
-			} )
+				{
+						'role': 'user',
+						'content': prompt,
+				} )
 			
 			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
 				with st.spinner( 'Thinking…' ):
@@ -3619,48 +5518,49 @@ if mode == 'Text':
 					response_obj = None
 					
 					try:
-						text_tools = [ ]
-						for name in st.session_state.get( 'text_tools', [ ] ):
-							if not isinstance( name, str ) or not name.strip( ):
-								continue
-							
-							text_tools.append( { 'type': name.strip( ) } )
+						vector_store_ids = parse_text_vector_store_ids(
+							st.session_state.get( 'text_vector_store_ids', '' ) )
 						
-						text_context = [ ]
+						text_tools = build_text_tools(
+							selected_tools=st.session_state.get( 'text_tools', [ ] ),
+							vector_store_ids=vector_store_ids )
+						
+						text_include = build_text_include(
+							selected_include=st.session_state.get( 'text_include', [ ] ),
+							selected_tools=text_tools )
+						
+						text_tool_choice = build_text_tool_choice(
+							tool_choice=st.session_state.get( 'text_tool_choice' ),
+							selected_tools=text_tools )
+						
+						text_format = build_text_response_format(
+							response_format=st.session_state.get( 'text_response_format' ),
+							schema_name=st.session_state.get( 'text_json_schema_name' ),
+							schema_text=st.session_state.get( 'text_json_schema' ),
+							strict=st.session_state.get( 'text_json_schema_strict', True ) )
+						
 						if st.session_state.get( 'text_input' ) != 'single_turn':
-							for item in st.session_state.get( 'text_messages', [ ] )[ :-1 ]:
-								if not isinstance( item, dict ):
-									continue
-								
-								role = str( item.get( 'role', '' ) ).strip( )
-								content = item.get( 'content', '' )
-								if role not in [ 'user', 'assistant', 'system', 'developer' ]:
-									continue
-								
-								if not isinstance( content, str ) or not content.strip( ):
-									continue
-								
-								text_context.append(
-								{
-									'role': role,
-									'content': content.strip( ),
-								} )
+							text_context = build_text_context(
+								messages=st.session_state.get( 'text_messages', [ ] ),
+								include_last_message=False )
+						else:
+							text_context = [ ]
 						
 						st.session_state[ 'text_context' ] = text_context
 						
-						text_format = None
-						if st.session_state.get( 'text_response_format' ) == 'text':
-							text_format = \
-							{
-								'format': { 'type': 'text' }
-							}
+						text_previous_id = get_text_previous_response_id(
+							input_mode=st.session_state.get( 'text_input' ),
+							previous_id=st.session_state.get( 'text_previous_response_id' ) )
 						
-						text_previous_id = st.session_state.get( 'text_previous_response_id' )
-						if not isinstance( text_previous_id, str ) or not text_previous_id.strip( ):
-							text_previous_id = None
+						text_conversation_id = get_text_conversation_id(
+							input_mode=st.session_state.get( 'text_input' ),
+							conversation_id=st.session_state.get( 'text_conversation_id' ) )
 						
-						if st.session_state.get( 'text_input' ) == 'single_turn':
-							text_previous_id = None
+						text_stream_value = get_text_stream_value(
+							st.session_state.get( 'text_stream' ) )
+						
+						text_background_value = get_text_background_value(
+							st.session_state.get( 'text_background' ) )
 						
 						response_text = text.generate_text( prompt=prompt,
 							model=st.session_state.get( 'text_model' ),
@@ -3672,17 +5572,20 @@ if mode == 'Text':
 							max_tools=st.session_state.get( 'text_max_calls' ),
 							max_tokens=st.session_state.get( 'text_max_tokens' ),
 							store=st.session_state.get( 'text_store' ),
-							stream=st.session_state.get( 'text_stream' ),
+							stream=text_stream_value,
 							instruct=st.session_state.get( 'text_system_instructions' ),
-							background=st.session_state.get( 'text_background' ),
+							background=text_background_value,
 							reasoning=st.session_state.get( 'text_reasoning' ),
-							include=st.session_state.get( 'text_include', [ ] ),
+							include=text_include,
 							tools=text_tools,
 							allowed_domains=st.session_state.get( 'text_domains', [ ] ),
 							previous_id=text_previous_id,
-							tool_choice=st.session_state.get( 'text_tool_choice' ),
+							tool_choice=text_tool_choice,
 							is_parallel=st.session_state.get( 'text_parallel_calls' ),
-							context=text_context )
+							context=text_context,
+							vector_store_ids=vector_store_ids,
+							conversation_id=text_conversation_id )
+						
 						response_obj = getattr( text, 'response', None )
 						st.session_state[ 'text_previous_response_id' ] = (
 								getattr( text, 'previous_id', None ) or '')
@@ -3701,24 +5604,9 @@ if mode == 'Text':
 									'content': str( response_text ).strip( ),
 							} )
 						
-						st.session_state[ 'text_context' ] = [ ]
-						for item in st.session_state.get( 'text_messages', [ ] ):
-							if not isinstance( item, dict ):
-								continue
-							
-							role = str( item.get( 'role', '' ) ).strip( )
-							content = item.get( 'content', '' )
-							if role not in [ 'user', 'assistant', 'system', 'developer' ]:
-								continue
-							
-							if not isinstance( content, str ) or not content.strip( ):
-								continue
-							
-							st.session_state[ 'text_context' ].append(
-								{
-										'role': role,
-										'content': content.strip( ),
-								} )
+						st.session_state[ 'text_context' ] = build_text_context(
+							messages=st.session_state.get( 'text_messages', [ ] ),
+							include_last_message=True )
 						
 						st.session_state.last_answer = str( response_text ).strip( )
 						st.session_state.last_sources = extract_sources( response_obj )
@@ -3734,6 +5622,7 @@ if mode == 'Text':
 		if st.button( 'Clear Messages' ):
 			st.session_state.text_messages = [ ]
 			st.session_state[ 'text_previous_response_id' ] = ''
+			st.session_state[ 'text_conversation_id' ] = ''
 			st.session_state.last_answer = ''
 			st.session_state.last_sources = [ ]
 			st.rerun( )
@@ -3742,47 +5631,7 @@ if mode == 'Text':
 # IMAGES MODE
 # ======================================================================================
 elif mode == 'Images':
-	image_model = st.session_state.get( 'image_model', '' )
-	image_mode = st.session_state.get( 'image_mode', '' )
-	image_quality = st.session_state.get( 'image_quality', '' )
-	image_size = st.session_state.get( 'image_size', '' )
-	image_reasoning = st.session_state.get( 'image_reasoning', '' )
-	image_response_format = st.session_state.get( 'image_response_format', '' )
-	image_mime_type = st.session_state.get( 'image_mime_type', '' )
-	image_output = st.session_state.get( 'image_output', '' )
-	image_detail = st.session_state.get( 'image_detail', '' )
-	image_tool_choice = st.session_state.get( 'image_tool_choice', '' )
-	image_style = st.session_state.get( 'image_style', '' )
-	image_backcolor = st.session_state.get( 'image_backcolor', '' )
-	image_content = st.session_state.get( 'image_content', '' )
-	image_number = st.session_state.get( 'image_number', 0 )
-	image_max_calls = st.session_state.get( 'image_max_calls', 0 )
-	image_max_searches = st.session_state.get( 'image_max_searches', 0 )
-	image_max_tokens = st.session_state.get( 'image_max_tokens', 0 )
-	image_top_percent = st.session_state.get( 'image_top_percent', 0.0 )
-	image_frequency = st.session_state.get( 'image_frequency_penalty', 0.0 )
-	image_presence = st.session_state.get( 'image_presence_penalty', 0.0 )
-	image_temperature = st.session_state.get( 'image_temperature', 0.0 )
-	image_compression = st.session_state.get( 'image_compression', 0.0 )
-	image_stream = st.session_state.get( 'image_stream', False )
-	image_store = st.session_state.get( 'image_store', False )
-	image_parallel_calls = st.session_state.get( 'image_parallel_calls', False )
-	image_background = st.session_state.get( 'image_background', False )
-	image_stops = st.session_state.get( 'image_stops', [ ] )
-	image_modalities = st.session_state.get( 'image_modalities', [ ] )
-	image_domains = st.session_state.get( 'image_domains', [ ] )
-	image_include = st.session_state.get( 'image_include', [ ] )
-	image_tools = st.session_state.get( 'image_tools', [ ] )
-	image_messages = st.session_state.get( 'image_messages', [ ] )
-	image_input = st.session_state.get( 'image_input', [ ] )
-	generator = None
-	analyzer = None
-	editor = None
-	# ---------------- Task ----------------
-	available_tasks = [ ]
-	model_options = [ ]
 	image = Images( )
-	
 	
 	# ------------------------------------------------------------------
 	# Session State
@@ -3792,271 +5641,158 @@ elif mode == 'Images':
 		st.session_state[ 'clear_image_instructions' ] = False
 		st.session_state[ 'clear_instructions' ] = False
 	
+	if not isinstance( st.session_state.get( 'image_number' ), int ):
+		st.session_state[ 'image_number' ] = 1
+	
+	if int( st.session_state.get( 'image_number', 1 ) or 1 ) < 1:
+		st.session_state[ 'image_number' ] = 1
+	
+	if not isinstance( st.session_state.get( 'image_max_tokens' ), int ):
+		st.session_state[ 'image_max_tokens' ] = 0
+	
+	if not isinstance( st.session_state.get( 'image_temperature' ), float ):
+		st.session_state[ 'image_temperature' ] = 0.0
+	
+	if not isinstance( st.session_state.get( 'image_include' ), list ):
+		st.session_state[ 'image_include' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'image_compression' ), float ):
+		st.session_state[ 'image_compression' ] = 0.0
+	
+	if not st.session_state.get( 'image_analysis_detail' ):
+		st.session_state[ 'image_analysis_detail' ] = 'auto'
+	
 	# ------------------------------------------------------------------
-	# Main  UI
+	# Main UI
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
-	with (center):
+	with center:
 		st.subheader( '📷 Images API', help=cfg.IMAGES_API )
 		st.divider( )
+		
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
-			
 			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
-				# ---------- Model ------------
+				# ---------- Image Mode ------------
 				with llm_c1:
-					model_options = list( image.model_options )
-					set_image_model = st.selectbox( label='Select Model', options=model_options,
-						key='image_model', placeholder='Options', index=None,
-						help='REQUIRED. Image Generation model used by the AI', )
-					
-					image_model = st.session_state[ 'image_model' ]
+					image_mode = st.selectbox( label='Image Mode',
+						options=[ 'Generation', 'Analysis', 'Editing' ],
+						key='image_mode', help='Available OpenAI image workflows.',
+						index=None, placeholder='Options' )
 				
-				# ---------- Reasoning ------------
+				# ---------- Image Model ------------
 				with llm_c2:
-					reasoning_options = list( image.reasoning_options )
-					set_image_reasoning = st.selectbox( label='Reasoning',
-						options=reasoning_options, key='image_reasoning',
-						help=cfg.REASONING, index=None, placeholder='Options' )
-					
-					image_reasoning = st.session_state[ 'image_reasoning' ]
+					image_model = st.selectbox( label='Select Model',
+						options=get_image_models( image ), key='image_model',
+						help='Required for image generation and image editing.',
+						index=None, placeholder='Options' )
 				
-				# ---------- Top-P ------------
+				# ---------- Analysis Model ------------
 				with llm_c3:
-					set_image_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
-						step=0.01, help=cfg.TOP_P, key='image_top_percent' )
-					
-					image_top_percent = st.session_state[ 'image_top_percent' ]
-				
-				# ---------- Temperature ------------
-				with llm_c4:
-					set_image_temperature = st.slider( label='Temperature', min_value=-2.0, max_value=2.0,
-						step=0.01,
-						help=cfg.TEMPERATURE, key='image_temperature' )
-					
-					image_temperature = st.session_state[ 'image_temperature' ]
-				
-				# ---------- Presense ------------
-				with llm_c5:
-					set_image_presence = st.slider( label='Presense Penalty', min_value=-2.0, max_value=2.0,
-						step=0.01, help=cfg.PRESENCE_PENALTY, key='image_presence_penalty' )
-					
-					image_presence = st.session_state[ 'image_presence_penalty' ]
-				
-				# ---------- Frequency ------------
-				with llm_c6:
-					set_image_freq = st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
-						step=0.01, help=cfg.FREQUENCY_PENALTY, key='image_frequency_penalty' )
-					
-					image_fequency = st.session_state[ 'image_frequency_penalty' ]
-				
-				# ---------- Reset Model ------------
-				if st.button( label='Reset', key='reset_image_model', width='stretch' ):
-					for key in [ 'image_model', 'image_temperature', 'image_presence_penalty',
-					             'image_reasoning', 'image_top_percent',
-					             'image_frequency_penalty' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
-			
-			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
-				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-				
-				# ---------- Max Calls ------------
-				with tool_c1:
-					set_image_calls = st.slider( label='Max Calls', min_value=0, max_value=10,
-						value=int( st.session_state.get( 'image_max_calls', 0 ) ), step=1,
-						help=cfg.MAX_TOOL_CALLS, key='image_max_calls' )
-					
-					image_max_calls = st.session_state[ 'image_max_calls' ]
-				
-				# ---------- Choice ------------
-				with tool_c2:
-					choice_options = list( image.choice_options )
-					set_image_choice = st.selectbox( label='Choice', options=choice_options,
-						key='image_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
-					
-					image_tool_choice = st.session_state[ 'image_tool_choice' ]
-				
-				# ---------- Include ------------
-				with tool_c3:
-					include_options = list( image.include_options )
-					set_image_include = st.multiselect( label='Include', options=include_options,
-						key='image_include', help=cfg.INCLUDE, placeholder='Options' )
-					
-					image_include = [ d.strip( ) for d in set_image_include
-					                  if d.strip( ) ]
-					
-					image_include = st.session_state[ 'image_include' ]
-				
-				# ---------- Domains ------------
-				with tool_c4:
-					set_image_domains = st.text_input( label='Allowed Domains', key='image_domains_input',
-						value=','.join( st.session_state.get( 'image_domains', [ ] ) ),
-						help=cfg.ALLOWED_DOMAINS, width='stretch', placeholder='Enter Domains' )
-					
-					image_domains = [ d.strip( ) for d in set_image_domains.split( ',' )
-					                  if d.strip( ) ]
-					
-					st.session_state[ 'image_domains' ] = image_domains
-				
-				# ---------- Tools ------------
-				with tool_c5:
-					tool_options = list( image.tool_options )
-					set_image_tools = st.multiselect( label='Tools', options=tool_options,
-						key='image_tools', help=cfg.TOOLS, placeholder='Options' )
-					
-					image_tools = [ d.strip( ) for d in set_image_tools
-					                if d.strip( ) ]
-					
-					image_tools = st.session_state[ 'image_tools' ]
-				
-				# ---------- Background ------------
-				with tool_c6:
-					set_image_background = st.toggle( label='Background', key='image_background',
-						help=cfg.BACKGROUND_MODE )
-					
-					image_background = st.session_state[ 'image_background' ]
-				
-				# ---------- Reset Tools ------------
-				if st.button( label='Reset', key='reset_image_tools', width='stretch' ):
-					for key in [ 'image_max_calls', 'image_tool_choice', 'image_include',
-					             'image_tools', 'image_domains', 'image_background' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
-			
-			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
-				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+					image_analysis_model = st.selectbox( label='Analysis Model',
+						options=get_image_analysis_models( image ), key='image_analysis_model',
+						help='Responses API vision model used for image analysis.',
+						index=None, placeholder='Options' )
 				
 				# ---------- Number ------------
-				with resp_c1:
-					set_image_number = st.slider( label='Number', min_value=0, max_value=50,
-						value=int( st.session_state.get( 'image_number', 0 ) ), step=1,
-						help='Optional. Upper limit on the responses returned by the model',
+				with llm_c4:
+					image_number = st.slider( label='Number', min_value=1, max_value=10,
+						step=1, help='Number of images to request.',
 						key='image_number' )
-					
-					image_number = st.session_state[ 'image_number' ]
 				
-				# ---------- Stream ------------
-				with resp_c2:
-					set_image_stream = st.toggle( label='Stream', key='image_stream',
-						help=cfg.STREAM )
-					
-					image_stream = st.session_state[ 'image_stream' ]
-				
-				# ---------- Store ------------
-				with resp_c3:
-					set_image_store = st.toggle( label='Store', key='image_store', help=cfg.STORE )
-					
-					image_store = st.session_state[ 'image_store' ]
-				
-				# ---------- Max Tokens ------------
-				with resp_c4:
-					set_image_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
-						value=int( st.session_state.get( 'image_max_tokens', 0 ) ), step=500,
-						help=cfg.MAX_OUTPUT_TOKENS, key='image_max_tokens' )
-					
-					image_tokens = st.session_state[ 'image_max_tokens' ]
-				
-				# ---------- Modalities------------
-				with resp_c5:
-					modality_options = list( image.modality_options )
-					set_image_modalities = st.multiselect( label='Response Modalities', options=modality_options,
-						key='image_modalities', help='Optional. Modality of the response',
-						placeholder='Options' )
-					
-					image_modalities = [ d.strip( ) for d in set_image_modalities
-					                     if d.strip( ) ]
-					
-					image_modalities = st.session_state[ 'image_modalities' ]
-				
-				# ---------- Stops ------------
-				with resp_c6:
-					set_image_stops = st.text_input( label='Stop Sequences', key='image_stops_input',
-						value=','.join( st.session_state.get( 'image_stops', [ ] ) ),
-						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
-					
-					image_stops = [ d.strip( ) for d in set_image_stops.split( ',' )
-					                if d.strip( ) ]
-					
-					st.session_state[ 'image_stops' ] = image_stops
-				
-				# ---------- Reset Reponse ------------
-				if st.button( label='Reset', key='reset_image_response', width='stretch' ):
-					for key in [ 'image_stream', 'image_store', 'image_number', 'image_stops',
-					             'image_tools', 'image_max_tokens', 'image_modalities' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
+				# ---------- Reset ------------
+				st.button( label='Reset', key='reset_image_llm',
+					width='stretch', on_click=reset_image_llm_settings )
 			
 			with st.expander( label='Visual Settings', icon='👁️', expanded=False, width='stretch' ):
-				img_c1, img_c2, img_c3, img_c4, img_c5 = st.columns(
+				vis_c1, vis_c2, vis_c3, vis_c4, vis_c5 = st.columns(
 					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
 				
-				# ------------ Compression -------
-				with img_c1:
-					set_image_compression = st.slider( label='Image Compression', key='image_compression',
-						value=float( st.session_state.get( 'image_compression' ) ),
-						min_value=0.0, max_value=1.0, step=0.01, help=cfg.IMAGE_COMPRESSION )
-					
-					image_compression = st.session_state[ 'image_compression' ]
+				# ---------- Output Format ------------
+				with vis_c1:
+					image_mime_type = st.selectbox( label='Output Format',
+						options=get_image_mime_options( image ), key='image_mime_type',
+						help='Image output format: png, jpeg, or webp.',
+						index=None, placeholder='Options' )
 				
-				# ------------ MIME --------
-				with img_c2:
-					mime_options = list( image.mime_options )
-					set_image_mime = st.selectbox( label='MIME Type', options=mime_options,
-						help='Optional. Image MIME Type', key='image_mime_type',
-						placeholder='Options', index=None, )
-					
-					image_mime_type = st.session_state[ 'image_mime_type' ]
+				# ---------- Image Size ------------
+				with vis_c2:
+					image_size = st.selectbox( label='Image Size',
+						options=get_image_size_options( image ), key='image_size',
+						help='Requested output image size.',
+						index=None, placeholder='Options' )
 				
-				# ---------  Backcolor --------
-				with img_c3:
-					backcolor_options = list( image.backcolor_options )
-					set_image_backcolor = st.selectbox( label='Back Color', options=backcolor_options,
-						help='Optional. Image Background Color', key='image_backcolor',
-						placeholder='Options', index=None, )
-					
-					image_backcolor = st.session_state[ 'image_backcolor' ]
+				# ---------- Image Quality ------------
+				with vis_c3:
+					image_quality = st.selectbox( label='Image Quality',
+						options=get_image_quality_options( image ), key='image_quality',
+						help='Requested image quality.',
+						index=None, placeholder='Options' )
 				
-				# --------- Size --------
-				with img_c4:
-					size_options = list( image.size_options )
-					set_image_size = st.selectbox( label='Image Size',
-						options=size_options, help='Optional. Image sizes',
-						key='image_size', placeholder='Options', index=None )
-					
-					image_size = st.session_state[ 'image_size' ]
+				# ---------- Background ------------
+				with vis_c4:
+					image_backcolor = st.selectbox( label='Background',
+						options=get_image_background_options( image ), key='image_backcolor',
+						help='Requested background mode for image generation and editing.',
+						index=None, placeholder='Options' )
 				
-				# --------- Quality --------
-				with img_c5:
-					quality_options = list( image.quality_options )
-					set_image_quality = st.selectbox( label='Image Quality',
-						options=quality_options, help='Optional. Image Quality',
-						key='image_quality', placeholder='Options', index=None )
-					
-					image_quality = st.session_state[ 'image_quality' ]
+				# ---------- Compression ------------
+				with vis_c5:
+					image_compression = st.slider( label='Compression',
+						min_value=0.0, max_value=1.0, step=0.01,
+						help=cfg.IMAGE_COMPRESSION, key='image_compression' )
 				
-				# -------- Reset Settings ------------------
-				if st.button( label='Reset', key='image_visual_reset', width='stretch' ):
-					for key in [ 'image_mime_type', 'image_size',
-					             'image_backcolor', 'image_quality', 'image_compression' ]:
+				# ---------- Reset ------------
+				st.button( label='Reset', key='reset_image_visual',
+					width='stretch', on_click=reset_image_visual_settings )
+			
+			with st.expander( label='Analysis Settings', icon='🔎', expanded=False,
+					width='stretch' ):
+				ana_s1, ana_s2, ana_s3, ana_s4, ana_s5 = st.columns(
+					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				
+				# ---------- Detail ------------
+				with ana_s1:
+					image_analysis_detail = st.selectbox( label='Detail',
+						options=get_image_detail_options( image ), key='image_analysis_detail',
+						help='Vision detail level for image analysis.',
+						index=None, placeholder='Options' )
+				
+				# ---------- Max Tokens ------------
+				with ana_s2:
+					image_max_tokens = st.slider( label='Max Tokens',
+						min_value=0, max_value=100000, step=500,
+						help=cfg.MAX_OUTPUT_TOKENS, key='image_max_tokens' )
+				
+				# ---------- Temperature ------------
+				with ana_s3:
+					image_temperature = st.slider( label='Temperature',
+						min_value=0.0, max_value=2.0, step=0.01,
+						help=cfg.TEMPERATURE, key='image_temperature' )
+				
+				# ---------- Include ------------
+				with ana_s4:
+					include_options = list( image.include_options )
+					image_include = st.multiselect( label='Include',
+						options=include_options, key='image_include',
+						help=cfg.INCLUDE, placeholder='Options' )
+				
+				# ---------- Store ------------
+				with ana_s5:
+					image_store = st.toggle( label='Store',
+						key='image_store', help=cfg.STORE )
+				
+				# ---------- Reset ------------
+				if st.button( label='Reset', key='reset_image_analysis', width='stretch' ):
+					for key in [ 'image_analysis_detail', 'image_max_tokens',
+					             'image_temperature', 'image_include', 'image_store' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
 					st.rerun( )
 		
-		# ------------------------------------------------------------------
-		# Expander — Image System Instructions
-		# ------------------------------------------------------------------
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			
@@ -4064,78 +5800,85 @@ elif mode == 'Images':
 			if not prompt_names:
 				prompt_names = [ '' ]
 			
+			# ---------- System Instructions ------------
 			with in_left:
-				st.text_area( label='Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='image_system_instructions' )
+				image_system_instructions = st.text_area( label='Enter Text',
+					height=50, width='stretch', help=cfg.SYSTEM_INSTRUCTIONS,
+					key='image_system_instructions' )
 			
-			def _on_template_change( ) -> None:
-				name = st.session_state.get( 'instructions' )
-				if name and name != 'No Templates Found':
-					text = fetch_prompt_text( cfg.DB_PATH, name )
-					if text is not None:
-						st.session_state[ 'image_system_instructions' ] = text
-			
+			# ---------- Template ------------
 			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=_on_template_change )
-			
-			def _on_clear( ) -> None:
-				st.session_state[ 'image_system_instructions' ] = ''
-				st.session_state[ 'instructions' ] = ''
-			
-			def _on_convert_system_instructions( ) -> None:
-				text = st.session_state.get( 'image_system_instructions', '' )
-				if not isinstance( text, str ) or not text.strip( ):
-					return
-				
-				src = text.strip( )
-				
-				# XML-delimited prompt blocks -> Markdown headings
-				if cfg.XML_BLOCK_PATTERN.search( src ):
-					converted = convert_xml( src )
-				
-				# Markdown headings <-> simple <hN> tags handled by existing helper
-				else:
-					converted = convert_markdown( src )
-				
-				st.session_state[ 'image_system_instructions' ] = converted
+				st.selectbox( label='Use Template', options=prompt_names,
+					index=None, key='instructions',
+					on_change=load_image_instruction_template )
 			
 			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
-			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
 			
+			# ---------- Clear Instructions ------------
+			with btn_c1:
+				st.button( label='Clear Instructions', width='stretch',
+					on_click=clear_image_instructions )
+			
+			# ---------- XML <-> Markdown ------------
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=_on_convert_system_instructions )
+					on_click=convert_image_system_instructions )
 		
 		# ------------------------------------------------------------------
 		# Tab Section
 		# ------------------------------------------------------------------
 		tab_gen, tab_analyze, tab_edit = st.tabs( [ 'Generate', 'Analyze', 'Edit' ] )
+		
 		with tab_gen:
-			prompt = st.chat_input( 'Enter image generation prompt...', key='image_generate_message' )
+			# ---------------------------------------------------
+			#                   MESSAGES
+			# ---------------------------------------------------
+			if st.session_state.get( 'image_input' ) is not None:
+				for msg in st.session_state.get( 'image_input', [ ] ):
+					if isinstance( msg, dict ):
+						with st.chat_message( msg.get( 'role', 'assistant' ), avatar='' ):
+							st.markdown( msg.get( 'content', '' ) )
+			
+			prompt = st.chat_input( 'Enter image generation prompt...',
+				key='image_generate_message' )
 			gen_c1, gen_c2 = st.columns( [ 0.5, 0.5 ] )
+			
+			# ---------- Generate Image ------------
 			with gen_c1:
-				if st.button( 'Generate Image' ):
+				if st.button( 'Generate Image', key='generate_image' ):
 					with st.spinner( 'Generating…' ):
 						try:
 							if not isinstance( prompt, str ) or not prompt.strip( ):
 								st.warning( 'Enter a prompt before generating an image.' )
+							elif not isinstance( image_model, str ) or not image_model.strip( ):
+								st.warning( 'Select a model before generating an image.' )
 							else:
+								append_image_message( 'user', prompt.strip( ) )
+								
 								image_result = image.generate(
-									prompt=prompt,
-									number=(st.session_state.get( 'image_number', 0 ) or 1),
+									prompt=prompt.strip( ),
+									number=image_number,
 									model=image_model,
-									size=st.session_state.get( 'image_size' ) or '1024x1024',
-									quality=st.session_state.get( 'image_quality' ) or 'auto',
-									fmt=st.session_state.get( 'image_output' ) or '.jpeg',
-									compression=st.session_state.get( 'image_compression' ),
-									background=st.session_state.get( 'image_backcolor' ) or None )
+									size=image_size or '1024x1024',
+									quality=image_quality or 'auto',
+									fmt=image_mime_type or 'jpeg',
+									compression=image_compression,
+									background=image_backcolor or None )
 								
 								if image_result is None:
 									st.warning( 'No image output was returned.' )
 								else:
-									st.image( image_result )
+									st.session_state[ 'image_output_bytes' ] = image_result
+									rendered = render_image_output( image_result,
+										caption='Generated image' )
+									
+									if rendered:
+										append_image_message(
+											'assistant',
+											'Generated image returned successfully.' )
+									else:
+										st.warning(
+											'Image output was returned but could not be rendered.' )
 								
 								try:
 									update_token_counters( getattr( image, 'response', None ) )
@@ -4144,32 +5887,42 @@ elif mode == 'Images':
 						except Exception as exc:
 							st.error( f'Image generation failed: {exc}' )
 			
+			# ---------- Clear Messages ------------
 			with gen_c2:
-				if st.button( 'Clear Messages', key='clear_image_generation' ):
-					reset_state( )
+				if st.button( 'Clear Messages', key='clear_image_generation',
+						on_click=clear_image_messages ):
 					st.rerun( )
 		
 		with tab_analyze:
-			uploaded_img = st.file_uploader(
-				'Upload an image for analysis',
+			# ---------- Upload Image ------------
+			uploaded_img = st.file_uploader( 'Upload an image for analysis',
 				type=[ 'png', 'jpg', 'jpeg', 'webp' ],
-				accept_multiple_files=False,
-				key='images_analyze_uploader', )
+				accept_multiple_files=False, key='images_analyze_uploader' )
 			
 			tmp_path = None
 			if uploaded_img:
 				tmp_path = save_temp( uploaded_img )
-				st.image( uploaded_img, caption='Uploaded image preview', use_column_width=True, )
+				st.image( uploaded_img, caption='Uploaded image preview',
+					use_column_width=True )
+			
+			if st.session_state.get( 'image_input' ) is not None:
+				for msg in st.session_state.get( 'image_input', [ ] ):
+					if isinstance( msg, dict ):
+						with st.chat_message( msg.get( 'role', 'assistant' ), avatar='' ):
+							st.markdown( msg.get( 'content', '' ) )
 			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 			
 			# ---------------------------------------------------
 			#                   MESSAGES
 			# ---------------------------------------------------
-			prompt = st.chat_input( 'Enter image analysis prompt...', key='image_analysis_message' )
+			prompt = st.chat_input( 'Enter image analysis prompt...',
+				key='image_analysis_message' )
 			ana_c1, ana_c2 = st.columns( [ 0.5, 0.5 ] )
+			
+			# ---------- Analyze Image ------------
 			with ana_c1:
-				if st.button( 'Analyze Image' ):
+				if st.button( 'Analyze Image', key='analyze_image' ):
 					with st.spinner( 'Analyzing image…' ):
 						try:
 							if not tmp_path:
@@ -4177,17 +5930,27 @@ elif mode == 'Images':
 							elif not isinstance( prompt, str ) or not prompt.strip( ):
 								st.warning( 'Enter a prompt before analyzing an image.' )
 							else:
+								model = image_analysis_model or 'gpt-4o-mini'
+								append_image_message( 'user', prompt.strip( ) )
+								
 								analysis_result = image.analyze(
-									text=prompt,
+									text=prompt.strip( ),
 									path=tmp_path,
-									instruct=st.session_state.get( 'image_system_instructions', '' ),
-									model=image_model or 'gpt-4o-mini' )
+									instruct=image_system_instructions,
+									model=model,
+									max_tokens=image_max_tokens,
+									temperature=image_temperature,
+									include=image_include,
+									store=image_store,
+									stream=None,
+									detail=image_analysis_detail or 'auto' )
 								
 								if analysis_result is None:
 									st.warning( 'No analysis output was returned.' )
 								else:
 									st.markdown( '**Analysis result:**' )
 									st.write( analysis_result )
+									append_image_message( 'assistant', str( analysis_result ) )
 								
 								try:
 									update_token_counters( getattr( image, 'response', None ) )
@@ -4196,28 +5959,40 @@ elif mode == 'Images':
 						except Exception as exc:
 							st.error( f'Analysis Failed: {exc}' )
 			
+			# ---------- Clear Messages ------------
 			with ana_c2:
-				if st.button( 'Clear Messages', key='clear_analysis_message' ):
-					reset_state( )
+				if st.button( 'Clear Messages', key='clear_image_analysis',
+						on_click=clear_image_messages ):
 					st.rerun( )
 		
 		with tab_edit:
+			# ---------- Upload Image ------------
 			uploaded_img = st.file_uploader( 'Upload Image for Edit',
-				type=[ 'png', 'jpg', 'jpeg', 'webp' ], accept_multiple_files=False,
-				key='images_edit_uploader', )
+				type=[ 'png', 'jpg', 'jpeg', 'webp' ],
+				accept_multiple_files=False, key='images_edit_uploader' )
 			
 			tmp_path = None
 			if uploaded_img:
 				tmp_path = save_temp( uploaded_img )
-				st.image( uploaded_img, caption='Uploaded image preview', use_column_width=True, )
+				st.image( uploaded_img, caption='Uploaded image preview',
+					use_column_width=True )
+			
+			if st.session_state.get( 'image_input' ) is not None:
+				for msg in st.session_state.get( 'image_input', [ ] ):
+					if isinstance( msg, dict ):
+						with st.chat_message( msg.get( 'role', 'assistant' ), avatar='' ):
+							st.markdown( msg.get( 'content', '' ) )
 			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 			
 			# ---------------------------------------------------
 			#                   MESSAGES
 			# ---------------------------------------------------
-			prompt = st.chat_input( 'Enter image editing prompt...', key='image_edit_messgae' )
+			prompt = st.chat_input( 'Enter image editing prompt...',
+				key='image_edit_message' )
 			edit_c1, edit_c2 = st.columns( [ 0.5, 0.5 ] )
+			
+			# ---------- Edit Image ------------
 			with edit_c1:
 				if st.button( 'Edit Image', key='edit_image' ):
 					with st.spinner( 'Editing image…' ):
@@ -4226,18 +6001,36 @@ elif mode == 'Images':
 								st.warning( 'Upload an image before editing.' )
 							elif not isinstance( prompt, str ) or not prompt.strip( ):
 								st.warning( 'Enter a prompt before editing an image.' )
+							elif not isinstance( image_model, str ) or not image_model.strip( ):
+								st.warning( 'Select a model before editing an image.' )
 							else:
-								edit_result = image.edit( prompt=prompt, path=tmp_path,
+								append_image_message( 'user', prompt.strip( ) )
+								
+								edit_result = image.edit(
+									prompt=prompt.strip( ),
+									path=tmp_path,
 									model=image_model,
-									size=st.session_state.get( 'image_size' ) or '1024x1024',
-									quality=st.session_state.get( 'image_quality' ) or 'auto',
-									fmt=st.session_state.get( 'image_output' ) or '.jpeg',
-									compression=st.session_state.get( 'image_compression' ) )
+									size=image_size or '1024x1024',
+									quality=image_quality or 'auto',
+									fmt=image_mime_type or 'jpeg',
+									compression=image_compression,
+									background=image_backcolor or None,
+									number=image_number )
 								
 								if edit_result is None:
 									st.warning( 'No edited image output was returned.' )
 								else:
-									st.image( edit_result )
+									st.session_state[ 'image_output_bytes' ] = edit_result
+									rendered = render_image_output( edit_result,
+										caption='Edited image' )
+									
+									if rendered:
+										append_image_message(
+											'assistant',
+											'Edited image returned successfully.' )
+									else:
+										st.warning(
+											'Edited image output was returned but could not be rendered.' )
 								
 								try:
 									update_token_counters( getattr( image, 'response', None ) )
@@ -4246,11 +6039,12 @@ elif mode == 'Images':
 						except Exception as exc:
 							st.error( f'Edit Failed: {exc}' )
 			
+			# ---------- Clear Messages ------------
 			with edit_c2:
-				if st.button( 'Clear Messages', key='clear_edit_message' ):
-					reset_state( )
+				if st.button( 'Clear Messages', key='clear_image_edit',
+						on_click=clear_image_messages ):
 					st.rerun( )
-
+					
 # ======================================================================================
 # AUDIO MODE
 # ======================================================================================
@@ -5950,17 +7744,13 @@ elif mode == 'Data Export':
 elif mode == 'Data Management':
 	left, center, right = st.columns( [ 0.05, 0.90, 0.05 ] )
 	with center:
-		st.subheader( "🏛️ Data Management", help=cfg.DATA_MANAGEMENT )
-		st.divider( )
-		tabs = st.tabs( [ "📥 Import", "🗂 Browse", "💉 CRUD", "📊 Explore", "🔎 Filter",
-		                  "🧮 Aggregate", "📈 Visualize", "⚙ Admin", "🧠 SQL" ] )
+		st.subheader( '🏛️ Data Management', help=cfg.DATA_MANAGEMENT )
+		tabs = st.tabs( [ 'Import', 'Browse', 'CRUD', 'Explore', 'Filter',
+		                  'Aggregate', 'Visualize', 'Admin', 'SQL' ] )
 		
 		tables = list_tables( )
 		if not tables:
 			st.info( "No tables available." )
-		else:
-			table = st.selectbox( "Table", tables )
-			df_full = read_table( table )
 		
 		# ------------------------------------------------------------------------------
 		# UPLOAD TAB
@@ -6194,12 +7984,17 @@ elif mode == 'Data Management':
 		with tabs[ 3 ]:
 			tables = list_tables( )
 			if tables:
-				table = st.selectbox( 'Table', tables, key='explore_table' )
-				page_size = st.slider( 'Rows per page', 10, 500, 50 )
-				page = st.number_input( 'Page', min_value=1, step=1 )
-				offset = (page - 1) * page_size
-				df_page = read_table( table, page_size, offset )
-				render_table( df_page )
+				exp_c1, exp_c2, exp_c3 = st.columns( [ 0.4, 0.4, 0.2 ], border=True )
+				with exp_c1:
+					table = st.selectbox( 'Table', tables, key='explore_table' )
+				with exp_c2:
+					page_size = st.slider( 'Rows per page', 10, 500, 50 )
+				with exp_c3:
+					page = st.number_input( 'Page', min_value=1, step=1 )
+					offset = (page - 1) * page_size
+					df_page = read_table( table, page_size, offset )
+				
+				st.data_editor( df_page )
 		
 		# ------------------------------------------------------------------------------
 		# FILTER
@@ -6207,14 +8002,18 @@ elif mode == 'Data Management':
 		with tabs[ 4 ]:
 			tables = list_tables( )
 			if tables:
-				table = st.selectbox( 'Table', tables, key='filter_table' )
-				df = read_table( table )
-				column = st.selectbox( 'Column', df.columns )
-				value = st.text_input( 'Contains' )
-				if value:
-					df = df[ df[ column ].astype( str ).str.contains( value ) ]
+				tbl_c1, tbl_c2, tbl_c3 = st.columns( [ 0.25, 0.25, 0.5 ], border=True )
+				with tbl_c1:
+					table = st.selectbox( 'Select Table', tables, key='filter_table' )
+					df = read_table( table )
+				with tbl_c2:
+					column = st.selectbox( 'Select Field', df.columns )
+				with tbl_c3:
+					value = st.text_input( 'Contains', placeholder='Enter Text for Lookup' )
+					if value:
+						df = df[ df[ column ].astype( str ).str.contains( value ) ]
 				
-				render_table( df )
+				st.data_editor( df )
 		
 		# ------------------------------------------------------------------------------
 		# AGGREGATE
@@ -6222,18 +8021,28 @@ elif mode == 'Data Management':
 		with tabs[ 5 ]:
 			tables = list_tables( )
 			if tables:
-				table = st.selectbox( 'Table', tables, key='agg_table' )
-				df = read_table( table )
-				numeric_cols = df.select_dtypes( include=[ 'number' ] ).columns.tolist( )
-				if numeric_cols:
-					col = st.selectbox( 'Column', numeric_cols )
-					agg = st.selectbox( 'Function', [ 'SUM', 'AVG', 'COUNT' ] )
-					if agg == 'SUM':
-						st.metric( 'Result', df[ col ].sum( ) )
-					elif agg == 'AVG':
-						st.metric( 'Result', df[ col ].mean( ) )
-					elif agg == 'COUNT':
-						st.metric( 'Result', df[ col ].count( ) )
+				agg_c1, agg_c2, agg_c3, agg_c4 = st.columns( [ 0.2, 0.2, 0.2, 0.4 ], border=True)
+				with agg_c1:
+					table = st.selectbox( 'Table', tables, key='agg_table' )
+					df = read_table( table )
+					numeric_cols = df.select_dtypes( include=[ 'number' ] ).columns.tolist( )
+					with agg_c2:
+						if numeric_cols:
+							col = st.selectbox( 'Column', numeric_cols )
+					with agg_c3:
+						agg = st.selectbox( 'Function', [ 'SUM', 'AVG', 'COUNT' ] )
+					with agg_c4:
+						if agg == 'SUM':
+							st.metric( 'Result', df[ col ].sum( ), width='stretch',
+								format='accounting' )
+							
+						elif agg == 'AVG':
+							st.metric( 'Result', df[ col ].mean( ), width='stretch',
+								format='accounting' )
+							
+						elif agg == 'COUNT':
+							st.metric( 'Result', df[ col ].count( ), width='stretch',
+								format='accounting' )
 		
 		# ------------------------------------------------------------------------------
 		# VISUALIZE
@@ -6498,10 +8307,10 @@ st.markdown(
 		left: 0;
 		width: 100%;
 		background-color: rgba(17, 17, 17, 0.95);
-		border-top: 1px solid #2a2a2a;
+		border-top: 1px solid #4f4c4c;
 		padding: 10px 16px;
 		font-size: 0.80rem;
-		color: #35618c;
+		color: #4978A6;
 		z-index: 1000;
 	}
 	.boo-status-inner {
@@ -6869,15 +8678,12 @@ elif mode == 'Vector Stores':
 right_text = ' ◽ '.join( right_parts ) if right_parts else '—'
 
 # ---- Rendering Method
-st.markdown(
-	f"""
+st.markdown( f"""
     <div class="boo-status-bar">
         <div class="boo-status-inner">
             <span>{provider_val} — {mode_val}</span>
             <span>{right_text}</span>
         </div>
     </div>
-    """,
-	unsafe_allow_html=True,
-)
+    """, unsafe_allow_html=True, )
 

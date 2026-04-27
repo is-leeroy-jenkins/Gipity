@@ -219,10 +219,10 @@ PROMPT_ENGINEERING = r'''Prompt engineering is the process of writing effective 
 TEXT_GENERATION = r'''Use a large language model to produce coherent, context-aware natural language
 		output in response to user prompts, system instructions, or retrieved document context.
 		When a user submits a request—whether it is a general inquiry, a structured analytical task,
-		or a document-grounded question—Buddy constructs a prompt that may include system directives,
+		or a document-grounded question—Gipity constructs a prompt that may include system directives,
 		conversation history, and optionally retrieved content from its vector store. The underlying
 		model then generates text according to configurable parameters such as temperature,
-		maximum tokens, and response format. This capability enables Buddy to function as
+		maximum tokens, and response format. This capability enables Gipity to function as
 		a conversational assistant, analytical explainer, summarizer, drafting tool, and reasoning engine,
 		producing structured or narrative outputs tailored to the user’s workflow. '''
 
@@ -241,7 +241,7 @@ AUDIO_API = r'''The Audio API functionality enables the ingestion, transformatio
 		summarized, embedded, or used in Document Q&A and conversational contexts. It can also
 		support translation of spoken content into other languages and text-to-speech generation, p
 		roducing natural-sounding audio from model-generated text. By integrating speech recognition
-		and synthesis alongside text and document processing, the Audio API expands Buddy into a
+		and synthesis alongside text and document processing, the Audio API expands Gipity into a
 		multimodal assistant capable of handling voice-driven inputs and delivering spoken outputs
 		within analytical or conversational workflows.  '''
 
@@ -278,7 +278,7 @@ VECTORSTORES_API = r'''Specialized databases designed to store and index embeddi
 EMBEDDINGS_API = r'''Creates numerical vector representations of text that capture semantic meaning in a
 		high-dimensional space. When documents, prompts, or queries are processed, their textual
 		content is transformed into embeddings so that semantically similar content is positioned
-		close together mathematically. Buddy stores these vectors in its local vector database,
+		close together mathematically. Gipity stores these vectors in its local vector database,
 		enabling similarity search, clustering, document retrieval, and contextual grounding for
 		downstream tasks like Document Q&A. By converting language into structured numerical form,
 		embeddings serve as the foundation for intelligent search, relevance ranking, and
@@ -292,7 +292,7 @@ DOCUMENT_Q_AND_A = r'''A retrieval-augmented workflow that allows users to ask n
 		question is asked. The retrieved context is then supplied to the language model to
 		generate a precise, source-aware response. This approach enables accurate,
 		citation-ready answers tied to user-provided content rather than relying solely on general
-		model knowledge, effectively turning Buddy into a document-aware analytical assistant.  '''
+		model knowledge, effectively turning Gipity into a document-aware analytical assistant.  '''
 
 DATA_MANAGEMENT = r'''Structured handling, organization, processing of
 		user-provided data in a self-contained SQLite Database. It allows uploading of files, extracting and
@@ -301,7 +301,7 @@ DATA_MANAGEMENT = r'''Structured handling, organization, processing of
 		and Data Analysis. Beyond ingestion, it includes version awareness, indexing, schema inspection
 		(where applicable), and the ability to manage or remove stored assets safely. Document
 		Management provides the foundational infrastructure that transforms raw files into structured,
-		searchable, and model-ready assets, ensuring that Buddy’s intelligence features operate
+		searchable, and model-ready assets, ensuring that Gipity’s intelligence features operate
 		on reliable, well-governed data rather than unmanaged documents.  '''
 
 IMAGE_BACKGROUND = r'''Optional. Allows to set transparency for the background of the generated image(s).
