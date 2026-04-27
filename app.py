@@ -3498,6 +3498,905 @@ def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 	
 	return '\n\n'.join( prompt_parts ).strip( )
 
+# ------------ FILES MODE UTILITIES -----------------
+
+def ensure_files_mode_state( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Ensure Files mode session-state keys exist before widget instantiation.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if 'files_model' not in st.session_state:
+		st.session_state[ 'files_model' ] = ''
+	
+	if 'files_purpose' not in st.session_state:
+		st.session_state[ 'files_purpose' ] = 'user_data'
+	
+	if 'files_filter_purpose' not in st.session_state:
+		st.session_state[ 'files_filter_purpose' ] = ''
+	
+	if 'files_type' not in st.session_state:
+		st.session_state[ 'files_type' ] = ''
+	
+	if 'files_id' not in st.session_state:
+		st.session_state[ 'files_id' ] = ''
+	
+	if 'files_url' not in st.session_state:
+		st.session_state[ 'files_url' ] = ''
+	
+	if 'files_table' not in st.session_state:
+		st.session_state[ 'files_table' ] = [ ]
+	
+	if 'files_df' not in st.session_state:
+		st.session_state[ 'files_df' ] = pd.DataFrame( )
+	
+	if 'files_metadata' not in st.session_state:
+		st.session_state[ 'files_metadata' ] = { }
+	
+	if 'files_content' not in st.session_state:
+		st.session_state[ 'files_content' ] = ''
+	
+	if 'files_content_bytes' not in st.session_state:
+		st.session_state[ 'files_content_bytes' ] = None
+	
+	if 'files_delete_result' not in st.session_state:
+		st.session_state[ 'files_delete_result' ] = { }
+	
+	if 'files_last_answer' not in st.session_state:
+		st.session_state[ 'files_last_answer' ] = ''
+	
+	if 'files_system_instructions' not in st.session_state:
+		st.session_state[ 'files_system_instructions' ] = ''
+	
+	if 'files_messages' not in st.session_state:
+		st.session_state.files_messages = [ ]
+	
+	if not isinstance( st.session_state.get( 'files_messages' ), list ):
+		st.session_state.files_messages = [ ]
+
+def get_files_upload_purpose_options( files: Files ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return OpenAI upload purpose options from the Files wrapper.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Upload purpose options.
+		
+	"""
+	options = getattr( files, 'upload_purpose_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return options
+	
+	options = getattr( files, 'purpose_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return options
+	
+	return [
+			'assistants',
+			'batch',
+			'fine-tune',
+			'vision',
+			'user_data',
+			'evals',
+	]
+
+def get_files_filter_purpose_options( files: Files ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return file purpose filter options for listing OpenAI files.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			File purpose filter options.
+		
+	"""
+	options = getattr( files, 'file_purpose_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [
+			'',
+			'assistants',
+			'assistants_output',
+			'batch',
+			'batch_output',
+			'fine-tune',
+			'fine-tune-results',
+			'vision',
+			'user_data',
+			'evals',
+	]
+
+def get_files_model_options( files: Files ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return model options for optional selected-file analysis workflows.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Model options.
+		
+	"""
+	options = getattr( files, 'model_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [
+			'',
+			'gpt-5-mini',
+			'gpt-5-nano',
+			'gpt-4.1-mini',
+			'gpt-4.1-nano',
+			'gpt-4o-mini',
+	]
+
+def save_files_upload( uploaded_file: Any ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Save a Streamlit uploaded file to a temporary local path for Files API upload.
+		
+		Parameters:
+		-----------
+		uploaded_file: Any
+			Streamlit uploaded file object.
+		
+		Returns:
+		--------
+		str | None
+			Temporary file path or None.
+		
+	"""
+	if uploaded_file is None:
+		return None
+	
+	try:
+		name = getattr( uploaded_file, 'name', '' )
+		suffix = Path( name ).suffix if isinstance( name, str ) and name.strip( ) else ''
+		
+		if not suffix:
+			suffix = '.tmp'
+		
+		with tempfile.NamedTemporaryFile( delete=False, suffix=suffix ) as tmp:
+			if hasattr( uploaded_file, 'getbuffer' ):
+				tmp.write( uploaded_file.getbuffer( ) )
+			elif hasattr( uploaded_file, 'read' ):
+				tmp.write( uploaded_file.read( ) )
+			else:
+				return None
+			
+			return tmp.name
+	except Exception:
+		return None
+
+def normalize_files_table( rows: Any ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Normalize Files API list output into table rows used by Files mode.
+		
+		Parameters:
+		-----------
+		rows: Any
+			Files API rows, response data, or wrapper-normalized rows.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Normalized table rows.
+		
+	"""
+	if rows is None:
+		return [ ]
+	
+	if isinstance( rows, dict ) and isinstance( rows.get( 'data' ), list ):
+		items = rows.get( 'data', [ ] )
+	elif isinstance( rows, list ):
+		items = rows
+	else:
+		items = getattr( rows, 'data', [ ] )
+	
+	normalized: list[ dict[ str, Any ] ] = [ ]
+	for item in items:
+		if isinstance( item, dict ):
+			source = item
+		elif hasattr( item, 'model_dump' ):
+			try:
+				source = item.model_dump( )
+			except Exception:
+				source = { }
+		else:
+			source = {
+					'id': getattr( item, 'id', None ),
+					'filename': getattr( item, 'filename', None ),
+					'purpose': getattr( item, 'purpose', None ),
+					'bytes': getattr( item, 'bytes', None ),
+					'created_at': getattr( item, 'created_at', None ),
+					'expires_at': getattr( item, 'expires_at', None ),
+					'status': getattr( item, 'status', None ),
+					'object': getattr( item, 'object', None ),
+			}
+		
+		file_id = source.get( 'id' )
+		if not file_id:
+			continue
+		
+		normalized.append(
+			{
+					'id': file_id,
+					'filename': source.get( 'filename', '' ),
+					'purpose': source.get( 'purpose', '' ),
+					'bytes': source.get( 'bytes', 0 ),
+					'created_at': source.get( 'created_at', '' ),
+					'expires_at': source.get( 'expires_at', '' ),
+					'status': source.get( 'status', '' ),
+					'object': source.get( 'object', '' ),
+			} )
+	
+	return normalized
+
+def build_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
+	"""
+	
+		Purpose:
+		--------
+		Build a display-ready DataFrame from normalized Files API rows.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized file metadata rows.
+		
+		Returns:
+		--------
+		pd.DataFrame
+			Display-ready file metadata table.
+		
+	"""
+	if not isinstance( rows, list ) or len( rows ) == 0:
+		return pd.DataFrame( )
+	
+	df_files = pd.DataFrame( rows )
+	preferred = [
+			'id',
+			'filename',
+			'purpose',
+			'bytes',
+			'created_at',
+			'expires_at',
+			'status',
+			'object',
+	]
+	
+	columns = [ column for column in preferred if column in df_files.columns ]
+	extras = [ column for column in df_files.columns if column not in columns ]
+	return df_files[ columns + extras ]
+
+def build_file_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
+	"""
+	
+		Purpose:
+		--------
+		Build display labels mapped to OpenAI file IDs.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized file metadata rows.
+		
+		Returns:
+		--------
+		dict[str, str]
+			Display label to file ID mapping.
+		
+	"""
+	options: dict[ str, str ] = { }
+	
+	if not isinstance( rows, list ):
+		return options
+	
+	for row in rows:
+		if not isinstance( row, dict ):
+			continue
+		
+		file_id = row.get( 'id' )
+		if not isinstance( file_id, str ) or not file_id.strip( ):
+			continue
+		
+		filename = row.get( 'filename' ) or 'Unnamed file'
+		purpose = row.get( 'purpose' ) or 'unknown'
+		label = f'{filename} — {file_id} — {purpose}'
+		options[ label ] = file_id
+	
+	return options
+
+def get_selected_file_id( selected_label: str | None,
+		options: dict[ str, str ] | None = None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Return the selected OpenAI file ID from a display label or direct ID.
+		
+		Parameters:
+		-----------
+		selected_label: str | None
+			Selected display label or raw file ID.
+		
+		options: dict[str, str] | None
+			Display label to file ID mapping.
+		
+		Returns:
+		--------
+		str | None
+			Selected OpenAI file ID.
+		
+	"""
+	if not isinstance( selected_label, str ) or not selected_label.strip( ):
+		return None
+	
+	value = selected_label.strip( )
+	
+	if isinstance( options, dict ) and value in options:
+		return options[ value ]
+	
+	if value.startswith( 'file-' ):
+		return value
+	
+	return None
+
+def render_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render normalized Files API rows as a Streamlit data editor.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized file metadata rows.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	df_files = build_files_dataframe( rows )
+	st.session_state[ 'files_df' ] = df_files
+	
+	if df_files.empty:
+		st.info( 'No files available.' )
+		return
+	
+	st.data_editor( df_files, use_container_width=True, hide_index=True )
+
+def render_file_metadata( metadata: dict[ str, Any ] | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render selected OpenAI file metadata.
+		
+		Parameters:
+		-----------
+		metadata: dict[str, Any] | None
+			Normalized file metadata.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if not isinstance( metadata, dict ) or len( metadata ) == 0:
+		st.info( 'No file metadata available.' )
+		return
+	
+	m1, m2, m3, m4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+		border=True, gap='xxsmall' )
+	
+	with m1:
+		st.metric( 'Purpose', metadata.get( 'purpose', '—' ) or '—' )
+	
+	with m2:
+		st.metric( 'Bytes', metadata.get( 'bytes', 0 ) or 0 )
+	
+	with m3:
+		st.metric( 'Status', metadata.get( 'status', '—' ) or '—' )
+	
+	with m4:
+		st.metric( 'Object', metadata.get( 'object', '—' ) or '—' )
+	
+	st.json( metadata )
+
+def render_file_content( content: str | bytes | dict[ str, Any ] | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render normalized OpenAI file content safely.
+		
+		Parameters:
+		-----------
+		content: str | bytes | dict[str, Any] | None
+			Normalized file content.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if content is None:
+		st.info( 'No file content available.' )
+		return
+	
+	if isinstance( content, bytes ):
+		st.download_button( label='Download File Content',
+			data=content, file_name='openai_file_content.bin',
+			mime='application/octet-stream', width='stretch' )
+		return
+	
+	if isinstance( content, dict ):
+		st.json( content )
+		return
+	
+	if isinstance( content, str ):
+		if not content.strip( ):
+			st.info( 'File content is empty.' )
+			return
+		
+		st.text_area( label='File Content', value=content,
+			height=300, width='stretch', disabled=True )
+		return
+	
+	st.write( content )
+
+def render_file_delete_result( result: dict[ str, Any ] | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render an OpenAI Files API deletion result.
+		
+		Parameters:
+		-----------
+		result: dict[str, Any] | None
+			Normalized delete result.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if not isinstance( result, dict ) or len( result ) == 0:
+		return
+	
+	deleted = result.get( 'deleted' )
+	if deleted is True:
+		st.success( f"Deleted file: {result.get( 'id', '' )}" )
+	else:
+		st.warning( 'Delete request completed, but deletion status was not confirmed.' )
+	
+	st.json( result )
+
+def clear_files_messages( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Files mode chat messages.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state.files_messages = [ ]
+
+def clear_files_outputs( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Files mode output state while preserving configuration controls.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'files_metadata' ] = { }
+	st.session_state[ 'files_content' ] = ''
+	st.session_state[ 'files_content_bytes' ] = None
+	st.session_state[ 'files_delete_result' ] = { }
+	st.session_state[ 'files_last_answer' ] = ''
+
+def reset_files_controls( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Files mode controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'files_model', 'files_purpose', 'files_filter_purpose',
+	             'files_type', 'files_id', 'files_url' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+def reset_files_all( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Files mode controls, outputs, table state, and messages.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	reset_files_controls( )
+	clear_files_outputs( )
+	st.session_state[ 'files_table' ] = [ ]
+	st.session_state[ 'files_df' ] = pd.DataFrame( )
+	st.session_state.files_messages = [ ]
+
+def clear_files_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Files mode system instructions and selected prompt template.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'files_system_instructions' ] = ''
+	st.session_state[ 'instructions' ] = ''
+
+def load_files_instruction_template( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Load the selected prompt template into Files mode system instructions.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	name = st.session_state.get( 'instructions' )
+	if name and name != 'No Templates Found':
+		text = fetch_prompt_text( cfg.DB_PATH, name )
+		if text is not None:
+			st.session_state[ 'files_system_instructions' ] = text
+
+def convert_files_system_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Convert Files mode system instructions between XML-like delimiters and Markdown
+		headings.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	text = st.session_state.get( 'files_system_instructions', '' )
+	if not isinstance( text, str ) or not text.strip( ):
+		return
+	
+	source = text.strip( )
+	if cfg.XML_BLOCK_PATTERN.search( source ):
+		converted = convert_xml( source )
+	else:
+		converted = convert_markdown( source )
+	
+	st.session_state[ 'files_system_instructions' ] = converted
+
+def run_files_upload( files: Files, uploaded_file: Any, purpose: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Save and upload a Streamlit file through the Files wrapper.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		uploaded_file: Any
+			Streamlit uploaded file object.
+		
+		purpose: str | None
+			Selected OpenAI upload purpose.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Uploaded file metadata.
+		
+	"""
+	if uploaded_file is None:
+		st.warning( 'Select a file before uploading.' )
+		return { }
+	
+	filepath = save_files_upload( uploaded_file )
+	if not filepath:
+		st.warning( 'The uploaded file could not be saved locally.' )
+		return { }
+	
+	try:
+		metadata = files.upload( filepath=filepath, purpose=purpose or 'user_data' )
+		metadata = metadata if isinstance( metadata, dict ) else { }
+		
+		if metadata.get( 'id' ):
+			st.session_state[ 'files_id' ] = metadata.get( 'id' )
+			st.session_state[ 'files_metadata' ] = metadata
+		
+		return metadata
+	finally:
+		try:
+			if os.path.exists( filepath ):
+				os.remove( filepath )
+		except Exception:
+			pass
+
+def run_files_list( files: Files, purpose: str | None = None ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		List files through the Files wrapper and store normalized rows.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		purpose: str | None
+			Optional file purpose filter.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Normalized file metadata rows.
+		
+	"""
+	rows = files.list(
+		purpose=purpose if isinstance( purpose, str ) and purpose.strip( ) else None )
+	rows = normalize_files_table( rows )
+	st.session_state[ 'files_table' ] = rows
+	st.session_state[ 'files_df' ] = build_files_dataframe( rows )
+	return rows
+
+def run_files_retrieve( files: Files, file_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Retrieve metadata for a selected OpenAI file.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		file_id: str | None
+			Selected OpenAI file ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized file metadata.
+		
+	"""
+	if not isinstance( file_id, str ) or not file_id.strip( ):
+		st.warning( 'Select or enter a file ID before retrieving metadata.' )
+		return { }
+	
+	metadata = files.retrieve( id=file_id.strip( ) )
+	metadata = metadata if isinstance( metadata, dict ) else { }
+	st.session_state[ 'files_metadata' ] = metadata
+	return metadata
+
+def run_files_extract( files: Files, file_id: str | None ) -> str | bytes | dict[ str, Any ] | None:
+	"""
+	
+		Purpose:
+		--------
+		Retrieve content for a selected OpenAI file.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		file_id: str | None
+			Selected OpenAI file ID.
+		
+		Returns:
+		--------
+		str | bytes | dict[str, Any] | None
+			Normalized file content.
+		
+	"""
+	if not isinstance( file_id, str ) or not file_id.strip( ):
+		st.warning( 'Select or enter a file ID before retrieving content.' )
+		return None
+	
+	content = files.extract( id=file_id.strip( ) )
+	
+	if isinstance( content, bytes ):
+		st.session_state[ 'files_content_bytes' ] = content
+		st.session_state[ 'files_content' ] = ''
+	elif isinstance( content, str ):
+		st.session_state[ 'files_content' ] = content
+		st.session_state[ 'files_content_bytes' ] = None
+	elif isinstance( content, dict ):
+		st.session_state[ 'files_content' ] = str( content )
+		st.session_state[ 'files_content_bytes' ] = None
+	else:
+		st.session_state[ 'files_content' ] = ''
+		st.session_state[ 'files_content_bytes' ] = None
+	
+	return content
+
+def run_files_delete( files: Files, file_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Delete a selected OpenAI file.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		file_id: str | None
+			Selected OpenAI file ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized deletion result.
+		
+	"""
+	if not isinstance( file_id, str ) or not file_id.strip( ):
+		st.warning( 'Select or enter a file ID before deleting a file.' )
+		return { }
+	
+	result = files.delete( id=file_id.strip( ) )
+	result = result if isinstance( result, dict ) else { }
+	st.session_state[ 'files_delete_result' ] = result
+	
+	if result.get( 'deleted' ) is True:
+		st.session_state[ 'files_id' ] = ''
+	
+	return result
+
+def run_files_analysis( files: Files, file_id: str | None, prompt: str | None,
+		model: str | None = None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Run selected-file analysis through the Files wrapper.
+		
+		Parameters:
+		-----------
+		files: Files
+			Files wrapper instance.
+		
+		file_id: str | None
+			Selected OpenAI file ID.
+		
+		prompt: str | None
+			User analysis prompt.
+		
+		model: str | None
+			Optional model name.
+		
+		Returns:
+		--------
+		str | None
+			Analysis output text.
+		
+	"""
+	if not isinstance( file_id, str ) or not file_id.strip( ):
+		st.warning( 'Select or enter a file ID before analyzing a file.' )
+		return None
+	
+	if not isinstance( prompt, str ) or not prompt.strip( ):
+		st.warning( 'Enter a prompt before analyzing a file.' )
+		return None
+	
+	model_value = model if isinstance( model, str ) and model.strip( ) else 'gpt-4o-mini'
+	response = files.search( id=file_id.strip( ), query=prompt.strip( ), model=model_value )
+	
+	if isinstance( response, str ) and response.strip( ):
+		st.session_state[ 'files_last_answer' ] = response.strip( )
+		return response.strip( )
+	
+	return response
+
 # ----------  DATABASE UTILITIES ----------
 
 def initialize_database( ) -> None:
@@ -7935,360 +8834,469 @@ elif mode == 'Embeddings':
 				st.json( usage )
 
 # ======================================================================================
-# FILES API MODE
+# FILES MODE
 # ======================================================================================
 elif mode == 'Files':
+	ensure_files_mode_state( )
 	files = Files( )
-	files_model = st.session_state.get( 'files_model', '' )
-	files_purpose = st.session_state.get( 'files_purpose', '' )
-	files_type = st.session_state.get( 'files_type', '' )
-	files_id = st.session_state.get( 'files_id', '' )
-	files_url = st.session_state.get( 'files_url', '' )
-	files_table = st.session_state.get( 'files_table', '' )
-	files_messages = st.session_state.get( 'files_messages', [ ] )
 	
-	for key in [ 'files_domains', 'files_stops', 'files_includes', 'files_messages', ]:
-		if key in st.session_state:
-			st.session_state[ key ] = [ ]
 	# ------------------------------------------------------------------
-	# Main Chat UI
+	# Session State
+	# ------------------------------------------------------------------
+	if 'files_manual_id' not in st.session_state:
+		st.session_state[ 'files_manual_id' ] = ''
+	
+	if 'files_selected_label' not in st.session_state:
+		st.session_state[ 'files_selected_label' ] = ''
+	
+	if not isinstance( st.session_state.get( 'files_table' ), list ):
+		st.session_state[ 'files_table' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'files_metadata' ), dict ):
+		st.session_state[ 'files_metadata' ] = { }
+	
+	if not isinstance( st.session_state.get( 'files_delete_result' ), dict ):
+		st.session_state[ 'files_delete_result' ] = { }
+	
+	if not isinstance( st.session_state.get( 'files_last_answer' ), str ):
+		st.session_state[ 'files_last_answer' ] = ''
+	
+	if not isinstance( st.session_state.get( 'files_messages' ), list ):
+		st.session_state.files_messages = [ ]
+	
+	if st.session_state.get( 'clear_instructions' ):
+		st.session_state[ 'files_system_instructions' ] = ''
+		st.session_state[ 'clear_instructions' ] = False
+	
+	# ------------------------------------------------------------------
+	# Main UI
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.90, 0.05 ] )
 	with center:
-		st.subheader( '📁 Files API', help=cfg.FILES_API )
+		st.subheader( '📁 Files API', help=getattr( cfg, 'FILES_API',
+			'Upload, list, retrieve, inspect, and delete OpenAI Files API files.' ) )
 		st.divider( )
-		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
-			
-			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-				
-				# ---------- Model ------------
-				with llm_c1:
-					model_options = list( files.model_options )
-					set_files_model = st.selectbox( label='Select Model', options=model_options,
-						key='files_model', placeholder='Options', index=None,
-						help='REQUIRED. Large Language Model used by the AI', )
-					
-					files_model = st.session_state[ 'files_model' ]
-				
-				# ---------- Reasoning ------------
-				with llm_c2:
-					reasoning_options = list( files.reasoning_options )
-					set_files_reasoning = st.selectbox( label='Reasoning',
-						options=reasoning_options, key='files_reasoning',
-						help=cfg.REASONING, index=None, placeholder='Options' )
-					
-					files_reasoning = st.session_state[ 'files_reasoning' ]
-				
-				# ---------- Top-P ------------
-				with llm_c3:
-					set_files_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
-						step=0.01, help=cfg.TOP_P, key='files_top_percent' )
-					
-					files_top_percent = st.session_state[ 'files_top_percent' ]
-				
-				# ---------- Temperature ------------
-				with llm_c4:
-					set_files_temperature = st.slider( label='Temperature', min_value=-2.0, max_value=2.0,
-						step=0.01,
-						help=cfg.TEMPERATURE, key='files_temperature' )
-					
-					files_temperature = st.session_state[ 'files_temperature' ]
-				
-				# ---------- Presense ------------
-				with llm_c5:
-					set_files_presence = st.slider( label='Presense Penalty', min_value=-2.0, max_value=2.0,
-						step=0.01, help=cfg.PRESENCE_PENALTY, key='files_presence_penalty' )
-					
-					files_presence = st.session_state[ 'files_presence_penalty' ]
-				
-				# ---------- Frequency ------------
-				with llm_c6:
-					set_files_freq = st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
-						step=0.01, help=cfg.FREQUENCY_PENALTY, key='files_frequency_penalty' )
-					
-					files_fequency = st.session_state[ 'files_frequency_penalty' ]
-				
-				# ---------- Reset Model ------------
-				if st.button( label='Reset', key='reset_files_model', width='stretch' ):
-					for key in [ 'files_model', 'files_temperature', 'files_presence_penalty',
-					             'files_reasoning', 'files_top_percent',
-					             'files_frequency_penalty' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
-			
-			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
-				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-				
-				# ---------- Max Calls ------------
-				with tool_c1:
-					set_files_calls = st.slider( label='Max Calls', min_value=0, max_value=10,
-						value=int( st.session_state.get( 'files_max_calls', 0 ) ), step=1,
-						help=cfg.MAX_TOOL_CALLS, key='files_max_calls' )
-					
-					files_max_calls = st.session_state[ 'files_max_calls' ]
-				
-				# ---------- Choice ------------
-				with tool_c2:
-					choice_options = list( files.choice_options )
-					set_files_choice = st.selectbox( label='Choice', options=choice_options,
-						key='files_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
-					
-					files_tool_choice = st.session_state[ 'files_tool_choice' ]
-				
-				# ---------- Include ------------
-				with tool_c3:
-					include_options = list( files.include_options )
-					set_files_include = st.multiselect( label='Include', options=include_options,
-						key='files_include', help=cfg.INCLUDE, placeholder='Options' )
-					
-					files_include = [ d.strip( ) for d in set_files_include
-					                  if d.strip( ) ]
-					
-					files_include = st.session_state[ 'files_include' ]
-				
-				# ---------- Domains ------------
-				with tool_c4:
-					set_files_domains = st.text_input( label='Allowed Domains', key='files_domains_input',
-						value=','.join( st.session_state.get( 'files_domains', [ ] ) ),
-						help=cfg.ALLOWED_DOMAINS, width='stretch', placeholder='Enter Domains' )
-					
-					files_domains = [ d.strip( ) for d in set_files_domains.split( ',' )
-					                  if d.strip( ) ]
-					
-					st.session_state[ 'files_domains' ] = files_domains
-				
-				# ---------- Tools ------------
-				with tool_c5:
-					tool_options = list( files.tool_options )
-					set_files_tools = st.multiselect( label='Tools', options=tool_options,
-						key='files_tools', help=cfg.TOOLS, placeholder='Options' )
-					
-					files_tools = [ d.strip( ) for d in set_files_tools
-					                if d.strip( ) ]
-					
-					files_tools = st.session_state[ 'files_tools' ]
-				
-				# ---------- Background ------------
-				with tool_c6:
-					set_files_background = st.toggle( label='Background', key='files_background',
-						help=cfg.BACKGROUND_MODE )
-					
-					files_background = st.session_state[ 'files_background' ]
-				
-				# ---------- Reset Tools ------------
-				if st.button( label='Reset', key='reset_files_tools', width='stretch' ):
-					for key in [ 'files_max_calls', 'files_tool_choice', 'files_include',
-					             'files_tools', 'files_domains', 'files_background' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
-			
-			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
-				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-				
-				# ---------- Number ------------
-				with resp_c1:
-					set_files_number = st.slider( label='Number', min_value=0, max_value=50,
-						value=int( st.session_state.get( 'files_number', 0 ) ), step=1,
-						help='Optional. Upper limit on the responses returned by the model',
-						key='files_number' )
-					
-					files_number = st.session_state[ 'files_number' ]
-				
-				# ---------- Stream ------------
-				with resp_c2:
-					set_files_stream = st.toggle( label='Stream', key='files_stream',
-						help=cfg.STREAM )
-					
-					files_stream = st.session_state[ 'files_stream' ]
-				
-				# ---------- Store ------------
-				with resp_c3:
-					set_files_store = st.toggle( label='Store', key='files_store', help=cfg.STORE )
-					
-					files_store = st.session_state[ 'files_store' ]
-				
-				# ---------- Max Tokens ------------
-				with resp_c4:
-					set_files_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
-						value=int( st.session_state.get( 'files_max_tokens', 0 ) ), step=500,
-						help=cfg.MAX_OUTPUT_TOKENS, key='files_max_tokens' )
-					
-					files_tokens = st.session_state[ 'files_max_tokens' ]
-				
-				# ---------- Modalities------------
-				with resp_c5:
-					modality_options = list( files.modality_options )
-					set_files_modalities = st.multiselect( label='Response Modalities', options=modality_options,
-						key='files_modalities', help='Optional. Modality of the response',
-						placeholder='Options' )
-					
-					files_modalities = [ d.strip( ) for d in set_files_modalities
-					                     if d.strip( ) ]
-					
-					files_modalities = st.session_state[ 'files_modalities' ]
-				
-				# ---------- Stops ------------
-				with resp_c6:
-					set_files_stops = st.text_input( label='Stop Sequences', key='files_stops_input',
-						value=','.join( st.session_state.get( 'files_stops', [ ] ) ),
-						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
-					
-					files_stops = [ d.strip( ) for d in set_files_stops.split( ',' )
-					                if d.strip( ) ]
-					
-					st.session_state[ 'files_stops' ] = files_stops
-				
-				# ---------- Reset Reponse ------------
-				if st.button( label='Reset', key='reset_files_response', width='stretch' ):
-					for key in [ 'files_stream', 'files_store', 'files_number', 'files_stops',
-					             'files_tools', 'files_max_tokens', 'files_modalities' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
 		
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
+		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			# ------------------------------------------------------------------
+			# File Management Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='File Management', icon='📂',
+					expanded=False, width='stretch' ):
+				mgmt_c1, mgmt_c2, mgmt_c3, mgmt_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
+				
+				# ---------- Upload Purpose ------------
+				with mgmt_c1:
+					upload_purposes = get_files_upload_purpose_options( files )
+					if st.session_state.get( 'files_purpose' ) not in upload_purposes:
+						st.session_state[ 'files_purpose' ] = 'user_data'
+					
+					files_purpose = st.selectbox( label='Upload Purpose',
+						options=upload_purposes, key='files_purpose',
+						help='Required OpenAI Files API upload purpose.',
+						index=upload_purposes.index(
+							st.session_state.get( 'files_purpose', 'user_data' ) )
+						if st.session_state.get( 'files_purpose' ) in upload_purposes else None,
+						placeholder='Options' )
+				
+				# ---------- List Purpose Filter ------------
+				with mgmt_c2:
+					filter_purposes = get_files_filter_purpose_options( files )
+					if st.session_state.get( 'files_filter_purpose' ) not in filter_purposes:
+						st.session_state[ 'files_filter_purpose' ] = ''
+					
+					files_filter_purpose = st.selectbox( label='List Purpose Filter',
+						options=filter_purposes, key='files_filter_purpose',
+						help='Optional purpose filter used when listing files.',
+						index=filter_purposes.index(
+							st.session_state.get( 'files_filter_purpose', '' ) )
+						if st.session_state.get( 'files_filter_purpose' ) in filter_purposes
+						else None,
+						placeholder='Options' )
+				
+				# ---------- Analysis Model ------------
+				with mgmt_c3:
+					model_options = get_files_model_options( files )
+					if st.session_state.get( 'files_model' ) not in model_options:
+						st.session_state[ 'files_model' ] = ''
+					
+					files_model = st.selectbox( label='Analysis Model',
+						options=model_options, key='files_model',
+						help='Optional model used for selected-file analysis.',
+						index=None, placeholder='Options' )
+				
+				# ---------- File Type ------------
+				with mgmt_c4:
+					files_type = st.selectbox( label='File Type',
+						options=[ '', 'metadata', 'content', 'analysis' ],
+						key='files_type',
+						help='Optional local UI classification for the selected file workflow.',
+						index=None, placeholder='Options' )
+				
+				# ---------- Manual File ID ------------
+				st.text_input( label='Manual File ID',
+					key='files_manual_id',
+					value=st.session_state.get( 'files_manual_id', '' ),
+					help='Optional direct OpenAI file ID. Use this if the file is not in the current table.',
+					width='stretch', placeholder='file-...' )
+				
+				# ---------- Reset ------------
+				st.button( label='Reset Controls', key='reset_files_controls',
+					width='stretch', on_click=reset_files_controls )
+			
+			# ------------------------------------------------------------------
+			# Current File Selection
+			# ------------------------------------------------------------------
+			with st.expander( label='Current File', icon='🧾',
+					expanded=False, width='stretch' ):
+				file_rows = st.session_state.get( 'files_table', [ ] )
+				selection_options = build_file_selection_options( file_rows )
+				selection_labels = [ '' ] + list( selection_options.keys( ) )
+				
+				if st.session_state.get( 'files_selected_label' ) not in selection_labels:
+					st.session_state[ 'files_selected_label' ] = ''
+				
+				selected_label = st.selectbox( label='Selected File',
+					options=selection_labels, key='files_selected_label',
+					help='Select a file from the latest file list. The displayed label maps to the file ID.',
+					index=selection_labels.index(
+						st.session_state.get( 'files_selected_label', '' ) )
+					if st.session_state.get( 'files_selected_label' ) in selection_labels else None,
+					placeholder='Options' )
+				
+				selected_from_table = get_selected_file_id(
+					selected_label=selected_label,
+					options=selection_options )
+				
+				manual_id = st.session_state.get( 'files_manual_id', '' )
+				selected_file_id = selected_from_table or (
+						manual_id.strip( ) if isinstance( manual_id, str ) and manual_id.strip( )
+						else st.session_state.get( 'files_id', '' ))
+				
+				if selected_file_id:
+					st.caption( f'Selected File ID: `{selected_file_id}`' )
+				else:
+					st.caption( 'No file selected.' )
+				
+				st.text_input( label='Selected File ID',
+					value=selected_file_id or '',
+					disabled=True,
+					help='Resolved file ID used by Retrieve, Content, Delete, and Analyze actions.',
+					key='files_selected_id_display',
+					width='stretch' )
+			
+			# ------------------------------------------------------------------
+			# File Actions
+			# ------------------------------------------------------------------
+			with st.expander( label='File Actions', icon='⚙️',
+					expanded=False, width='stretch' ):
+				action_c1, action_c2, action_c3, action_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
+				
+				# ---------- List Files ------------
+				with action_c1:
+					if st.button( 'List Files', key='list_openai_files',
+							width='stretch' ):
+						with st.spinner( 'Listing files…' ):
+							try:
+								filter_value = st.session_state.get( 'files_filter_purpose', '' )
+								rows = run_files_list(
+									files=files,
+									purpose=filter_value if filter_value else None )
+								
+								if len( rows ) > 0:
+									st.success( f'Listed {len( rows )} file(s).' )
+								else:
+									st.info( 'No files were returned.' )
+							except Exception as exc:
+								st.error( f'List files failed: {exc}' )
+				
+				# ---------- Retrieve Metadata ------------
+				with action_c2:
+					if st.button( 'Retrieve Metadata', key='retrieve_openai_file',
+							width='stretch' ):
+						with st.spinner( 'Retrieving file metadata…' ):
+							try:
+								metadata = run_files_retrieve(
+									files=files,
+									file_id=selected_file_id )
+								
+								if metadata:
+									st.success( 'File metadata retrieved.' )
+							except Exception as exc:
+								st.error( f'Retrieve metadata failed: {exc}' )
+				
+				# ---------- Retrieve Content ------------
+				with action_c3:
+					if st.button( 'Retrieve Content', key='retrieve_openai_file_content',
+							width='stretch' ):
+						with st.spinner( 'Retrieving file content…' ):
+							try:
+								content = run_files_extract(
+									files=files,
+									file_id=selected_file_id )
+								
+								if content is not None:
+									st.success( 'File content retrieved.' )
+							except Exception as exc:
+								st.error( f'Retrieve content failed: {exc}' )
+				
+				# ---------- Delete File ------------
+				with action_c4:
+					if st.button( 'Delete File', key='delete_openai_file',
+							width='stretch' ):
+						with st.spinner( 'Deleting file…' ):
+							try:
+								result = run_files_delete(
+									files=files,
+									file_id=selected_file_id )
+								
+								if result.get( 'deleted' ) is True:
+									st.success( 'File deleted.' )
+									try:
+										rows = run_files_list(
+											files=files,
+											purpose=st.session_state.get(
+												'files_filter_purpose' ) or None )
+										st.session_state[ 'files_table' ] = rows
+									except Exception:
+										pass
+							except Exception as exc:
+								st.error( f'Delete file failed: {exc}' )
+				
+				# ---------- Clear Outputs ------------
+				st.button( label='Clear Outputs', key='clear_files_outputs',
+					width='stretch', on_click=clear_files_outputs )
+		
+		# ------------------------------------------------------------------
+		# System Instructions
+		# ------------------------------------------------------------------
+		with st.expander( label='System Instructions', icon='🖥️',
+				expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
 				prompt_names = [ '' ]
 			
+			# ---------- System Instructions ------------
 			with in_left:
-				st.text_area( label='Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='files_system_instructions' )
+				st.text_area( label='Enter Text',
+					height=70, width='stretch',
+					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
+						'Optional instructions used for selected-file analysis.' ),
+					key='files_system_instructions' )
 			
-			def _on_template_change( ) -> None:
-				name = st.session_state.get( 'instructions' )
-				if name and name != 'No Templates Found':
-					text = fetch_prompt_text( cfg.DB_PATH, name )
-					if text is not None:
-						st.session_state[ 'files_system_instructions' ] = text
-			
+			# ---------- Template ------------
 			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=_on_template_change )
-			
-			def _on_clear( ) -> None:
-				st.session_state[ 'files_system_instructions' ] = ''
-				st.session_state[ 'instructions' ] = ''
-			
-			def _on_convert_system_instructions( ) -> None:
-				text = st.session_state.get( 'files_system_instructions', '' )
-				if not isinstance( text, str ) or not text.strip( ):
-					return
-				
-				src = text.strip( )
-				
-				# XML-delimited prompt blocks -> Markdown headings
-				if cfg.XML_BLOCK_PATTERN.search( src ):
-					converted = convert_xml( src )
-				
-				# Markdown headings <-> simple <hN> tags handled by existing helper
-				else:
-					converted = convert_markdown( src )
-				
-				st.session_state[ 'files_system_instructions' ] = converted
+				st.selectbox( label='Use Template',
+					options=prompt_names, index=None,
+					key='instructions',
+					on_change=load_files_instruction_template )
 			
 			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			
+			# ---------- Clear Instructions ------------
 			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+				st.button( label='Clear Instructions',
+					width='stretch', on_click=clear_files_instructions )
 			
+			# ---------- XML <-> Markdown ------------
 			with btn_c2:
-				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=_on_convert_system_instructions )
+				st.button( label='XML <-> Markdown',
+					width='stretch', on_click=convert_files_system_instructions )
 		
-		list_method = None
-		if hasattr( files, 'list' ):
-			list_method = getattr( files, 'list' )
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
-		uploaded_file = st.file_uploader( 'Upload file (server-side via Files API)',
-			type=[ 'pdf', 'txt', 'md', 'docx', 'png', 'jpg', 'jpeg', ], )
+		# ------------------------------------------------------------------
+		# Body: Upload, Table, Details
+		# ------------------------------------------------------------------
+		upload_col, table_col, detail_col = st.columns(
+			[ 0.30, 0.40, 0.30 ], border=True, gap='small' )
 		
-		if uploaded_file:
-			tmp_path = save_temp( uploaded_file )
-			upload_fn = None
-			for name in ('upload_file', 'upload', 'files_upload'):
-				if hasattr( files, name ):
-					upload_fn = getattr( files, name )
-					break
+		# ------------------------------------------------------------------
+		# Upload Column
+		# ------------------------------------------------------------------
+		with upload_col:
+			st.subheader( 'Upload File' )
 			
-			if not upload_fn:
-				st.warning( 'No upload function found on chat object.' )
-			else:
-				with st.spinner( 'Uploading to Files API...' ):
+			uploaded_file = st.file_uploader( label='Select File',
+				accept_multiple_files=False,
+				key='files_upload_file',
+				help='Select a local file to upload to the OpenAI Files API.' )
+			
+			if uploaded_file is not None:
+				st.caption( f"Selected: {getattr( uploaded_file, 'name', 'uploaded file' )}" )
+				st.caption( f"Size: {getattr( uploaded_file, 'size', 0 )} bytes" )
+			
+			if st.button( 'Upload File', key='upload_openai_file',
+					width='stretch' ):
+				with st.spinner( 'Uploading file…' ):
 					try:
-						fid = upload_fn( tmp_path )
-						st.success( f'Uploaded; file id: {fid}' )
-					except Exception as exc:
-						st.error( f"Upload failed: {exc}" )
-		
-		if st.button( 'List Files' ):
-			try:
-				files_resp = list_method( )
-				rows = [ ]
-				files_list = (files_resp.data if hasattr( files_resp, 'data' ) else files_resp
-				if isinstance( files_resp, list ) else [ ])
-				
-				for f in files_list:
-					rows.append( { 'id': str( getattr( f, 'id', "" ) ),
-					               'filename': str( getattr( f, 'filename', "" ) ),
-					               'files_purpose': str( getattr( f, 'files_purpose', "" ) ), } )
-				
-				st.session_state.files_table = rows
-			
-			except Exception as exc:
-				st.session_state.files_table = None
-				st.error( f'List files failed: {exc}' )
-			
-			if 'files_list' in locals( ) and files_list:
-				file_ids = [ r.get( 'filename' ) if isinstance( r, dict )
-				             else getattr( r, 'id', None ) for r in files_list ]
-				sel = st.selectbox( label='Select File to Delete', options=file_ids,
-					index=None, placeholder='Options' )
-				if st.button( 'Delete File' ):
-					del_fn = None
-					for name in ('delete_file', 'delete', 'files_delete'):
-						if hasattr( files, name ):
-							del_fn = getattr( files, name )
-							break
-					if not del_fn:
-						st.warning( 'No delete function found on chat object.' )
-					else:
-						with st.spinner( 'Deleting file...' ):
+						metadata = run_files_upload(
+							files=files,
+							uploaded_file=uploaded_file,
+							purpose=st.session_state.get( 'files_purpose', 'user_data' ) )
+						
+						if metadata.get( 'id' ):
+							st.success( f"Uploaded file: {metadata.get( 'id' )}" )
+							
 							try:
-								res = del_fn( sel )
-								st.success( f'Delete result: {res}' )
-							except Exception as exc:
-								st.error( f'Delete failed: {exc}' )
+								rows = run_files_list(
+									files=files,
+									purpose=st.session_state.get(
+										'files_filter_purpose' ) or None )
+								st.session_state[ 'files_table' ] = rows
+							except Exception:
+								pass
+					except Exception as exc:
+						st.error( f'Upload failed: {exc}' )
 		
-		st.divider( )
+		# ------------------------------------------------------------------
+		# Table Column
+		# ------------------------------------------------------------------
+		with table_col:
+			st.subheader( 'Files' )
+			
+			rows = st.session_state.get( 'files_table', [ ] )
+			render_files_table( rows )
 		
-		# ---------------------------------------------------
-		#                   MESSAGES
-		# ---------------------------------------------------
-		for msg in st.session_state.files_messages:
-			with st.chat_message( msg[ 'role' ] ):
-				st.markdown( msg[ 'content' ] )
+		# ------------------------------------------------------------------
+		# Details Column
+		# ------------------------------------------------------------------
+		with detail_col:
+			st.subheader( 'Selected File Details' )
+			
+			metadata = st.session_state.get( 'files_metadata', { } )
+			if isinstance( metadata, dict ) and len( metadata ) > 0:
+				render_file_metadata( metadata )
+			else:
+				st.info( 'Retrieve metadata to inspect a selected file.' )
+			
+			delete_result = st.session_state.get( 'files_delete_result', { } )
+			if isinstance( delete_result, dict ) and len( delete_result ) > 0:
+				render_file_delete_result( delete_result )
 		
-		if prompt := st.chat_input( 'Ask a question about the files' ):
-			st.session_state.files_messages.append( { 'role': 'user', 'content': prompt } )
-			response = route_document_query( prompt )
-			st.session_state.files_messages.append( { 'role': 'assistant', 'content': response } )
-			st.rerun( )
+		# ------------------------------------------------------------------
+		# Content Output
+		# ------------------------------------------------------------------
+		content_value = st.session_state.get( 'files_content', '' )
+		content_bytes = st.session_state.get( 'files_content_bytes', None )
 		
-		# --------  Reset Button
-		if st.button( 'Clear Messages' ):
-			reset_state( )
-			st.rerun( )
+		if isinstance( content_bytes, bytes ) and len( content_bytes ) > 0:
+			with st.expander( label='File Content', icon='📄',
+					expanded=False, width='stretch' ):
+				render_file_content( content_bytes )
+		elif isinstance( content_value, str ) and content_value.strip( ):
+			with st.expander( label='File Content', icon='📄',
+					expanded=False, width='stretch' ):
+				render_file_content( content_value )
+		
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Messages
+		# ------------------------------------------------------------------
+		if st.session_state.get( 'files_messages' ) is not None:
+			for msg in st.session_state.files_messages:
+				if not isinstance( msg, dict ):
+					continue
+				
+				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
+				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
+					st.markdown( msg.get( 'content', '' ) )
+		
+		prompt = st.chat_input( 'Ask a question about the selected file …' )
+		if prompt is not None and str( prompt ).strip( ):
+			prompt = str( prompt ).strip( )
+			st.session_state.files_messages.append(
+				{
+						'role': 'user',
+						'content': prompt,
+				} )
+			
+			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
+				with st.spinner( 'Analyzing selected file…' ):
+					try:
+						# Re-resolve the selected file ID at execution time to avoid stale locals.
+						current_rows = st.session_state.get( 'files_table', [ ] )
+						current_options = build_file_selection_options( current_rows )
+						current_label = st.session_state.get( 'files_selected_label', '' )
+						current_selected = get_selected_file_id(
+							selected_label=current_label,
+							options=current_options )
+						
+						current_manual = st.session_state.get( 'files_manual_id', '' )
+						current_file_id = current_selected or (
+								current_manual.strip( ) if isinstance( current_manual, str )
+								                           and current_manual.strip( ) else st.session_state.get(
+									'files_id', '' ))
+						
+						instruction_text = st.session_state.get( 'files_system_instructions', '' )
+						if isinstance( instruction_text, str ) and instruction_text.strip( ):
+							analysis_prompt = f'{instruction_text.strip( )}\n\nUser Question: {prompt}'
+						else:
+							analysis_prompt = prompt
+						
+						answer = run_files_analysis(
+							files=files,
+							file_id=current_file_id,
+							prompt=analysis_prompt,
+							model=st.session_state.get( 'files_model' ) or 'gpt-4o-mini' )
+						
+						if isinstance( answer, str ) and answer.strip( ):
+							st.markdown( answer )
+							st.session_state.files_messages.append(
+								{
+										'role': 'assistant',
+										'content': answer.strip( ),
+								} )
+							st.session_state[ 'files_last_answer' ] = answer.strip( )
+							
+							try:
+								update_token_counters( getattr( files, 'response', None ) )
+							except Exception:
+								pass
+						else:
+							message = 'No file analysis response was returned.'
+							st.warning( message )
+							st.session_state.files_messages.append(
+								{
+										'role': 'assistant',
+										'content': message,
+								} )
+					except Exception as exc:
+						st.error( f'File analysis failed: {exc}' )
+		
+		# ------------------------------------------------------------------
+		# Last Analysis Output
+		# ------------------------------------------------------------------
+		last_answer = st.session_state.get( 'files_last_answer', '' )
+		if isinstance( last_answer, str ) and last_answer.strip( ):
+			with st.expander( label='Last File Analysis', icon='🧠',
+					expanded=False, width='stretch' ):
+				st.markdown( last_answer )
+		
+		# ------------------------------------------------------------------
+		# Reset Buttons
+		# ------------------------------------------------------------------
+		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
+		
+		with reset_c1:
+			if st.button( 'Clear Messages', key='clear_files_messages',
+					width='stretch', on_click=clear_files_messages ):
+				st.rerun( )
+		
+		with reset_c2:
+			if st.button( 'Clear Outputs', key='clear_files_mode_outputs',
+					width='stretch', on_click=clear_files_outputs ):
+				st.rerun( )
+		
+		with reset_c3:
+			if st.button( 'Reset All', key='reset_files_all',
+					width='stretch', on_click=reset_files_all ):
+				st.rerun( )
 
 # ======================================================================================
 # VECTORSTORES MODE
@@ -9245,11 +10253,11 @@ st.markdown(
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		background-color: rgba(17, 17, 17, 0.95);
-		border-top: 1px solid #4f4c4c;
+		background-color: rgba(20, 20, 20, 0.95);
+		border-top: 1px solid #5A5A5A;
 		padding: 10px 16px;
 		font-size: 0.80rem;
-		color: #4978A6;
+		color: #5181B0;
 		z-index: 1000;
 	}
 	.boo-status-inner {
