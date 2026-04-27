@@ -940,7 +940,7 @@ def load_embedder( ) -> SentenceTransformer:
 	return SentenceTransformer( 'all-MiniLM-L6-v2' )
 
 # ======================================================================================
-# Utilities
+# Utilities Section
 # ======================================================================================
 
 def extract_usage( resp: Any ) -> Dict[ str, int ]:
@@ -1013,7 +1013,7 @@ def display_value( val: Any ) -> str:
 	except Exception:
 		return '—'
 
-# ----------- RESPONSE/CHAT UTILITIES ------------
+# ----------- RESPONSE/CHAT API UTILITIES ------------
 
 def extract_response_text( response: object ) -> str:
 	"""
@@ -2032,7 +2032,7 @@ def reset_text_api_state_controls( ) -> None:
 		if key in st.session_state:
 			del st.session_state[ key ]
 
-# ------------ IMAGE UTILITIES -----------
+# ------------ IMAGE API UTILITIES -----------
 
 def clear_image_messages( ) -> None:
 	"""
@@ -2441,7 +2441,7 @@ def render_image_output( image_result: str | bytes | list[ str | bytes ] | None,
 	
 	return rendered
 
-# ------------- EMBEDDING UTILITIES ---------------------
+# ------------- EMBEDDINGS API UTILITIES ---------------------
 
 def ensure_embeddings_mode_state( ) -> None:
 	"""
@@ -3498,7 +3498,7 @@ def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 	
 	return '\n\n'.join( prompt_parts ).strip( )
 
-# ------------ FILES MODE UTILITIES -----------------
+# ------------ FILES API UTILITIES -----------------
 
 def ensure_files_mode_state( ) -> None:
 	"""
@@ -4396,6 +4396,1538 @@ def run_files_analysis( files: Files, file_id: str | None, prompt: str | None,
 		return response.strip( )
 	
 	return response
+
+# ------------ VECTOR STORES UTILITIES -----------------
+
+def ensure_vectorstores_mode_state( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Ensure Vector Stores mode session-state keys exist before widget instantiation.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if 'stores_model' not in st.session_state:
+		st.session_state[ 'stores_model' ] = ''
+	
+	if 'stores_id' not in st.session_state:
+		st.session_state[ 'stores_id' ] = ''
+	
+	if 'stores_manual_id' not in st.session_state:
+		st.session_state[ 'stores_manual_id' ] = ''
+	
+	if 'stores_selected_label' not in st.session_state:
+		st.session_state[ 'stores_selected_label' ] = ''
+	
+	if 'stores_name' not in st.session_state:
+		st.session_state[ 'stores_name' ] = ''
+	
+	if 'stores_description' not in st.session_state:
+		st.session_state[ 'stores_description' ] = ''
+	
+	if 'stores_metadata' not in st.session_state:
+		st.session_state[ 'stores_metadata' ] = ''
+	
+	if 'stores_expires_days' not in st.session_state:
+		st.session_state[ 'stores_expires_days' ] = 0
+	
+	if 'stores_expires_anchor' not in st.session_state:
+		st.session_state[ 'stores_expires_anchor' ] = 'last_active_at'
+	
+	if 'stores_file_ids' not in st.session_state:
+		st.session_state[ 'stores_file_ids' ] = ''
+	
+	if 'stores_chunking_strategy' not in st.session_state:
+		st.session_state[ 'stores_chunking_strategy' ] = 'auto'
+	
+	if 'stores_chunk_size' not in st.session_state:
+		st.session_state[ 'stores_chunk_size' ] = 800
+	
+	if 'stores_chunk_overlap' not in st.session_state:
+		st.session_state[ 'stores_chunk_overlap' ] = 400
+	
+	if 'stores_table' not in st.session_state:
+		st.session_state[ 'stores_table' ] = [ ]
+	
+	if 'stores_df' not in st.session_state:
+		st.session_state[ 'stores_df' ] = pd.DataFrame( )
+	
+	if 'stores_store_metadata' not in st.session_state:
+		st.session_state[ 'stores_store_metadata' ] = { }
+	
+	if 'stores_files_table' not in st.session_state:
+		st.session_state[ 'stores_files_table' ] = [ ]
+	
+	if 'stores_files_df' not in st.session_state:
+		st.session_state[ 'stores_files_df' ] = pd.DataFrame( )
+	
+	if 'stores_file_id' not in st.session_state:
+		st.session_state[ 'stores_file_id' ] = ''
+	
+	if 'stores_file_selected_label' not in st.session_state:
+		st.session_state[ 'stores_file_selected_label' ] = ''
+	
+	if 'stores_file_attributes' not in st.session_state:
+		st.session_state[ 'stores_file_attributes' ] = ''
+	
+	if 'stores_batch_id' not in st.session_state:
+		st.session_state[ 'stores_batch_id' ] = ''
+	
+	if 'stores_batch_result' not in st.session_state:
+		st.session_state[ 'stores_batch_result' ] = { }
+	
+	if 'stores_search_query' not in st.session_state:
+		st.session_state[ 'stores_search_query' ] = ''
+	
+	if 'stores_search_results' not in st.session_state:
+		st.session_state[ 'stores_search_results' ] = [ ]
+	
+	if 'stores_max_results' not in st.session_state:
+		st.session_state[ 'stores_max_results' ] = 10
+	
+	if 'stores_ranker' not in st.session_state:
+		st.session_state[ 'stores_ranker' ] = 'auto'
+	
+	if 'stores_score_threshold' not in st.session_state:
+		st.session_state[ 'stores_score_threshold' ] = 0.0
+	
+	if 'stores_rewrite_query' not in st.session_state:
+		st.session_state[ 'stores_rewrite_query' ] = False
+	
+	if 'stores_last_answer' not in st.session_state:
+		st.session_state[ 'stores_last_answer' ] = ''
+	
+	if 'stores_system_instructions' not in st.session_state:
+		st.session_state[ 'stores_system_instructions' ] = ''
+	
+	if 'stores_messages' not in st.session_state:
+		st.session_state.stores_messages = [ ]
+	
+	if not isinstance( st.session_state.get( 'stores_messages' ), list ):
+		st.session_state.stores_messages = [ ]
+
+def get_vector_store_model_options( vector: VectorStores ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return model options for Vector Stores answer workflows.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Model option names.
+		
+	"""
+	options = getattr( vector, 'model_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return [ '' ] + options
+	
+	return [
+			'',
+			'gpt-5-mini',
+			'gpt-5-nano',
+			'gpt-4.1-mini',
+			'gpt-4.1-nano',
+			'gpt-4o-mini',
+	]
+
+def get_vector_store_ranker_options( vector: VectorStores ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return native vector store search ranker options.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Ranker option names.
+		
+	"""
+	options = getattr( vector, 'ranker_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return options
+	
+	return [
+			'auto',
+			'default-2024-11-15',
+	]
+
+def get_vector_store_chunking_options( vector: VectorStores ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return vector store chunking strategy options.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		Returns:
+		--------
+		list[str]
+			Chunking strategy option names.
+		
+	"""
+	options = getattr( vector, 'chunking_strategy_options', None )
+	if isinstance( options, list ) and len( options ) > 0:
+		return options
+	
+	return [
+			'auto',
+			'static',
+	]
+
+def parse_vector_store_file_ids( value: str | list[ str ] | None ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Parse comma-delimited or list-based OpenAI file IDs for vector store workflows.
+		
+		Parameters:
+		-----------
+		value: str | list[str] | None
+			Comma-delimited file IDs or a list of file IDs.
+		
+		Returns:
+		--------
+		list[str]
+			Clean file IDs.
+		
+	"""
+	if value is None:
+		return [ ]
+	
+	if isinstance( value, list ):
+		return [ str( item ).strip( ) for item in value if str( item ).strip( ) ]
+	
+	if not isinstance( value, str ) or not value.strip( ):
+		return [ ]
+	
+	return [ item.strip( ) for item in value.split( ',' ) if item.strip( ) ]
+
+def parse_vector_store_json( value: str | None, label: str = 'JSON' ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Parse optional JSON text into a dictionary for metadata, attributes, or filters.
+		
+		Parameters:
+		-----------
+		value: str | None
+			Optional JSON object text.
+		
+		label: str
+			Display label used in warning messages.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Parsed dictionary or empty dictionary.
+		
+	"""
+	if not isinstance( value, str ) or not value.strip( ):
+		return { }
+	
+	try:
+		parsed = json.loads( value )
+	except Exception as exc:
+		st.warning( f'{label} could not be parsed and will be omitted: {exc}' )
+		return { }
+	
+	if not isinstance( parsed, dict ):
+		st.warning( f'{label} must be a JSON object. It will be omitted.' )
+		return { }
+	
+	return parsed
+
+def build_vector_store_expires_after_from_state( vector: VectorStores ) -> dict[ str, Any ] | None:
+	"""
+	
+		Purpose:
+		--------
+		Build a vector store expiration policy from Streamlit session state.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		Returns:
+		--------
+		dict[str, Any] | None
+			Expiration policy or None.
+		
+	"""
+	days = st.session_state.get( 'stores_expires_days', 0 )
+	anchor = st.session_state.get( 'stores_expires_anchor', 'last_active_at' )
+	
+	try:
+		day_value = int( days )
+	except Exception:
+		day_value = 0
+	
+	if day_value <= 0:
+		return None
+	
+	return vector.build_expires_after( anchor=anchor, days=day_value )
+
+def build_vector_store_chunking_strategy_from_state( vector: VectorStores ) -> Dict[  str, Any ] | None:
+	"""
+	
+		Purpose:
+		--------
+		Build a vector store chunking strategy from Streamlit session state.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		Returns:
+		--------
+		dict[str, Any] | None
+			Chunking strategy or None.
+		
+	"""
+	strategy = st.session_state.get( 'stores_chunking_strategy', 'auto' )
+	
+	if not isinstance( strategy, str ) or not strategy.strip( ):
+		return None
+	
+	if strategy == 'auto':
+		return vector.build_chunking_strategy( strategy='auto' )
+	
+	return vector.build_chunking_strategy(
+		strategy='static',
+		max_chunk_size_tokens=st.session_state.get( 'stores_chunk_size', 800 ),
+		chunk_overlap_tokens=st.session_state.get( 'stores_chunk_overlap', 400 ) )
+
+def build_vector_store_ranking_options_from_state( ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Build native vector store search ranking options from Streamlit session state.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Ranking options dictionary.
+		
+	"""
+	ranker = st.session_state.get( 'stores_ranker', 'auto' )
+	score_threshold = st.session_state.get( 'stores_score_threshold', 0.0 )
+	options: dict[ str, Any ] = { }
+	
+	if isinstance( ranker, str ) and ranker.strip( ):
+		options[ 'ranker' ] = ranker.strip( )
+	
+	try:
+		threshold = float( score_threshold )
+	except Exception:
+		threshold = 0.0
+	
+	if threshold > 0.0:
+		options[ 'score_threshold' ] = threshold
+	
+	return options
+
+def normalize_vector_store_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Normalize vector store rows returned from the wrapper or API.
+		
+		Parameters:
+		-----------
+		rows: Any
+			Vector store rows or response object.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Normalized vector store rows.
+		
+	"""
+	if rows is None:
+		return [ ]
+	
+	if isinstance( rows, dict ) and isinstance( rows.get( 'data' ), list ):
+		items = rows.get( 'data', [ ] )
+	elif isinstance( rows, list ):
+		items = rows
+	else:
+		items = getattr( rows, 'data', [ ] )
+	
+	normalized: list[ dict[ str, Any ] ] = [ ]
+	for item in items:
+		if isinstance( item, dict ):
+			source = item
+		elif hasattr( item, 'model_dump' ):
+			try:
+				source = item.model_dump( )
+			except Exception:
+				source = { }
+		else:
+			source = {
+					'id': getattr( item, 'id', None ),
+					'name': getattr( item, 'name', None ),
+					'description': getattr( item, 'description', None ),
+					'created_at': getattr( item, 'created_at', None ),
+					'object': getattr( item, 'object', None ),
+					'usage_bytes': getattr( item, 'usage_bytes', None ),
+					'file_counts': getattr( item, 'file_counts', None ),
+					'status': getattr( item, 'status', None ),
+					'expires_at': getattr( item, 'expires_at', None ),
+					'last_active_at': getattr( item, 'last_active_at', None ),
+			}
+		
+		store_id = source.get( 'id' )
+		if not store_id:
+			continue
+		
+		normalized.append(
+			{
+					'id': store_id,
+					'name': source.get( 'name', '' ),
+					'description': source.get( 'description', '' ),
+					'status': source.get( 'status', '' ),
+					'usage_bytes': source.get( 'usage_bytes', 0 ),
+					'file_counts': source.get( 'file_counts', { } ),
+					'created_at': source.get( 'created_at', '' ),
+					'expires_at': source.get( 'expires_at', '' ),
+					'last_active_at': source.get( 'last_active_at', '' ),
+					'object': source.get( 'object', '' ),
+					'metadata': source.get( 'metadata', { } ),
+			} )
+	
+	return normalized
+
+def normalize_vector_store_file_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Normalize vector store file rows returned from the wrapper or API.
+		
+		Parameters:
+		-----------
+		rows: Any
+			Vector store file rows or response object.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Normalized vector store file rows.
+		
+	"""
+	if rows is None:
+		return [ ]
+	
+	if isinstance( rows, dict ) and isinstance( rows.get( 'data' ), list ):
+		items = rows.get( 'data', [ ] )
+	elif isinstance( rows, list ):
+		items = rows
+	else:
+		items = getattr( rows, 'data', [ ] )
+	
+	normalized: list[ dict[ str, Any ] ] = [ ]
+	for item in items:
+		if isinstance( item, dict ):
+			source = item
+		elif hasattr( item, 'model_dump' ):
+			try:
+				source = item.model_dump( )
+			except Exception:
+				source = { }
+		else:
+			source = {
+					'id': getattr( item, 'id', None ),
+					'object': getattr( item, 'object', None ),
+					'created_at': getattr( item, 'created_at', None ),
+					'vector_store_id': getattr( item, 'vector_store_id', None ),
+					'status': getattr( item, 'status', None ),
+					'last_error': getattr( item, 'last_error', None ),
+					'usage_bytes': getattr( item, 'usage_bytes', None ),
+					'attributes': getattr( item, 'attributes', None ),
+			}
+		
+		file_id = source.get( 'id' )
+		if not file_id:
+			continue
+		
+		normalized.append(
+			{
+					'id': file_id,
+					'vector_store_id': source.get( 'vector_store_id', '' ),
+					'status': source.get( 'status', '' ),
+					'usage_bytes': source.get( 'usage_bytes', 0 ),
+					'created_at': source.get( 'created_at', '' ),
+					'last_error': source.get( 'last_error', '' ),
+					'attributes': source.get( 'attributes', { } ),
+					'object': source.get( 'object', '' ),
+					'chunking_strategy': source.get( 'chunking_strategy', { } ),
+			} )
+	
+	return normalized
+
+def build_vector_stores_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
+	"""
+	
+		Purpose:
+		--------
+		Build a display-ready DataFrame from normalized vector store rows.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized vector store rows.
+		
+		Returns:
+		--------
+		pd.DataFrame
+			Display-ready vector stores table.
+		
+	"""
+	if not isinstance( rows, list ) or len( rows ) == 0:
+		return pd.DataFrame( )
+	
+	df_stores = pd.DataFrame( rows )
+	preferred = [
+			'id',
+			'name',
+			'description',
+			'status',
+			'usage_bytes',
+			'file_counts',
+			'created_at',
+			'expires_at',
+			'last_active_at',
+			'object',
+			'metadata',
+	]
+	
+	columns = [ column for column in preferred if column in df_stores.columns ]
+	extras = [ column for column in df_stores.columns if column not in columns ]
+	return df_stores[ columns + extras ]
+
+def build_vector_store_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
+	"""
+	
+		Purpose:
+		--------
+		Build a display-ready DataFrame from normalized vector store file rows.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized vector store file rows.
+		
+		Returns:
+		--------
+		pd.DataFrame
+			Display-ready vector store files table.
+		
+	"""
+	if not isinstance( rows, list ) or len( rows ) == 0:
+		return pd.DataFrame( )
+	
+	df_files = pd.DataFrame( rows )
+	preferred = [
+			'id',
+			'vector_store_id',
+			'status',
+			'usage_bytes',
+			'created_at',
+			'last_error',
+			'attributes',
+			'object',
+			'chunking_strategy',
+	]
+	
+	columns = [ column for column in preferred if column in df_files.columns ]
+	extras = [ column for column in df_files.columns if column not in columns ]
+	return df_files[ columns + extras ]
+
+def build_vector_store_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
+	"""
+	
+		Purpose:
+		--------
+		Build vector store display labels mapped to vector store IDs.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized vector store rows.
+		
+		Returns:
+		--------
+		dict[str, str]
+			Display label to vector store ID mapping.
+		
+	"""
+	options: dict[ str, str ] = { }
+	
+	if not isinstance( rows, list ):
+		return options
+	
+	for row in rows:
+		if not isinstance( row, dict ):
+			continue
+		
+		store_id = row.get( 'id' )
+		if not isinstance( store_id, str ) or not store_id.strip( ):
+			continue
+		
+		name = row.get( 'name' ) or 'Unnamed store'
+		status = row.get( 'status' ) or 'unknown'
+		label = f'{name} — {store_id} — {status}'
+		options[ label ] = store_id
+	
+	return options
+
+def get_selected_vector_store_id( selected_label: str | None,
+		options: dict[ str, str ] | None = None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Return the selected vector store ID from a display label or direct ID.
+		
+		Parameters:
+		-----------
+		selected_label: str | None
+			Selected display label or raw vector store ID.
+		
+		options: dict[str, str] | None
+			Display label to vector store ID mapping.
+		
+		Returns:
+		--------
+		str | None
+			Selected vector store ID.
+		
+	"""
+	if not isinstance( selected_label, str ) or not selected_label.strip( ):
+		return None
+	
+	value = selected_label.strip( )
+	
+	if isinstance( options, dict ) and value in options:
+		return options[ value ]
+	
+	if value.startswith( 'vs_' ):
+		return value
+	
+	return None
+
+def build_vector_store_file_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
+	"""
+	
+		Purpose:
+		--------
+		Build vector store file display labels mapped to OpenAI file IDs.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized vector store file rows.
+		
+		Returns:
+		--------
+		dict[str, str]
+			Display label to file ID mapping.
+		
+	"""
+	options: dict[ str, str ] = { }
+	
+	if not isinstance( rows, list ):
+		return options
+	
+	for row in rows:
+		if not isinstance( row, dict ):
+			continue
+		
+		file_id = row.get( 'id' )
+		if not isinstance( file_id, str ) or not file_id.strip( ):
+			continue
+		
+		status = row.get( 'status' ) or 'unknown'
+		label = f'{file_id} — {status}'
+		options[ label ] = file_id
+	
+	return options
+
+def get_selected_vector_store_file_id( selected_label: str | None,
+		options: dict[ str, str ] | None = None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Return the selected vector store file ID from a display label or direct ID.
+		
+		Parameters:
+		-----------
+		selected_label: str | None
+			Selected display label or raw file ID.
+		
+		options: dict[str, str] | None
+			Display label to file ID mapping.
+		
+		Returns:
+		--------
+		str | None
+			Selected OpenAI file ID.
+		
+	"""
+	if not isinstance( selected_label, str ) or not selected_label.strip( ):
+		return None
+	
+	value = selected_label.strip( )
+	
+	if isinstance( options, dict ) and value in options:
+		return options[ value ]
+	
+	if value.startswith( 'file-' ):
+		return value
+	
+	return None
+
+def render_vector_stores_table( rows: list[ dict[ str, Any ] ] ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render vector stores as a Streamlit data editor.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized vector store rows.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	df_stores = build_vector_stores_dataframe( rows )
+	st.session_state[ 'stores_df' ] = df_stores
+	
+	if df_stores.empty:
+		st.info( 'No vector stores available.' )
+		return
+	
+	st.data_editor( df_stores, use_container_width=True, hide_index=True )
+
+def render_vector_store_metadata( metadata: dict[ str, Any ] | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render selected vector store metadata.
+		
+		Parameters:
+		-----------
+		metadata: dict[str, Any] | None
+			Normalized vector store metadata.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if not isinstance( metadata, dict ) or len( metadata ) == 0:
+		st.info( 'No vector store metadata available.' )
+		return
+	
+	m1, m2, m3, m4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+		border=True, gap='xxsmall' )
+	
+	with m1:
+		st.metric( 'Status', metadata.get( 'status', '—' ) or '—' )
+	
+	with m2:
+		st.metric( 'Usage Bytes', metadata.get( 'usage_bytes', 0 ) or 0 )
+	
+	with m3:
+		st.metric( 'Object', metadata.get( 'object', '—' ) or '—' )
+	
+	with m4:
+		file_counts = metadata.get( 'file_counts', { } )
+		if isinstance( file_counts, dict ):
+			st.metric( 'Files', file_counts.get( 'total', 0 ) or 0 )
+		else:
+			st.metric( 'Files', '—' )
+	
+	st.json( metadata )
+
+def render_vector_store_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render vector store files as a Streamlit data editor.
+		
+		Parameters:
+		-----------
+		rows: list[dict[str, Any]]
+			Normalized vector store file rows.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	df_files = build_vector_store_files_dataframe( rows )
+	st.session_state[ 'stores_files_df' ] = df_files
+	
+	if df_files.empty:
+		st.info( 'No vector store files available.' )
+		return
+	
+	st.data_editor( df_files, use_container_width=True, hide_index=True )
+
+def render_vector_store_search_results( results: list[ dict[ str, Any ] ] ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render native vector store search results.
+		
+		Parameters:
+		-----------
+		results: list[dict[str, Any]]
+			Normalized search result rows.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if not isinstance( results, list ) or len( results ) == 0:
+		st.info( 'No search results available.' )
+		return
+	
+	df_results = pd.DataFrame( results )
+	st.data_editor( df_results, use_container_width=True, hide_index=True )
+
+def render_vector_store_batch_result( result: dict[ str, Any ] | None ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render vector store file batch metadata.
+		
+		Parameters:
+		-----------
+		result: dict[str, Any] | None
+			Normalized file batch metadata.
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if not isinstance( result, dict ) or len( result ) == 0:
+		st.info( 'No batch result available.' )
+		return
+	
+	st.json( result )
+
+def clear_vector_store_outputs( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Vector Stores mode output state while preserving controls.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'stores_store_metadata' ] = { }
+	st.session_state[ 'stores_files_table' ] = [ ]
+	st.session_state[ 'stores_files_df' ] = pd.DataFrame( )
+	st.session_state[ 'stores_batch_result' ] = { }
+	st.session_state[ 'stores_search_results' ] = [ ]
+	st.session_state[ 'stores_last_answer' ] = ''
+
+def clear_vector_store_messages( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Vector Stores mode chat messages.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state.stores_messages = [ ]
+
+def reset_vector_store_controls( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Vector Stores mode controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'stores_model', 'stores_id', 'stores_manual_id',
+	             'stores_selected_label', 'stores_name', 'stores_description',
+	             'stores_metadata', 'stores_expires_days', 'stores_expires_anchor',
+	             'stores_file_ids', 'stores_chunking_strategy', 'stores_chunk_size',
+	             'stores_chunk_overlap', 'stores_file_id', 'stores_file_selected_label',
+	             'stores_file_attributes', 'stores_batch_id', 'stores_search_query',
+	             'stores_max_results', 'stores_ranker', 'stores_score_threshold',
+	             'stores_rewrite_query' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+def reset_vector_store_all( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Vector Stores mode controls, outputs, tables, and messages.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	reset_vector_store_controls( )
+	clear_vector_store_outputs( )
+	st.session_state[ 'stores_table' ] = [ ]
+	st.session_state[ 'stores_df' ] = pd.DataFrame( )
+	st.session_state.stores_messages = [ ]
+
+def clear_vector_store_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Vector Stores mode system instructions and selected prompt template.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'stores_system_instructions' ] = ''
+	st.session_state[ 'instructions' ] = ''
+
+def load_vector_store_instruction_template( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Load the selected prompt template into Vector Stores mode system instructions.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	name = st.session_state.get( 'instructions' )
+	if name and name != 'No Templates Found':
+		text = fetch_prompt_text( cfg.DB_PATH, name )
+		if text is not None:
+			st.session_state[ 'stores_system_instructions' ] = text
+
+def convert_vector_store_system_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Convert Vector Stores mode system instructions between XML-like delimiters and
+		Markdown headings.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	text = st.session_state.get( 'stores_system_instructions', '' )
+	if not isinstance( text, str ) or not text.strip( ):
+		return
+	
+	source = text.strip( )
+	if cfg.XML_BLOCK_PATTERN.search( source ):
+		converted = convert_xml( source )
+	else:
+		converted = convert_markdown( source )
+	
+	st.session_state[ 'stores_system_instructions' ] = converted
+
+def run_vector_store_create( vector: VectorStores ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Create a vector store through the VectorStores wrapper.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized vector store metadata.
+		
+	"""
+	name = st.session_state.get( 'stores_name', '' )
+	if not isinstance( name, str ) or not name.strip( ):
+		st.warning( 'Enter a vector store name before creating a store.' )
+		return { }
+	
+	metadata = parse_vector_store_json(
+		st.session_state.get( 'stores_metadata', '' ),
+		label='Vector store metadata' )
+	
+	file_ids = parse_vector_store_file_ids(
+		st.session_state.get( 'stores_file_ids', '' ) )
+	
+	result = vector.create(
+		name=name.strip( ),
+		description=st.session_state.get( 'stores_description', '' ) or None,
+		metadata=metadata,
+		expires_after=build_vector_store_expires_after_from_state( vector ),
+		file_ids=file_ids,
+		chunking_strategy=build_vector_store_chunking_strategy_from_state( vector ) )
+	
+	result = result if isinstance( result, dict ) else { }
+	
+	if result.get( 'id' ):
+		st.session_state[ 'stores_id' ] = result.get( 'id' )
+		st.session_state[ 'stores_store_metadata' ] = result
+	
+	return result
+
+def run_vector_store_list( vector: VectorStores ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		List vector stores through the VectorStores wrapper and store normalized rows.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Normalized vector store rows.
+		
+	"""
+	rows = vector.list_stores( limit=100, order='desc' )
+	rows = normalize_vector_store_rows( rows )
+	st.session_state[ 'stores_table' ] = rows
+	st.session_state[ 'stores_df' ] = build_vector_stores_dataframe( rows )
+	return rows
+
+def run_vector_store_retrieve( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Retrieve vector store metadata through the VectorStores wrapper.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized vector store metadata.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before retrieving metadata.' )
+		return { }
+	
+	result = vector.retrieve( store_id=store_id.strip( ) )
+	result = result if isinstance( result, dict ) else { }
+	st.session_state[ 'stores_store_metadata' ] = result
+	st.session_state[ 'stores_id' ] = store_id.strip( )
+	return result
+
+def run_vector_store_update( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Update vector store metadata through the VectorStores wrapper.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized vector store metadata.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before updating.' )
+		return { }
+	
+	metadata = parse_vector_store_json(
+		st.session_state.get( 'stores_metadata', '' ),
+		label='Vector store metadata' )
+	
+	result = vector.update(
+		store_id=store_id.strip( ),
+		name=st.session_state.get( 'stores_name', '' ) or None,
+		description=st.session_state.get( 'stores_description', '' ) or None,
+		metadata=metadata,
+		expires_after=build_vector_store_expires_after_from_state( vector ) )
+	
+	result = result if isinstance( result, dict ) else { }
+	st.session_state[ 'stores_store_metadata' ] = result
+	return result
+
+def run_vector_store_delete( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Delete a vector store through the VectorStores wrapper.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized delete result.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before deleting.' )
+		return { }
+	
+	result = vector.delete( store_id=store_id.strip( ) )
+	result = result if isinstance( result, dict ) else { }
+	
+	if result.get( 'deleted' ) is True:
+		st.session_state[ 'stores_id' ] = ''
+		st.session_state[ 'stores_store_metadata' ] = { }
+	
+	return result
+
+def run_vector_store_attach_file( vector: VectorStores,
+		store_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Attach a file to a vector store through the VectorStores wrapper.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized vector store file metadata.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before attaching a file.' )
+		return { }
+	
+	file_id = st.session_state.get( 'stores_file_id', '' )
+	if not isinstance( file_id, str ) or not file_id.strip( ):
+		st.warning( 'Enter an OpenAI file ID before attaching a file.' )
+		return { }
+	
+	attributes = parse_vector_store_json(
+		st.session_state.get( 'stores_file_attributes', '' ),
+		label='Vector store file attributes' )
+	
+	result = vector.attach_file(
+		store_id=store_id.strip( ),
+		file_id=file_id.strip( ),
+		attributes=attributes,
+		chunking_strategy=build_vector_store_chunking_strategy_from_state( vector ) )
+	
+	return result if isinstance( result, dict ) else { }
+
+def run_vector_store_list_files( vector: VectorStores,
+		store_id: str | None ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		List files attached to a vector store.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Normalized vector store file rows.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before listing files.' )
+		return [ ]
+	
+	rows = vector.list_files( store_id=store_id.strip( ), limit=100, order='desc' )
+	rows = normalize_vector_store_file_rows( rows )
+	st.session_state[ 'stores_files_table' ] = rows
+	st.session_state[ 'stores_files_df' ] = build_vector_store_files_dataframe( rows )
+	return rows
+
+def run_vector_store_delete_file( vector: VectorStores, store_id: str | None,
+		file_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Delete a file from a vector store.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		file_id: str | None
+			Selected OpenAI file ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized delete result.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before deleting a file.' )
+		return { }
+	
+	if not isinstance( file_id, str ) or not file_id.strip( ):
+		st.warning( 'Select or enter a file ID before deleting it from the vector store.' )
+		return { }
+	
+	result = vector.delete_file( store_id=store_id.strip( ), file_id=file_id.strip( ) )
+	return result if isinstance( result, dict ) else { }
+
+def run_vector_store_create_batch( vector: VectorStores,
+		store_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Create a vector store file batch from comma-delimited file IDs.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized file batch metadata.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before creating a batch.' )
+		return { }
+	
+	file_ids = parse_vector_store_file_ids( st.session_state.get( 'stores_file_ids', '' ) )
+	if len( file_ids ) == 0:
+		st.warning( 'Enter one or more OpenAI file IDs before creating a batch.' )
+		return { }
+	
+	attributes = parse_vector_store_json(
+		st.session_state.get( 'stores_file_attributes', '' ),
+		label='Vector store file attributes' )
+	
+	result = vector.create_file_batch(
+		store_id=store_id.strip( ),
+		file_ids=file_ids,
+		attributes=attributes,
+		chunking_strategy=build_vector_store_chunking_strategy_from_state( vector ) )
+	
+	result = result if isinstance( result, dict ) else { }
+	st.session_state[ 'stores_batch_result' ] = result
+	
+	if result.get( 'id' ):
+		st.session_state[ 'stores_batch_id' ] = result.get( 'id' )
+	
+	return result
+
+def run_vector_store_retrieve_batch( vector: VectorStores,
+		store_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Retrieve vector store file batch metadata.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized file batch metadata.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before retrieving a batch.' )
+		return { }
+	
+	batch_id = st.session_state.get( 'stores_batch_id', '' )
+	if not isinstance( batch_id, str ) or not batch_id.strip( ):
+		st.warning( 'Enter a file batch ID before retrieving batch metadata.' )
+		return { }
+	
+	result = vector.retrieve_file_batch(
+		store_id=store_id.strip( ),
+		batch_id=batch_id.strip( ) )
+	
+	result = result if isinstance( result, dict ) else { }
+	st.session_state[ 'stores_batch_result' ] = result
+	return result
+
+def run_vector_store_cancel_batch( vector: VectorStores,
+		store_id: str | None ) -> dict[ str, Any ]:
+	"""
+	
+		Purpose:
+		--------
+		Cancel a vector store file batch.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		dict[str, Any]
+			Normalized file batch metadata.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before cancelling a batch.' )
+		return { }
+	
+	batch_id = st.session_state.get( 'stores_batch_id', '' )
+	if not isinstance( batch_id, str ) or not batch_id.strip( ):
+		st.warning( 'Enter a file batch ID before cancelling a batch.' )
+		return { }
+	
+	result = vector.cancel_file_batch(
+		store_id=store_id.strip( ),
+		batch_id=batch_id.strip( ) )
+	
+	result = result if isinstance( result, dict ) else { }
+	st.session_state[ 'stores_batch_result' ] = result
+	return result
+
+def run_vector_store_search( vector: VectorStores,
+		store_id: str | None ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Run native vector store search.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Normalized search result rows.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before searching.' )
+		return [ ]
+	
+	query = st.session_state.get( 'stores_search_query', '' )
+	if not isinstance( query, str ) or not query.strip( ):
+		st.warning( 'Enter a search query before searching a vector store.' )
+		return [ ]
+	
+	results = vector.search_store(
+		store_id=store_id.strip( ),
+		query=query.strip( ),
+		max_num_results=st.session_state.get( 'stores_max_results', 10 ),
+		ranking_options=build_vector_store_ranking_options_from_state( ),
+		rewrite_query=st.session_state.get( 'stores_rewrite_query', False ) )
+	
+	results = results if isinstance( results, list ) else [ ]
+	st.session_state[ 'stores_search_results' ] = results
+	return results
+
+def run_vector_store_answer( vector: VectorStores, store_id: str | None,
+		prompt: str | None ) -> str | None:
+	"""
+	
+		Purpose:
+		--------
+		Answer a prompt using Responses API file_search over the selected vector store.
+		
+		Parameters:
+		-----------
+		vector: VectorStores
+			VectorStores wrapper instance.
+		
+		store_id: str | None
+			Selected vector store ID.
+		
+		prompt: str | None
+			User prompt.
+		
+		Returns:
+		--------
+		str | None
+			Generated answer text.
+		
+	"""
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		st.warning( 'Select or enter a vector store ID before asking a question.' )
+		return None
+	
+	if not isinstance( prompt, str ) or not prompt.strip( ):
+		st.warning( 'Enter a prompt before querying the vector store.' )
+		return None
+	
+	model = st.session_state.get( 'stores_model' ) or 'gpt-4o-mini'
+	instructions = st.session_state.get( 'stores_system_instructions', '' )
+	
+	answer = vector.answer_with_file_search(
+		store_ids=[ store_id.strip( ) ],
+		prompt=prompt.strip( ),
+		model=model,
+		max_num_results=st.session_state.get( 'stores_max_results', 10 ),
+		instructions=instructions if isinstance( instructions, str ) and instructions.strip( )
+		else None )
+	
+	if isinstance( answer, str ) and answer.strip( ):
+		st.session_state[ 'stores_last_answer' ] = answer.strip( )
+		return answer.strip( )
+	
+	return answer
 
 # ----------  DATABASE UTILITIES ----------
 
@@ -9299,100 +10831,776 @@ elif mode == 'Files':
 				st.rerun( )
 
 # ======================================================================================
-# VECTORSTORES MODE
+# VECTOR STORES MODE
 # ======================================================================================
 elif mode == 'Vector Stores':
-	stores_model = st.session_state.get( 'stores_model', '' )
-	stores_format = st.session_state.get( 'stores_response_format', '' )
-	stores_input = st.session_state.get( 'stores_input', '' )
-	stores_reasoning = st.session_state.get( 'stores_reasoning', '' )
-	stores_tool_choice = st.session_state.get( 'stores_tool_choice', '' )
-	stores_top_percent = st.session_state.get( 'stores_top_percent', 0.0 )
-	stores_frequency = st.session_state.get( 'stores_frequency_penalty', 0.0 )
-	stores_presence = st.session_state.get( 'stores_presence_penalty', 0.0 )
-	stores_number = st.session_state.get( 'stores_number', 0 )
-	stores_temperature = st.session_state.get( 'stores_temperature', 0.0 )
-	stores_stream = st.session_state.get( 'stores_stream', False )
-	stores_store = st.session_state.get( 'stores_store', False )
-	stores_messages = st.session_state.get( 'stores_messages', [ ] )
-	stores_background = st.session_state.get( 'stores_background', False )
-	vector = None
-	
-	# ------------------------------------------------------------------
-	# Main Chat UI
-	# ------------------------------------------------------------------
+	ensure_vectorstores_mode_state( )
 	vector = VectorStores( )
 	
+	# ------------------------------------------------------------------
+	# Session State
+	# ------------------------------------------------------------------
+	if not isinstance( st.session_state.get( 'stores_table' ), list ):
+		st.session_state[ 'stores_table' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'stores_files_table' ), list ):
+		st.session_state[ 'stores_files_table' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'stores_store_metadata' ), dict ):
+		st.session_state[ 'stores_store_metadata' ] = { }
+	
+	if not isinstance( st.session_state.get( 'stores_batch_result' ), dict ):
+		st.session_state[ 'stores_batch_result' ] = { }
+	
+	if not isinstance( st.session_state.get( 'stores_search_results' ), list ):
+		st.session_state[ 'stores_search_results' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'stores_messages' ), list ):
+		st.session_state.stores_messages = [ ]
+	
+	if st.session_state.get( 'clear_instructions' ):
+		st.session_state[ 'stores_system_instructions' ] = ''
+		st.session_state[ 'clear_instructions' ] = False
+	
+	# ------------------------------------------------------------------
+	# Main UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.025, 0.95, 0.025 ] )
 	with center:
-		st.subheader( '🧊 Vector Stores', help=cfg.VECTORSTORES_API )
+		st.subheader( '🧊 Vector Stores', help=getattr( cfg, 'VECTORSTORES_API',
+			'Create, manage, search, and query OpenAI vector stores.' ) )
 		st.divider( )
-		st.caption( 'Vector Store Management' )
-		stores_c1, stores_c2 = st.columns( [ 0.50, 0.50 ], border=True )
-		with stores_c1:
-			# --------------------------------------------------------------
-			# Expander - Create File Search Store
-			# --------------------------------------------------------------
-			with st.expander( 'Create:', expanded=True ):
-				new_store_name = st.text_input( 'Vector Store Name' )
-				if st.button( '➕ Create' ):
-					if not new_store_name:
-						st.warning( 'Enter Name.' )
-					else:
-						try:
-							res = vector.create( new_store_name )
-							st.success( f"Create call submitted for '{new_store_name}'." )
-						except Exception as exc:
-							st.error( f'Create store failed: {exc}' )
 		
-		with stores_c2:
-			vs_map = getattr( vector, 'collections', None )
-			# --------------------------------------------------------------
-			# Expander - Retreive Files
-			# --------------------------------------------------------------
-			with st.expander( 'Retreive:', expanded=True ):
-				options = [ ]
-				if vs_map and isinstance( vs_map, dict ):
-					options = list( vs_map.items( ) )
+		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			# ------------------------------------------------------------------
+			# Store Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='Store Controls', icon='🗄️',
+					expanded=False, width='stretch' ):
+				ctrl_c1, ctrl_c2, ctrl_c3, ctrl_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
-				# --------------------------------------------------------------
-				# Select / Retrieve / Delete
-				# --------------------------------------------------------------
-				if options:
-					names = [ f'{n} — {i}' for n, i in options ]
-					sel = st.selectbox( 'Select Vector Store', options=names,
-						key='select_stores' )
+				# ---------- Store Name ------------
+				with ctrl_c1:
+					st.text_input( label='Store Name',
+						key='stores_name',
+						value=st.session_state.get( 'stores_name', '' ),
+						help='Name used when creating or updating a vector store.',
+						width='stretch', placeholder='Enter store name' )
+				
+				# ---------- Model ------------
+				with ctrl_c2:
+					model_options = get_vector_store_model_options( vector )
+					if st.session_state.get( 'stores_model' ) not in model_options:
+						st.session_state[ 'stores_model' ] = ''
 					
-					sel_id = ''
-					for n, i in options:
-						if f'{n} — {i}' == sel:
-							sel_id = i
-							break
+					st.selectbox( label='Answer Model',
+						options=model_options,
+						key='stores_model',
+						help='Model used only for Responses API file_search answers.',
+						index=None, placeholder='Options' )
+				
+				# ---------- Expiration Anchor ------------
+				with ctrl_c3:
+					st.selectbox( label='Expiration Anchor',
+						options=[ 'last_active_at' ],
+						key='stores_expires_anchor',
+						help='Expiration anchor for vector store expiration policy.',
+						index=0, placeholder='Options' )
+				
+				# ---------- Expiration Days ------------
+				with ctrl_c4:
+					st.slider( label='Expiration Days',
+						min_value=0, max_value=365, step=1,
+						key='stores_expires_days',
+						help='Optional expiration days. Zero omits expires_after.' )
+				
+				# ---------- Description ------------
+				st.text_area( label='Store Description',
+					key='stores_description',
+					value=st.session_state.get( 'stores_description', '' ),
+					height=80, width='stretch',
+					help='Optional vector store description.',
+					placeholder='Optional description' )
+				
+				# ---------- Metadata ------------
+				st.text_area( label='Store Metadata JSON',
+					key='stores_metadata',
+					value=st.session_state.get( 'stores_metadata', '' ),
+					height=100, width='stretch',
+					help='Optional JSON object used as vector store metadata.',
+					placeholder='{ "project": "example" }' )
+			
+			# ------------------------------------------------------------------
+			# Chunking Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='Chunking Controls', icon='🧩',
+					expanded=False, width='stretch' ):
+				chunk_c1, chunk_c2, chunk_c3 = st.columns(
+					[ 0.34, 0.33, 0.33 ], border=True, gap='xxsmall' )
+				
+				# ---------- Chunking Strategy ------------
+				with chunk_c1:
+					chunking_options = get_vector_store_chunking_options( vector )
+					if st.session_state.get( 'stores_chunking_strategy' ) not in chunking_options:
+						st.session_state[ 'stores_chunking_strategy' ] = 'auto'
 					
-					opt_c1, opt_c2 = st.columns( [ 0.5, 0.5 ] )
+					st.selectbox( label='Chunking Strategy',
+						options=chunking_options,
+						key='stores_chunking_strategy',
+						help='Chunking strategy used when creating stores or attaching files.',
+						index=chunking_options.index(
+							st.session_state.get( 'stores_chunking_strategy', 'auto' ) )
+						if st.session_state.get( 'stores_chunking_strategy' ) in chunking_options
+						else None,
+						placeholder='Options' )
+				
+				# ---------- Max Chunk Size ------------
+				with chunk_c2:
+					try:
+						current_chunk_size = int( st.session_state.get(
+							'stores_chunk_size', 800 ) or 800 )
+					except Exception:
+						current_chunk_size = 800
 					
-					with opt_c1:
-						if st.button( '📥 Retrieve Vector Store', key='retrieve_filestore' ):
-							if not sel_id:
-								st.warning( 'No Vector Store Selected!' )
-							else:
+					if current_chunk_size < 100:
+						st.session_state[ 'stores_chunk_size' ] = 100
+					elif current_chunk_size > 4096:
+						st.session_state[ 'stores_chunk_size' ] = 4096
+					
+					st.slider( label='Max Chunk Tokens',
+						min_value=100, max_value=4096, step=50,
+						key='stores_chunk_size',
+						help='Static chunking max chunk size in tokens.' )
+				
+				# ---------- Chunk Overlap ------------
+				with chunk_c3:
+					max_overlap = max( 0, int( st.session_state.get(
+						'stores_chunk_size', 800 ) or 800 ) // 2 )
+					
+					try:
+						current_overlap = int( st.session_state.get(
+							'stores_chunk_overlap', 400 ) or 400 )
+					except Exception:
+						current_overlap = 400
+					
+					if current_overlap < 0:
+						st.session_state[ 'stores_chunk_overlap' ] = 0
+					elif current_overlap > max_overlap:
+						st.session_state[ 'stores_chunk_overlap' ] = max_overlap
+					
+					st.slider( label='Chunk Overlap',
+						min_value=0, max_value=max_overlap, step=25,
+						key='stores_chunk_overlap',
+						help='Static chunking overlap in tokens. Cannot exceed half the chunk size.' )
+			
+			# ------------------------------------------------------------------
+			# File Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='File Controls', icon='📎',
+					expanded=False, width='stretch' ):
+				file_c1, file_c2 = st.columns(
+					[ 0.50, 0.50 ], border=True, gap='xxsmall' )
+				
+				# ---------- Single File ID ------------
+				with file_c1:
+					st.text_input( label='File ID',
+						key='stores_file_id',
+						value=st.session_state.get( 'stores_file_id', '' ),
+						help='OpenAI file ID used when attaching or managing one vector store file.',
+						width='stretch', placeholder='file-...' )
+				
+				# ---------- Batch File IDs ------------
+				with file_c2:
+					st.text_input( label='File IDs',
+						key='stores_file_ids',
+						value=st.session_state.get( 'stores_file_ids', '' ),
+						help='Comma-delimited OpenAI file IDs used for create/store file batch workflows.',
+						width='stretch', placeholder='file-..., file-...' )
+				
+				# ---------- File Attributes ------------
+				st.text_area( label='File Attributes JSON',
+					key='stores_file_attributes',
+					value=st.session_state.get( 'stores_file_attributes', '' ),
+					height=90, width='stretch',
+					help='Optional JSON object used as vector store file attributes.',
+					placeholder='{ "source": "manual-upload" }' )
+				
+				# ---------- Batch ID ------------
+				st.text_input( label='Batch ID',
+					key='stores_batch_id',
+					value=st.session_state.get( 'stores_batch_id', '' ),
+					help='Vector store file batch ID used for retrieve/cancel workflows.',
+					width='stretch', placeholder='vsfb_...' )
+			
+			# ------------------------------------------------------------------
+			# Search Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='Search Controls', icon='🔎',
+					expanded=False, width='stretch' ):
+				search_c1, search_c2, search_c3, search_c4 = st.columns(
+					[ 0.40, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				
+				# ---------- Search Query ------------
+				with search_c1:
+					st.text_input( label='Search Query',
+						key='stores_search_query',
+						value=st.session_state.get( 'stores_search_query', '' ),
+						help='Native vector store search query.',
+						width='stretch', placeholder='Enter search query' )
+				
+				# ---------- Max Results ------------
+				with search_c2:
+					st.slider( label='Max Results',
+						min_value=1, max_value=50, step=1,
+						key='stores_max_results',
+						help='Maximum number of native search or file_search results.' )
+				
+				# ---------- Ranker ------------
+				with search_c3:
+					ranker_options = get_vector_store_ranker_options( vector )
+					if st.session_state.get( 'stores_ranker' ) not in ranker_options:
+						st.session_state[ 'stores_ranker' ] = 'auto'
+					
+					st.selectbox( label='Ranker',
+						options=ranker_options,
+						key='stores_ranker',
+						help='Native vector store search ranker.',
+						index=ranker_options.index(
+							st.session_state.get( 'stores_ranker', 'auto' ) )
+						if st.session_state.get( 'stores_ranker' ) in ranker_options
+						else None,
+						placeholder='Options' )
+				
+				# ---------- Score Threshold / Rewrite ------------
+				with search_c4:
+					st.slider( label='Score Threshold',
+						min_value=0.0, max_value=1.0, step=0.01,
+						key='stores_score_threshold',
+						help='Optional native search score threshold.' )
+					
+					st.toggle( label='Rewrite Query',
+						key='stores_rewrite_query',
+						help='Optional native vector store query rewriting.' )
+			
+			# ------------------------------------------------------------------
+			# Current Store Selection
+			# ------------------------------------------------------------------
+			with st.expander( label='Current Store', icon='🎯',
+					expanded=False, width='stretch' ):
+				store_rows = st.session_state.get( 'stores_table', [ ] )
+				store_options = build_vector_store_selection_options( store_rows )
+				store_labels = [ '' ] + list( store_options.keys( ) )
+				
+				if st.session_state.get( 'stores_selected_label' ) not in store_labels:
+					st.session_state[ 'stores_selected_label' ] = ''
+				
+				selected_label = st.selectbox( label='Selected Vector Store',
+					options=store_labels,
+					key='stores_selected_label',
+					help='Select a vector store from the latest list.',
+					index=store_labels.index(
+						st.session_state.get( 'stores_selected_label', '' ) )
+					if st.session_state.get( 'stores_selected_label' ) in store_labels
+					else None,
+					placeholder='Options' )
+				
+				selected_from_table = get_selected_vector_store_id(
+					selected_label=selected_label,
+					options=store_options )
+				
+				manual_id = st.session_state.get( 'stores_manual_id', '' )
+				selected_store_id = selected_from_table or (
+						manual_id.strip( ) if isinstance( manual_id, str )
+						                      and manual_id.strip( ) else st.session_state.get(
+							'stores_id', '' ))
+				
+				st.text_input( label='Manual Vector Store ID',
+					key='stores_manual_id',
+					value=st.session_state.get( 'stores_manual_id', '' ),
+					help='Optional direct vector store ID. Use this if the store is not in the current table.',
+					width='stretch', placeholder='vs_...' )
+				
+				if selected_store_id:
+					st.caption( f'Selected Vector Store ID: `{selected_store_id}`' )
+				else:
+					st.caption( 'No vector store selected.' )
+				
+				st.text_input( label='Resolved Store ID',
+					value=selected_store_id or '',
+					disabled=True,
+					key='stores_selected_id_display',
+					help='Resolved vector store ID used by store, file, batch, search, and answer actions.',
+					width='stretch' )
+		
+		# ------------------------------------------------------------------
+		# System Instructions
+		# ------------------------------------------------------------------
+		with st.expander( label='System Instructions', icon='🖥️',
+				expanded=False, width='stretch' ):
+			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
+			
+			prompt_names = fetch_prompt_names( cfg.DB_PATH )
+			if not prompt_names:
+				prompt_names = [ '' ]
+			
+			# ---------- System Instructions ------------
+			with in_left:
+				st.text_area( label='Enter Text',
+					height=70, width='stretch',
+					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
+						'Optional instructions used for Responses API file_search answers.' ),
+					key='stores_system_instructions' )
+			
+			# ---------- Template ------------
+			with in_right:
+				st.selectbox( label='Use Template',
+					options=prompt_names, index=None,
+					key='instructions',
+					on_change=load_vector_store_instruction_template )
+			
+			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			
+			# ---------- Clear Instructions ------------
+			with btn_c1:
+				st.button( label='Clear Instructions',
+					width='stretch', on_click=clear_vector_store_instructions )
+			
+			# ---------- XML <-> Markdown ------------
+			with btn_c2:
+				st.button( label='XML <-> Markdown',
+					width='stretch', on_click=convert_vector_store_system_instructions )
+		
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Primary Management Columns
+		# ------------------------------------------------------------------
+		left_col, right_col = st.columns( [ 0.50, 0.50 ], border=True, gap='small' )
+		
+		# ------------------------------------------------------------------
+		# Left Column: Store Management
+		# ------------------------------------------------------------------
+		with left_col:
+			st.subheader( 'Vector Store Management' )
+			
+			create_c1, create_c2 = st.columns( [ 0.50, 0.50 ] )
+			
+			# ---------- Create Store ------------
+			with create_c1:
+				if st.button( 'Create Store', key='create_vector_store',
+						width='stretch' ):
+					with st.spinner( 'Creating vector store…' ):
+						try:
+							result = run_vector_store_create( vector )
+							
+							if result.get( 'id' ):
+								st.success( f"Created vector store: {result.get( 'id' )}" )
+								
 								try:
-									vs = vector.retrieve( store_id=sel_id )
-									st.write( 'Name:', vs.name )
-									st.write( 'Files:', vs.file_counts )
-									st.write( 'Size (MB):', round( vs.usage_bytes / 1_048_576, 2 ) )
-								except Exception as exc:
-									st.error( f'retrieve() failed: {exc}' )
-					
-					with opt_c2:
-						if st.button( '❌ Delete Vector Store', key='delete_store' ):
-							if not sel_id:
-								st.warning( 'No Vector Store Selected.' )
+									rows = run_vector_store_list( vector )
+									st.session_state[ 'stores_table' ] = rows
+								except Exception:
+									pass
+						except Exception as exc:
+							st.error( f'Create vector store failed: {exc}' )
+			
+			# ---------- List Stores ------------
+			with create_c2:
+				if st.button( 'List Stores', key='list_vector_stores',
+						width='stretch' ):
+					with st.spinner( 'Listing vector stores…' ):
+						try:
+							rows = run_vector_store_list( vector )
+							
+							if len( rows ) > 0:
+								st.success( f'Listed {len( rows )} vector store(s).' )
 							else:
+								st.info( 'No vector stores were returned.' )
+						except Exception as exc:
+							st.error( f'List vector stores failed: {exc}' )
+			
+			retrieve_c1, retrieve_c2, retrieve_c3 = st.columns(
+				[ 0.34, 0.33, 0.33 ] )
+			
+			# ---------- Retrieve Store ------------
+			with retrieve_c1:
+				if st.button( 'Retrieve Store', key='retrieve_vector_store',
+						width='stretch' ):
+					with st.spinner( 'Retrieving vector store…' ):
+						try:
+							result = run_vector_store_retrieve(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if result:
+								st.success( 'Vector store metadata retrieved.' )
+						except Exception as exc:
+							st.error( f'Retrieve vector store failed: {exc}' )
+			
+			# ---------- Update Store ------------
+			with retrieve_c2:
+				if st.button( 'Update Store', key='update_vector_store',
+						width='stretch' ):
+					with st.spinner( 'Updating vector store…' ):
+						try:
+							result = run_vector_store_update(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if result:
+								st.success( 'Vector store updated.' )
+								
 								try:
-									vs = vector.delete( store_id=sel_id )
-								except Exception as exc:
-									st.error( f'Delete failed: {exc}' )
+									rows = run_vector_store_list( vector )
+									st.session_state[ 'stores_table' ] = rows
+								except Exception:
+									pass
+						except Exception as exc:
+							st.error( f'Update vector store failed: {exc}' )
+			
+			# ---------- Delete Store ------------
+			with retrieve_c3:
+				if st.button( 'Delete Store', key='delete_vector_store',
+						width='stretch' ):
+					with st.spinner( 'Deleting vector store…' ):
+						try:
+							result = run_vector_store_delete(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if result.get( 'deleted' ) is True:
+								st.success( 'Vector store deleted.' )
+								
+								try:
+									rows = run_vector_store_list( vector )
+									st.session_state[ 'stores_table' ] = rows
+								except Exception:
+									pass
+							elif result:
+								st.warning( 'Delete request completed without confirmed deletion.' )
+						except Exception as exc:
+							st.error( f'Delete vector store failed: {exc}' )
+			
+			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
+			# ---------- Vector Stores Table ------------
+			st.subheader( 'Vector Stores' )
+			render_vector_stores_table( st.session_state.get( 'stores_table', [ ] ) )
+		
+		# ------------------------------------------------------------------
+		# Right Column: Store Details / Search
+		# ------------------------------------------------------------------
+		with right_col:
+			st.subheader( 'Selected Store Details' )
+			
+			metadata = st.session_state.get( 'stores_store_metadata', { } )
+			if isinstance( metadata, dict ) and len( metadata ) > 0:
+				render_vector_store_metadata( metadata )
+			else:
+				st.info( 'Retrieve a vector store to inspect metadata.' )
+			
+			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
+			search_c1, search_c2 = st.columns( [ 0.50, 0.50 ] )
+			
+			# ---------- Native Search ------------
+			with search_c1:
+				if st.button( 'Search Store', key='search_vector_store',
+						width='stretch' ):
+					with st.spinner( 'Searching vector store…' ):
+						try:
+							results = run_vector_store_search(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if len( results ) > 0:
+								st.success( f'Returned {len( results )} search result(s).' )
+							else:
+								st.info( 'No vector store search results were returned.' )
+						except Exception as exc:
+							st.error( f'Vector store search failed: {exc}' )
+			
+			# ---------- Clear Outputs ------------
+			with search_c2:
+				st.button( label='Clear Outputs',
+					key='clear_vector_store_outputs',
+					width='stretch',
+					on_click=clear_vector_store_outputs )
+			
+			# ---------- Search Results ------------
+			results = st.session_state.get( 'stores_search_results', [ ] )
+			if isinstance( results, list ) and len( results ) > 0:
+				with st.expander( label='Search Results', icon='🔎',
+						expanded=False, width='stretch' ):
+					render_vector_store_search_results( results )
+		
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# File and Batch Operations
+		# ------------------------------------------------------------------
+		file_col, batch_col = st.columns( [ 0.50, 0.50 ], border=True, gap='small' )
+		
+		# ------------------------------------------------------------------
+		# File Column
+		# ------------------------------------------------------------------
+		with file_col:
+			st.subheader( 'Vector Store Files' )
+			
+			file_action_c1, file_action_c2, file_action_c3 = st.columns(
+				[ 0.34, 0.33, 0.33 ] )
+			
+			# ---------- Attach File ------------
+			with file_action_c1:
+				if st.button( 'Attach File', key='attach_vector_store_file',
+						width='stretch' ):
+					with st.spinner( 'Attaching file…' ):
+						try:
+							result = run_vector_store_attach_file(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if result.get( 'id' ):
+								st.success( f"Attached file: {result.get( 'id' )}" )
+								
+								try:
+									rows = run_vector_store_list_files(
+										vector=vector,
+										store_id=selected_store_id )
+									st.session_state[ 'stores_files_table' ] = rows
+								except Exception:
+									pass
+						except Exception as exc:
+							st.error( f'Attach file failed: {exc}' )
+			
+			# ---------- List Files ------------
+			with file_action_c2:
+				if st.button( 'List Files', key='list_vector_store_files',
+						width='stretch' ):
+					with st.spinner( 'Listing vector store files…' ):
+						try:
+							rows = run_vector_store_list_files(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if len( rows ) > 0:
+								st.success( f'Listed {len( rows )} vector store file(s).' )
+							else:
+								st.info( 'No files are attached to this vector store.' )
+						except Exception as exc:
+							st.error( f'List vector store files failed: {exc}' )
+			
+			# ---------- Delete Selected File ------------
+			with file_action_c3:
+				file_rows = st.session_state.get( 'stores_files_table', [ ] )
+				file_options = build_vector_store_file_selection_options( file_rows )
+				file_labels = [ '' ] + list( file_options.keys( ) )
+				
+				if st.session_state.get( 'stores_file_selected_label' ) not in file_labels:
+					st.session_state[ 'stores_file_selected_label' ] = ''
+				
+				selected_file_label = st.selectbox( label='Selected File',
+					options=file_labels,
+					key='stores_file_selected_label',
+					help='Select a vector store file from the latest file list.',
+					index=file_labels.index(
+						st.session_state.get( 'stores_file_selected_label', '' ) )
+					if st.session_state.get( 'stores_file_selected_label' ) in file_labels
+					else None,
+					placeholder='Options' )
+				
+				selected_file_id = get_selected_vector_store_file_id(
+					selected_label=selected_file_label,
+					options=file_options ) or st.session_state.get( 'stores_file_id', '' )
+				
+				if st.button( 'Delete File', key='delete_vector_store_file',
+						width='stretch' ):
+					with st.spinner( 'Deleting vector store file…' ):
+						try:
+							result = run_vector_store_delete_file(
+								vector=vector,
+								store_id=selected_store_id,
+								file_id=selected_file_id )
+							
+							if result.get( 'deleted' ) is True:
+								st.success( 'Vector store file deleted.' )
+								
+								try:
+									rows = run_vector_store_list_files(
+										vector=vector,
+										store_id=selected_store_id )
+									st.session_state[ 'stores_files_table' ] = rows
+								except Exception:
+									pass
+							elif result:
+								st.warning(
+									'Delete file request completed without confirmed deletion.' )
+						except Exception as exc:
+							st.error( f'Delete vector store file failed: {exc}' )
+			
+			# ---------- Files Table ------------
+			render_vector_store_files_table(
+				st.session_state.get( 'stores_files_table', [ ] ) )
+		
+		# ------------------------------------------------------------------
+		# Batch Column
+		# ------------------------------------------------------------------
+		with batch_col:
+			st.subheader( 'File Batches' )
+			
+			batch_c1, batch_c2, batch_c3 = st.columns(
+				[ 0.34, 0.33, 0.33 ] )
+			
+			# ---------- Create Batch ------------
+			with batch_c1:
+				if st.button( 'Create Batch', key='create_vector_store_batch',
+						width='stretch' ):
+					with st.spinner( 'Creating vector store file batch…' ):
+						try:
+							result = run_vector_store_create_batch(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if result.get( 'id' ):
+								st.success( f"Created batch: {result.get( 'id' )}" )
+						except Exception as exc:
+							st.error( f'Create batch failed: {exc}' )
+			
+			# ---------- Retrieve Batch ------------
+			with batch_c2:
+				if st.button( 'Retrieve Batch', key='retrieve_vector_store_batch',
+						width='stretch' ):
+					with st.spinner( 'Retrieving vector store file batch…' ):
+						try:
+							result = run_vector_store_retrieve_batch(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if result:
+								st.success( 'Batch metadata retrieved.' )
+						except Exception as exc:
+							st.error( f'Retrieve batch failed: {exc}' )
+			
+			# ---------- Cancel Batch ------------
+			with batch_c3:
+				if st.button( 'Cancel Batch', key='cancel_vector_store_batch',
+						width='stretch' ):
+					with st.spinner( 'Cancelling vector store file batch…' ):
+						try:
+							result = run_vector_store_cancel_batch(
+								vector=vector,
+								store_id=selected_store_id )
+							
+							if result:
+								st.success( 'Batch cancellation requested.' )
+						except Exception as exc:
+							st.error( f'Cancel batch failed: {exc}' )
+			
+			# ---------- Batch Result ------------
+			batch_result = st.session_state.get( 'stores_batch_result', { } )
+			if isinstance( batch_result, dict ) and len( batch_result ) > 0:
+				render_vector_store_batch_result( batch_result )
+			else:
+				st.info( 'No batch result available.' )
+		
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Messages
+		# ------------------------------------------------------------------
+		if st.session_state.get( 'stores_messages' ) is not None:
+			for msg in st.session_state.stores_messages:
+				if not isinstance( msg, dict ):
+					continue
+				
+				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
+				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
+					st.markdown( msg.get( 'content', '' ) )
+		
+		prompt = st.chat_input( 'Ask a question using the selected vector store …' )
+		if prompt is not None and str( prompt ).strip( ):
+			prompt = str( prompt ).strip( )
+			st.session_state.stores_messages.append(
+				{
+						'role': 'user',
+						'content': prompt,
+				} )
+			
+			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
+				with st.spinner( 'Querying vector store…' ):
+					try:
+						# Re-resolve the selected store ID at execution time to avoid stale locals.
+						current_rows = st.session_state.get( 'stores_table', [ ] )
+						current_options = build_vector_store_selection_options( current_rows )
+						current_label = st.session_state.get( 'stores_selected_label', '' )
+						current_selected = get_selected_vector_store_id(
+							selected_label=current_label,
+							options=current_options )
+						
+						current_manual = st.session_state.get( 'stores_manual_id', '' )
+						current_store_id = current_selected or (
+								current_manual.strip( ) if isinstance( current_manual, str )
+								                           and current_manual.strip( ) else st.session_state.get(
+									'stores_id', '' ))
+						
+						answer = run_vector_store_answer(
+							vector=vector,
+							store_id=current_store_id,
+							prompt=prompt )
+						
+						if isinstance( answer, str ) and answer.strip( ):
+							st.markdown( answer )
+							st.session_state.stores_messages.append(
+								{
+										'role': 'assistant',
+										'content': answer.strip( ),
+								} )
+							st.session_state[ 'stores_last_answer' ] = answer.strip( )
+							
+							try:
+								update_token_counters( getattr( vector, 'response', None ) )
+							except Exception:
+								pass
+						else:
+							message = 'No vector store answer was returned.'
+							st.warning( message )
+							st.session_state.stores_messages.append(
+								{
+										'role': 'assistant',
+										'content': message,
+								} )
+					except Exception as exc:
+						st.error( f'Vector store answer failed: {exc}' )
+		
+		# ------------------------------------------------------------------
+		# Last Answer
+		# ------------------------------------------------------------------
+		last_answer = st.session_state.get( 'stores_last_answer', '' )
+		if isinstance( last_answer, str ) and last_answer.strip( ):
+			with st.expander( label='Last Vector Store Answer', icon='🧠',
+					expanded=False, width='stretch' ):
+				st.markdown( last_answer )
+		
+		# ------------------------------------------------------------------
+		# Reset Buttons
+		# ------------------------------------------------------------------
+		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
+		
+		with reset_c1:
+			if st.button( 'Clear Messages', key='clear_vector_store_messages',
+					width='stretch', on_click=clear_vector_store_messages ):
+				st.rerun( )
+		
+		with reset_c2:
+			if st.button( 'Clear Outputs', key='clear_vector_store_mode_outputs',
+					width='stretch', on_click=clear_vector_store_outputs ):
+				st.rerun( )
+		
+		with reset_c3:
+			if st.button( 'Reset All', key='reset_vector_store_all',
+					width='stretch', on_click=reset_vector_store_all ):
+				st.rerun( )
 
 # ======================================================================================
 # PROMPT ENGINEERING MODE
@@ -10235,8 +12443,7 @@ elif mode == 'Data Management':
 # ======================================================================================
 # FOOTER — SECTION
 # ======================================================================================
-st.markdown(
-	"""
+st.markdown( """
 	<style>
 	.block-container {
 		padding-bottom: 3rem;

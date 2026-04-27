@@ -5069,8 +5069,8 @@ class Files( GPT ):
 	prompt: Optional[ str ]
 	output_text: Optional[ str ]
 	
-	def __init__( self, id: str = None, filepath: str = None, purpose: str = 'user_data',
-			model: str = 'gpt-4o-mini', prompt: str = None ):
+	def __init__( self, id: str=None, filepath: str=None, purpose: str='user_data',
+			model: str='gpt-4o-mini', prompt: str=None ):
 		"""
 
 	        Purpose:
@@ -5218,7 +5218,7 @@ class Files( GPT ):
 				'gpt-4o-mini',
 		]
 	
-	def validate_upload_purpose( self, purpose: str = None ) -> str:
+	def validate_upload_purpose( self, purpose: str=None ) -> str:
 		"""
 
 	        Purpose:
@@ -5251,7 +5251,7 @@ class Files( GPT ):
 			exception.method = 'validate_upload_purpose( self, purpose: str=None ) -> str'
 			raise exception
 	
-	def validate_file_id( self, id: str = None ) -> str:
+	def validate_file_id( self, id: str=None ) -> str:
 		"""
 
 	        Purpose:
@@ -5337,7 +5337,7 @@ class Files( GPT ):
 			exception.method = 'normalize_file_object( self, file: Any ) -> Dict[ str, Any ]'
 			raise exception
 	
-	def normalize_file_list( self, response: Any, purpose: str = None ) -> List[ Dict[ str, Any ] ]:
+	def normalize_file_list( self, response: Any, purpose: str=None ) -> List[ Dict[ str, Any ] ]:
 		"""
 
 	        Purpose:
@@ -5369,7 +5369,7 @@ class Files( GPT ):
 			else:
 				items = getattr( response, 'data', [ ] )
 			
-			rows: List[ Dict[ str, Any ] ] = [ ]
+			rows: List[ Dict[ str, Any ] ]=[ ]
 			for item in items:
 				row = self.normalize_file_object( item )
 				
@@ -5451,7 +5451,7 @@ class Files( GPT ):
 			exception.method = 'normalize_file_content( self, content: Any )'
 			raise exception
 	
-	def upload( self, filepath: str, purpose: str = 'user_data' ) -> Dict[ str, Any ] | None:
+	def upload( self, filepath: str, purpose: str='user_data' ) -> Dict[ str, Any ] | None:
 		"""
 
 	        Purpose:
@@ -5503,7 +5503,7 @@ class Files( GPT ):
 			exception.method = 'upload( self, filepath: str, purpose: str )'
 			raise exception
 	
-	def list( self, purpose: str = None ) -> List[ Dict[ str, Any ] ]:
+	def list( self, purpose: str=None ) -> List[ Dict[ str, Any ] ]:
 		"""
 
 	        Purpose:
@@ -5527,7 +5527,7 @@ class Files( GPT ):
 			self.request = { }
 			
 			if self.purpose:
-				self.request[ 'purpose_filter' ] = self.purpose
+				self.request[ 'purpose_filter' ]=self.purpose
 			
 			self.response = self.client.files.list( )
 			self.files = self.normalize_file_list( self.response, purpose=self.purpose )
@@ -5656,8 +5656,8 @@ class Files( GPT ):
 			exception.method = 'delete( self, id: str ) -> Dict[ str, Any ] | None'
 			raise exception
 	
-	def summarize( self, id: str, prompt: str = None, model: str = 'gpt-4o-mini',
-			max_chars: int = 120000 ) -> str | None:
+	def summarize( self, id: str, prompt: str=None, model: str='gpt-4o-mini',
+			max_chars: int=120000 ) -> str | None:
 		"""
 
 	        Purpose:
@@ -5733,8 +5733,8 @@ class Files( GPT ):
 			exception.method = 'summarize( self, id: str, prompt: str=None ) -> str | None'
 			raise exception
 	
-	def search( self, id: str, query: str, model: str = 'gpt-4o-mini',
-			max_chars: int = 120000 ) -> str | None:
+	def search( self, id: str, query: str, model: str='gpt-4o-mini',
+			max_chars: int=120000 ) -> str | None:
 		"""
 
 	        Purpose:
@@ -5776,7 +5776,7 @@ class Files( GPT ):
 			exception.method = 'search( self, id: str, query: str ) -> str | None'
 			raise exception
 	
-	def survey( self, id: str, max_chars: int = 4000 ) -> Dict[ str, Any ]:
+	def survey( self, id: str, max_chars: int=4000 ) -> Dict[ str, Any ]:
 		"""
 
 	        Purpose:
@@ -5878,57 +5878,197 @@ class Files( GPT ):
 		]
 
 class VectorStores( GPT ):
-	'''
-		
-		Purpose:
-		--------
-		
-		Attributes:
-		----------
-		
-	'''
-	client: Optional[ OpenAI ]
-	prompt: Optional[ str ]
-	response_format: Optional[ str ]
-	name: Optional[ str ]
-	store_ids: Optional[ List[ str ] ]
-	store_id: Optional[ str ]
-	file_path: Optional[ str ]
-	file_id: Optional[ str ]
-	max_results: Optional[ int ]
-	include: Optional[ List[ str ] ]
-	tool_choice: Optional[ str ]
-	input: Optional[ List[ Dict[ str, str ] ] ]
-	instructions: Optional[ str ]
-	tools: Optional[ List[ Dict[ str, str ] ] ]
-	reasoning: Optional[ Dict[ str, str ] ]
-	documents: Optional[ Dict[ str, Any ] ]
-	collections: Optional[ Dict[ str, Any ] ]
+	"""
 	
-	def __init__( self  ):
+	    Purpose:
+	    --------
+	    Provides a wrapper around the OpenAI Vector Stores API, including vector store
+	    management, vector store file management, file batches, native vector store search,
+	    and Responses API file_search workflows.
+
+	    Attributes:
+	    -----------
+	    api_key:
+	        OpenAI API key loaded from config.py.
+
+	    client:
+	        OpenAI client instance.
+
+	    name:
+	        Vector store name.
+
+	    description:
+	        Optional vector store description.
+
+	    store_id:
+	        Selected or returned vector store identifier.
+
+	    file_id:
+	        Selected or returned OpenAI file identifier.
+
+	    batch_id:
+	        Selected or returned vector store file batch identifier.
+
+	    response:
+	        Last raw API response object.
+
+	    vector_store:
+	        Last normalized vector store metadata.
+
+	    vector_stores:
+	        Last normalized list of vector stores.
+
+	    vector_file:
+	        Last normalized vector store file metadata.
+
+	    vector_files:
+	        Last normalized list of vector store files.
+
+	    file_batch:
+	        Last normalized file batch metadata.
+
+	    search_results:
+	        Last normalized vector store search results.
+
+	    output_text:
+	        Last answer text generated through Responses API file_search.
+
+	    request:
+	        Last API request dictionary.
+
+	    Methods:
+	    --------
+	    create:
+	        Create a vector store.
+
+	    list_stores:
+	        List vector stores.
+
+	    retrieve:
+	        Retrieve vector store metadata.
+
+	    update:
+	        Update vector store metadata.
+
+	    delete:
+	        Delete a vector store.
+
+	    attach_file:
+	        Attach an OpenAI file to a vector store.
+
+	    list:
+	        Backward-compatible alias for listing vector store files.
+
+	    list_files:
+	        List files attached to a vector store.
+
+	    retrieve_file:
+	        Retrieve vector store file metadata.
+
+	    update_file:
+	        Update vector store file attributes.
+
+	    delete_file:
+	        Delete a file from a vector store.
+
+	    retrieve_file_content:
+	        Retrieve vector store file content.
+
+	    create_file_batch:
+	        Create a vector store file batch.
+
+	    retrieve_file_batch:
+	        Retrieve vector store file batch metadata.
+
+	    list_file_batch_files:
+	        List files in a vector store file batch.
+
+	    cancel_file_batch:
+	        Cancel a vector store file batch.
+
+	    search:
+	        Backward-compatible native vector store search method.
+
+	    search_store:
+	        Search a vector store using the native Vector Stores Search API.
+
+	    answer_with_file_search:
+	        Answer a question using Responses API file_search.
+
+	    survey:
+	        Run a Responses API file_search survey across one or more vector stores.
+
+    """
+	api_key: Optional[ str ]
+	client: Optional[ OpenAI ]
+	name: Optional[ str ]
+	description: Optional[ str ]
+	store_id: Optional[ str ]
+	file_id: Optional[ str ]
+	batch_id: Optional[ str ]
+	response: Optional[ Any ]
+	vector_store: Optional[ Dict[ str, Any ] ]
+	vector_stores: Optional[ List[ Dict[ str, Any ] ] ]
+	vector_file: Optional[ Dict[ str, Any ] ]
+	vector_files: Optional[ List[ Dict[ str, Any ] ] ]
+	file_batch: Optional[ Dict[ str, Any ] ]
+	search_results: Optional[ List[ Dict[ str, Any ] ] ]
+	output_text: Optional[ str ]
+	request: Optional[ Dict[ str, Any ] ]
+	collections: Optional[ Dict[ str, str ] ]
+	max_search_results: Optional[ int ]
+	
+	def __init__( self, name: str=None, store_id: str=None, file_id: str=None,
+			model: str='gpt-4o-mini', max_search_results: int=10 ):
+		"""
+
+	        Purpose:
+	        --------
+	        Initialize a VectorStores wrapper instance.
+
+	        Parameters:
+	        -----------
+	        name: str
+	            Optional vector store name.
+
+	        store_id: str
+	            Optional vector store identifier.
+
+	        file_id: str
+	            Optional OpenAI file identifier.
+
+	        model: str
+	            Optional model used for Responses API file_search workflows.
+
+	        max_search_results: int
+	            Optional maximum search results value.
+
+	        Returns:
+	        --------
+	        None
+
+        """
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
 		self.client = None
-		self.model = None
-		self.name = None
-		self.content = None
+		self.name = name
+		self.description = None
+		self.store_id = store_id
+		self.file_id = file_id
+		self.batch_id = None
+		self.model = model
 		self.response = None
-		self.store_id = None
-		self.file_id = None
-		self.file_path = None
-		self.max_results = None
-		self.collections = \
-		{
-			'Financial Regulations': 'vs_712r5W5833G6aLxIYIbuvVcK',
-			'Public Laws': 'vs_699506f7d5348191990e0557c717fa9d',
-			'Explanatory Statements': 'vs_699505df9ac48191a525c0ecb86fef66',
-		}
-		self.documents = \
-		{
-			'Account_Balances.csv': 'file-U6wFeRGSeg38Db5uJzo5sj',
-			'SF133.csv': 'file-32s641QK1Xb5QUatY3zfWF',
-			'Authority.csv': 'file-Qi2rw2QsdxKBX1iiaQxY3m',
-			'Outlays.csv': 'file-GHEwSWR7ezMvHrQ3X648wn'
+		self.vector_store = None
+		self.vector_stores = [ ]
+		self.vector_file = None
+		self.vector_files = [ ]
+		self.file_batch = None
+		self.search_results = [ ]
+		self.output_text = None
+		self.request = None
+		self.max_search_results = max_search_results
+		self.collections = {
+				'Guidance': 'vs_712r5W5833G6aLxIYIbuvVcK',
 		}
 	
 	@property
@@ -5937,207 +6077,1685 @@ class VectorStores( GPT ):
 
 	        Purpose:
 	        --------
-	        Methods that returns a list of small_model names
+	        Return model options for Responses API file_search answer workflows.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[str] | None:
+	            Model names.
 
         '''
 		return [
-				'gpt-5',
-				'gpt-5.2',
 				'gpt-5-mini',
 				'gpt-5-nano',
-				'gpt-5-turbo',
-				'gpt-4.1',
 				'gpt-4.1-mini',
 				'gpt-4.1-nano',
-				'gpt-4o',
-				'gpt-4o-mini' ]
+				'gpt-4o-mini',
+		]
 	
-	def create( self, store_name: str ) -> Any | None:
+	@property
+	def ranker_options( self ) -> List[ str ] | None:
 		'''
-			
-			Returns:
-			--------
-			A List[ str ] of file_ids
 
-		'''
-		try:
-			throw_if( 'store_name', store_name )
-			self.name = store_name
-			self.client = OpenAI( api_key=self.api_key )
-			_store = self.client.vector_stores.create( name=self.store_name )
-			return _store
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'gpt'
-			exception.cause = 'VectorStore'
-			exception.method = 'create( self, store_name: str ) -> str'
-			raise exception
-	
-	def list( self, store_id: str ) -> List[ Any ] | None:
-		try:
-			throw_if( 'store_id', store_id )
-			self.store_id = store_id
-			self.client = OpenAI( api_key=self.api_key )
-			_stores = self.client.vector_stores.files.list( vector_store_id=self.store_id )
-			return list( _stores )
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'gpt'
-			exception.cause = 'VectorStore'
-			exception.method = 'list( self, store_id: str ) -> Any'
-			raise exception
-	
-	def retrieve( self, store_id: str ) -> Any | None:
-		'''
-			
-			Returns:
-			--------
-			A List[ str ] of file_ids
+	        Purpose:
+	        --------
+	        Return vector store search ranker options.
 
-		'''
-		try:
-			throw_if( 'store_id', store_id )
-			self.store_id = store_id
-			self.client = OpenAI( api_key=self.api_key )
-			vector_store = self.client.vector_stores.retrieve( vector_store_id=self.store_id )
-			return vector_store
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'gpt'
-			exception.cause = 'VectorStore'
-			exception.method = 'retrieve( self, id: str ) -> Any'
-			raise exception
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[str] | None:
+	            Ranker option values.
+
+        '''
+		return [
+				'auto',
+				'default-2024-11-15',
+		]
 	
-	def search( self, prompt: str, store_id: str, model: str='gpt-4.1-nano-2025-04-14' ) -> str | None:
+	@property
+	def chunking_strategy_options( self ) -> List[ str ] | None:
+		'''
+
+	        Purpose:
+	        --------
+	        Return supported chunking strategy option names.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[str] | None:
+	            Chunking strategy option values.
+
+        '''
+		return [
+				'auto',
+				'static',
+		]
+	
+	def validate_store_name( self, name: str=None ) -> str:
 		"""
 
 	        Purpose:
-	        _______
-	        Method that analyzeses an image given a prompt,
+	        --------
+	        Validate and normalize a vector store name.
 
 	        Parameters:
-	        ----------
-	        prompt: str
-	        url: str
+	        -----------
+	        name: str
+	            Requested vector store name.
 
 	        Returns:
-	        -------
-	        str | None
+	        --------
+	        str:
+	            Clean vector store name.
 
         """
 		try:
-			throw_if( 'prompt', prompt )
-			throw_if( 'store_id', store_id )
-			self.prompt = prompt
-			self.model = model
-			self.vector_store_ids = [ store_id ]
-			self.tools = [
-			{
-				'text': 'file_search',
-				'vector_store_ids': self.vector_store_ids,
-				'max_num_results': self.max_search_results,
-			} ]
-			self.response = self.client.responses.create( model=self.model, tools=self.tools,
-				input=self.prompt )
-			return self.response.output_text
+			value = name if isinstance( name, str ) and name.strip( ) else self.name
+			throw_if( 'name', value )
+			return value.strip( )
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
-			exception.cause = 'VectorStore'
-			exception.method = ('search(self, prompt: str, store_id: str, '
-			                    'model: str=gpt-4.1-nano) -> str')
+			exception.cause = 'VectorStores'
+			exception.method = 'validate_store_name( self, name: str=None ) -> str'
 			raise exception
 	
-	def survey( self, prompt: str, store_ids: List[ str ]=None, results: int=10,
-			model: str='gpt-4.1-nano' ) -> str | None:
+	def validate_store_id( self, store_id: str=None ) -> str:
 		"""
 
 	        Purpose:
-	        _______
-	        Method that analyzeses an image given a prompt,
+	        --------
+	        Validate and normalize a vector store identifier.
 
 	        Parameters:
-	        ----------
-	        prompt: str
-	        url: str
+	        -----------
+	        store_id: str
+	            Requested vector store identifier.
 
 	        Returns:
-	        -------
-	        str | None
+	        --------
+	        str:
+	            Clean vector store identifier.
 
         """
 		try:
-			throw_if( 'prompt', prompt )
-			throw_if( 'store_id', store_ids )
-			self.prompt = prompt
-			self.model = model
-			self.vector_store_ids = store_ids
-			self.max_results = results
-			self.tools = [
-			{
-				'text': 'file_search',
-				'vector_store_ids': self.vector_store_ids,
-				'max_num_results': self.max_search_results,
-			} ]
-			self.client = OpenAI( api_key=self.api_key )
-			self.response = self.client.responses.create( model=self.model, tools=self.tools,
-				input=self.prompt )
-			return self.response.output_text
+			value = store_id if isinstance( store_id, str ) and store_id.strip( ) else self.store_id
+			throw_if( 'store_id', value )
+			return value.strip( )
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
-			exception.cause = 'VectorStore'
-			exception.method = ('survey( self, prompt: str, store_ids: List[ str ], '
-			                    'results: int=10, model: str=gpt-4.1-nano )->str')
+			exception.cause = 'VectorStores'
+			exception.method = 'validate_store_id( self, store_id: str=None ) -> str'
 			raise exception
 	
-	def update( self, store_id: str, filename: str ) -> VectorStore | None:
-		try:
-			throw_if( 'store_id', store_id )
-			throw_if( 'filename', filename )
-			self.store_id = store_id
-			self.name = filename
-			self.client = OpenAI( api_key=self.api_key )
-			vector_store = self.client.vector_stores.update( vector_store_id=self.store_id, name=self.name )
-			return vector_store
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'gpt'
-			exception.cause = 'VectorStore'
-			exception.method = 'update( self, store_id: str, filename: str )'
-			raise exception
-	
-	def delete( self, store_id: str ) -> None:
-		'''
-			
-			Returns:
-			--------
-			A List[ str ] of file_ids
+	def validate_file_id( self, file_id: str=None ) -> str:
+		"""
 
-		'''
+	        Purpose:
+	        --------
+	        Validate and normalize an OpenAI file identifier.
+
+	        Parameters:
+	        -----------
+	        file_id: str
+	            Requested OpenAI file identifier.
+
+	        Returns:
+	        --------
+	        str:
+	            Clean OpenAI file identifier.
+
+        """
 		try:
-			throw_if( 'store_id', store_id )
-			self.store_id = store_id
-			self.client = OpenAI( api_key=self.api_key )
-			self.client.vector_stores.delete( vector_store_id=self.store_id )
+			value = file_id if isinstance( file_id, str ) and file_id.strip( ) else self.file_id
+			throw_if( 'file_id', value )
+			return value.strip( )
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
-			exception.cause = 'VectorStore'
-			exception.method = 'delete( self, id: str )'
+			exception.cause = 'VectorStores'
+			exception.method = 'validate_file_id( self, file_id: str=None ) -> str'
+			raise exception
+	
+	def validate_batch_id( self, batch_id: str=None ) -> str:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize a vector store file batch identifier.
+
+	        Parameters:
+	        -----------
+	        batch_id: str
+	            Requested vector store file batch identifier.
+
+	        Returns:
+	        --------
+	        str:
+	            Clean vector store file batch identifier.
+
+        """
+		try:
+			value = batch_id if isinstance( batch_id, str ) and batch_id.strip( ) else self.batch_id
+			throw_if( 'batch_id', value )
+			return value.strip( )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'validate_batch_id( self, batch_id: str=None ) -> str'
+			raise exception
+	
+	def validate_file_ids( self, file_ids: List[ str ]=None ) -> List[ str ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize a list of OpenAI file identifiers.
+
+	        Parameters:
+	        -----------
+	        file_ids: List[str]
+	            Requested OpenAI file identifiers.
+
+	        Returns:
+	        --------
+	        List[str]:
+	            Clean OpenAI file identifiers.
+
+        """
+		try:
+			if file_ids is None:
+				return [ ]
+			
+			values = [ ]
+			for item in file_ids:
+				if isinstance( item, str ) and item.strip( ):
+					values.append( item.strip( ) )
+			
+			return values
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'validate_file_ids( self, file_ids: List[ str ]=None )'
+			raise exception
+	
+	def validate_max_num_results( self, max_num_results: int=None ) -> int:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize a vector store search result limit.
+
+	        Parameters:
+	        -----------
+	        max_num_results: int
+	            Requested maximum search result count.
+
+	        Returns:
+	        --------
+	        int:
+	            Valid result count between 1 and 50.
+
+        """
+		try:
+			value = self.max_search_results if max_num_results is None else int( max_num_results )
+			
+			if value < 1:
+				return 1
+			
+			if value > 50:
+				return 50
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'validate_max_num_results( self, max_num_results: int=None )'
+			raise exception
+	
+	def build_expires_after( self, anchor: str=None, days: int=None ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Build an OpenAI vector store expiration policy dictionary.
+
+	        Parameters:
+	        -----------
+	        anchor: str
+	            Expiration anchor value.
+
+	        days: int
+	            Number of days after the anchor.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Expiration policy or None.
+
+        """
+		try:
+			if days is None:
+				return None
+			
+			value = int( days )
+			if value <= 0:
+				return None
+			
+			anchor_value = anchor if isinstance( anchor,
+				str ) and anchor.strip( ) else 'last_active_at'
+			
+			return {
+					'anchor': anchor_value.strip( ),
+					'days': value,
+			}
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'build_expires_after( self, anchor: str=None, days: int=None )'
+			raise exception
+	
+	def build_chunking_strategy( self, strategy: str='auto', max_chunk_size_tokens: int=None,
+			chunk_overlap_tokens: int=None ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Build an OpenAI vector store chunking strategy dictionary.
+
+	        Parameters:
+	        -----------
+	        strategy: str
+	            Chunking strategy name: auto or static.
+
+	        max_chunk_size_tokens: int
+	            Maximum chunk size in tokens for static chunking.
+
+	        chunk_overlap_tokens: int
+	            Chunk overlap in tokens for static chunking.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Chunking strategy dictionary or None.
+
+        """
+		try:
+			strategy_value = strategy if isinstance( strategy,
+				str ) and strategy.strip( ) else 'auto'
+			strategy_value = strategy_value.strip( )
+			
+			if strategy_value == 'auto':
+				return { 'type': 'auto', }
+			
+			if strategy_value != 'static':
+				return None
+			
+			max_value = 800 if max_chunk_size_tokens is None else int( max_chunk_size_tokens )
+			overlap_value = 400 if chunk_overlap_tokens is None else int( chunk_overlap_tokens )
+			
+			if max_value < 100:
+				max_value = 100
+			
+			if max_value > 4096:
+				max_value = 4096
+			
+			if overlap_value < 0:
+				overlap_value = 0
+			
+			if overlap_value > max_value // 2:
+				overlap_value = max_value // 2
+			
+			return {
+					'type': 'static',
+					'static': {
+							'max_chunk_size_tokens': max_value,
+							'chunk_overlap_tokens': overlap_value,
+					},
+			}
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'build_chunking_strategy( self, strategy: str, **kwargs )'
+			raise exception
+	
+	def normalize_vector_store( self, store: Any ) -> Dict[ str, Any ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Normalize a vector store response object into a dictionary.
+
+	        Parameters:
+	        -----------
+	        store: Any
+	            OpenAI vector store object, dictionary, or response.
+
+	        Returns:
+	        --------
+	        Dict[str, Any]:
+	            Normalized vector store metadata.
+
+        """
+		try:
+			if store is None:
+				return { }
+			
+			if isinstance( store, dict ):
+				source = store
+			elif hasattr( store, 'model_dump' ):
+				source = store.model_dump( )
+			else:
+				source = {
+						'id': getattr( store, 'id', None ),
+						'name': getattr( store, 'name', None ),
+						'description': getattr( store, 'description', None ),
+						'created_at': getattr( store, 'created_at', None ),
+						'object': getattr( store, 'object', None ),
+						'usage_bytes': getattr( store, 'usage_bytes', None ),
+						'file_counts': getattr( store, 'file_counts', None ),
+						'status': getattr( store, 'status', None ),
+						'expires_after': getattr( store, 'expires_after', None ),
+						'expires_at': getattr( store, 'expires_at', None ),
+						'last_active_at': getattr( store, 'last_active_at', None ),
+						'metadata': getattr( store, 'metadata', None ),
+				}
+			
+			return {
+					'id': source.get( 'id' ),
+					'name': source.get( 'name' ),
+					'description': source.get( 'description' ),
+					'created_at': source.get( 'created_at' ),
+					'object': source.get( 'object' ),
+					'usage_bytes': source.get( 'usage_bytes' ),
+					'file_counts': source.get( 'file_counts' ),
+					'status': source.get( 'status' ),
+					'expires_after': source.get( 'expires_after' ),
+					'expires_at': source.get( 'expires_at' ),
+					'last_active_at': source.get( 'last_active_at' ),
+					'metadata': source.get( 'metadata' ),
+			}
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'normalize_vector_store( self, store: Any ) -> Dict[ str, Any ]'
+			raise exception
+	
+	def normalize_vector_store_file( self, file: Any ) -> Dict[ str, Any ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Normalize a vector store file response object into a dictionary.
+
+	        Parameters:
+	        -----------
+	        file: Any
+	            OpenAI vector store file object, dictionary, or response.
+
+	        Returns:
+	        --------
+	        Dict[str, Any]:
+	            Normalized vector store file metadata.
+
+        """
+		try:
+			if file is None:
+				return { }
+			
+			if isinstance( file, dict ):
+				source = file
+			elif hasattr( file, 'model_dump' ):
+				source = file.model_dump( )
+			else:
+				source = {
+						'id': getattr( file, 'id', None ),
+						'object': getattr( file, 'object', None ),
+						'created_at': getattr( file, 'created_at', None ),
+						'vector_store_id': getattr( file, 'vector_store_id', None ),
+						'status': getattr( file, 'status', None ),
+						'last_error': getattr( file, 'last_error', None ),
+						'chunking_strategy': getattr( file, 'chunking_strategy', None ),
+						'attributes': getattr( file, 'attributes', None ),
+						'usage_bytes': getattr( file, 'usage_bytes', None ),
+				}
+			
+			return {
+					'id': source.get( 'id' ),
+					'object': source.get( 'object' ),
+					'created_at': source.get( 'created_at' ),
+					'vector_store_id': source.get( 'vector_store_id' ),
+					'status': source.get( 'status' ),
+					'last_error': source.get( 'last_error' ),
+					'chunking_strategy': source.get( 'chunking_strategy' ),
+					'attributes': source.get( 'attributes' ),
+					'usage_bytes': source.get( 'usage_bytes' ),
+			}
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'normalize_vector_store_file( self, file: Any )'
+			raise exception
+	
+	def normalize_file_batch( self, batch: Any ) -> Dict[ str, Any ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Normalize a vector store file batch response object into a dictionary.
+
+	        Parameters:
+	        -----------
+	        batch: Any
+	            OpenAI vector store file batch object, dictionary, or response.
+
+	        Returns:
+	        --------
+	        Dict[str, Any]:
+	            Normalized file batch metadata.
+
+        """
+		try:
+			if batch is None:
+				return { }
+			
+			if isinstance( batch, dict ):
+				source = batch
+			elif hasattr( batch, 'model_dump' ):
+				source = batch.model_dump( )
+			else:
+				source = {
+						'id': getattr( batch, 'id', None ),
+						'object': getattr( batch, 'object', None ),
+						'created_at': getattr( batch, 'created_at', None ),
+						'vector_store_id': getattr( batch, 'vector_store_id', None ),
+						'status': getattr( batch, 'status', None ),
+						'file_counts': getattr( batch, 'file_counts', None ),
+				}
+			
+			return {
+					'id': source.get( 'id' ),
+					'object': source.get( 'object' ),
+					'created_at': source.get( 'created_at' ),
+					'vector_store_id': source.get( 'vector_store_id' ),
+					'status': source.get( 'status' ),
+					'file_counts': source.get( 'file_counts' ),
+			}
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'normalize_file_batch( self, batch: Any ) -> Dict[ str, Any ]'
+			raise exception
+	
+	def normalize_search_results( self, response: Any ) -> List[ Dict[ str, Any ] ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Normalize native vector store search results into dictionaries.
+
+	        Parameters:
+	        -----------
+	        response: Any
+	            OpenAI vector store search response.
+
+	        Returns:
+	        --------
+	        List[Dict[str, Any]]:
+	            Normalized search result rows.
+
+        """
+		try:
+			if response is None:
+				return [ ]
+			
+			if isinstance( response, dict ):
+				items = response.get( 'data', [ ] )
+			elif isinstance( response, list ):
+				items = response
+			else:
+				items = getattr( response, 'data', [ ] )
+			
+			rows: List[ Dict[ str, Any ] ]=[ ]
+			for item in items:
+				if isinstance( item, dict ):
+					source = item
+				elif hasattr( item, 'model_dump' ):
+					source = item.model_dump( )
+				else:
+					source = {
+							'file_id': getattr( item, 'file_id', None ),
+							'filename': getattr( item, 'filename', None ),
+							'score': getattr( item, 'score', None ),
+							'attributes': getattr( item, 'attributes', None ),
+							'content': getattr( item, 'content', None ),
+					}
+				
+				rows.append(
+					{
+							'file_id': source.get( 'file_id' ),
+							'filename': source.get( 'filename' ),
+							'score': source.get( 'score' ),
+							'attributes': source.get( 'attributes' ),
+							'content': source.get( 'content' ),
+					} )
+			
+			return rows
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'normalize_search_results( self, response: Any )'
+			raise exception
+	
+	def create( self, name: str, description: str=None, metadata: Dict[ str, Any ]=None,
+			expires_after: Dict[ str, Any ]=None, file_ids: List[ str ]=None,
+			chunking_strategy: Dict[ str, Any ]=None ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Create an OpenAI vector store.
+
+	        Parameters:
+	        -----------
+	        name: str
+	            Vector store name.
+
+	        description: str
+	            Optional vector store description.
+
+	        metadata: Dict[str, Any]
+	            Optional vector store metadata.
+
+	        expires_after: Dict[str, Any]
+	            Optional expiration policy.
+
+	        file_ids: List[str]
+	            Optional OpenAI file IDs to attach on creation.
+
+	        chunking_strategy: Dict[str, Any]
+	            Optional chunking strategy.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized vector store metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.name = self.validate_store_name( name )
+			self.description = description if isinstance( description,
+				str ) and description.strip( ) else None
+			
+			self.request = {
+					'name': self.name,
+			}
+			
+			if self.description:
+				self.request[ 'description' ]=self.description
+			
+			if isinstance( metadata, dict ) and len( metadata ) > 0:
+				self.request[ 'metadata' ]=metadata
+			
+			if isinstance( expires_after, dict ) and len( expires_after ) > 0:
+				self.request[ 'expires_after' ]=expires_after
+			
+			clean_file_ids = self.validate_file_ids( file_ids )
+			if len( clean_file_ids ) > 0:
+				self.request[ 'file_ids' ]=clean_file_ids
+			
+			if isinstance( chunking_strategy, dict ) and len( chunking_strategy ) > 0:
+				self.request[ 'chunking_strategy' ]=chunking_strategy
+			
+			self.response = self.client.vector_stores.create( **self.request )
+			self.vector_store = self.normalize_vector_store( self.response )
+			self.store_id = self.vector_store.get( 'id' )
+			return self.vector_store
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'create( self, name: str, **kwargs ) -> Dict[ str, Any ] | None'
+			raise exception
+	
+	def list_stores( self, limit: int=100, order: str='desc',
+			after: str=None, before: str=None ) -> List[ Dict[ str, Any ] ]:
+		"""
+
+	        Purpose:
+	        --------
+	        List OpenAI vector stores.
+
+	        Parameters:
+	        -----------
+	        limit: int
+	            Maximum number of vector stores to return.
+
+	        order: str
+	            Sort order.
+
+	        after: str
+	            Optional pagination cursor.
+
+	        before: str
+	            Optional pagination cursor.
+
+	        Returns:
+	        --------
+	        List[Dict[str, Any]]:
+	            Normalized vector store rows.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.request = {
+					'limit': limit,
+					'order': order,
+			}
+			
+			if isinstance( after, str ) and after.strip( ):
+				self.request[ 'after' ]=after.strip( )
+			
+			if isinstance( before, str ) and before.strip( ):
+				self.request[ 'before' ]=before.strip( )
+			
+			self.response = self.client.vector_stores.list( **self.request )
+			items = getattr( self.response, 'data', [ ] )
+			self.vector_stores = [ self.normalize_vector_store( item ) for item in items ]
+			return self.vector_stores
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'list_stores( self, limit: int=100 )'
+			raise exception
+	
+	def retrieve( self, store_id: str ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Retrieve one OpenAI vector store by ID.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized vector store metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.request = {
+					'vector_store_id': self.store_id,
+			}
+			
+			self.response = self.client.vector_stores.retrieve(
+				vector_store_id=self.store_id )
+			self.vector_store = self.normalize_vector_store( self.response )
+			return self.vector_store
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'retrieve( self, store_id: str ) -> Dict[ str, Any ] | None'
+			raise exception
+	
+	def update( self, store_id: str, name: str=None, description: str=None,
+			metadata: Dict[ str, Any ]=None,
+			expires_after: Dict[ str, Any ]=None ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Update one OpenAI vector store.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        name: str
+	            Optional new vector store name.
+
+	        description: str
+	            Optional new vector store description.
+
+	        metadata: Dict[str, Any]
+	            Optional metadata dictionary.
+
+	        expires_after: Dict[str, Any]
+	            Optional expiration policy.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized updated vector store metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.request = { }
+			
+			if isinstance( name, str ) and name.strip( ):
+				self.request[ 'name' ]=name.strip( )
+			
+			if isinstance( description, str ) and description.strip( ):
+				self.request[ 'description' ]=description.strip( )
+			
+			if isinstance( metadata, dict ):
+				self.request[ 'metadata' ]=metadata
+			
+			if isinstance( expires_after, dict ) and len( expires_after ) > 0:
+				self.request[ 'expires_after' ]=expires_after
+			
+			if len( self.request ) == 0:
+				return self.retrieve( self.store_id )
+			
+			self.response = self.client.vector_stores.update(
+				vector_store_id=self.store_id,
+				**self.request )
+			
+			self.vector_store = self.normalize_vector_store( self.response )
+			return self.vector_store
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'update( self, store_id: str, **kwargs )'
+			raise exception
+	
+	def delete( self, store_id: str ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Delete one OpenAI vector store by ID.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized delete result.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.request = {
+					'vector_store_id': self.store_id,
+			}
+			
+			self.response = self.client.vector_stores.delete(
+				vector_store_id=self.store_id )
+			
+			if isinstance( self.response, dict ):
+				return self.response
+			
+			if hasattr( self.response, 'model_dump' ):
+				return self.response.model_dump( )
+			
+			return {
+					'id': getattr( self.response, 'id', self.store_id ),
+					'deleted': getattr( self.response, 'deleted', None ),
+					'object': getattr( self.response, 'object', None ),
+			}
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'delete( self, store_id: str ) -> Dict[ str, Any ] | None'
+			raise exception
+	
+	def attach_file( self, store_id: str, file_id: str, attributes: Dict[ str, Any ]=None,
+			chunking_strategy: Dict[ str, Any ]=None ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Attach an OpenAI file to a vector store.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        file_id: str
+	            OpenAI file identifier.
+
+	        attributes: Dict[str, Any]
+	            Optional file attributes.
+
+	        chunking_strategy: Dict[str, Any]
+	            Optional chunking strategy.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized vector store file metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.file_id = self.validate_file_id( file_id )
+			self.request = {
+					'file_id': self.file_id,
+			}
+			
+			if isinstance( attributes, dict ) and len( attributes ) > 0:
+				self.request[ 'attributes' ]=attributes
+			
+			if isinstance( chunking_strategy, dict ) and len( chunking_strategy ) > 0:
+				self.request[ 'chunking_strategy' ]=chunking_strategy
+			
+			self.response = self.client.vector_stores.files.create(
+				vector_store_id=self.store_id,
+				**self.request )
+			
+			self.vector_file = self.normalize_vector_store_file( self.response )
+			return self.vector_file
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'attach_file( self, store_id: str, file_id: str )'
+			raise exception
+	
+	def list( self, store_id: str, limit: int=100, order: str='desc' ) -> List[ Dict[ str, Any ] ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Backward-compatible alias for listing vector store files.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        limit: int
+	            Maximum number of vector store files to return.
+
+	        order: str
+	            Sort order.
+
+	        Returns:
+	        --------
+	        List[Dict[str, Any]]:
+	            Normalized vector store file rows.
+
+        """
+		try:
+			return self.list_files( store_id=store_id, limit=limit, order=order )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'list( self, store_id: str ) -> List[ Dict[ str, Any ] ]'
+			raise exception
+	
+	def list_files( self, store_id: str, limit: int=100,
+			order: str='desc' ) -> List[ Dict[ str, Any ] ]:
+		"""
+
+	        Purpose:
+	        --------
+	        List files attached to a vector store.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        limit: int
+	            Maximum number of files to return.
+
+	        order: str
+	            Sort order.
+
+	        Returns:
+	        --------
+	        List[Dict[str, Any]]:
+	            Normalized vector store file rows.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.request = {
+					'limit': limit,
+					'order': order,
+			}
+			
+			self.response = self.client.vector_stores.files.list(
+				vector_store_id=self.store_id,
+				**self.request )
+			
+			items = getattr( self.response, 'data', [ ] )
+			self.vector_files = [ self.normalize_vector_store_file( item ) for item in items ]
+			return self.vector_files
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'list_files( self, store_id: str )'
+			raise exception
+	
+	def retrieve_file( self, store_id: str, file_id: str ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Retrieve one vector store file metadata object.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        file_id: str
+	            OpenAI file identifier.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized vector store file metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.file_id = self.validate_file_id( file_id )
+			
+			self.response = self.client.vector_stores.files.retrieve(
+				vector_store_id=self.store_id,
+				file_id=self.file_id )
+			
+			self.vector_file = self.normalize_vector_store_file( self.response )
+			return self.vector_file
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'retrieve_file( self, store_id: str, file_id: str )'
+			raise exception
+	
+	def update_file( self, store_id: str, file_id: str,
+			attributes: Dict[ str, Any ]=None ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Update vector store file attributes.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        file_id: str
+	            OpenAI file identifier.
+
+	        attributes: Dict[str, Any]
+	            File attributes to apply.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized vector store file metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.file_id = self.validate_file_id( file_id )
+			self.request = { }
+			
+			if isinstance( attributes, dict ):
+				self.request[ 'attributes' ]=attributes
+			
+			self.response = self.client.vector_stores.files.update(
+				vector_store_id=self.store_id,
+				file_id=self.file_id,
+				**self.request )
+			
+			self.vector_file = self.normalize_vector_store_file( self.response )
+			return self.vector_file
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'update_file( self, store_id: str, file_id: str )'
+			raise exception
+	
+	def delete_file( self, store_id: str, file_id: str ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Delete a file from a vector store.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        file_id: str
+	            OpenAI file identifier.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized delete result.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.file_id = self.validate_file_id( file_id )
+			
+			self.response = self.client.vector_stores.files.delete(
+				vector_store_id=self.store_id,
+				file_id=self.file_id )
+			
+			if isinstance( self.response, dict ):
+				return self.response
+			
+			if hasattr( self.response, 'model_dump' ):
+				return self.response.model_dump( )
+			
+			return {
+					'id': getattr( self.response, 'id', self.file_id ),
+					'deleted': getattr( self.response, 'deleted', None ),
+					'object': getattr( self.response, 'object', None ),
+			}
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'delete_file( self, store_id: str, file_id: str )'
+			raise exception
+	
+	def retrieve_file_content( self, store_id: str, file_id: str ) -> Any:
+		"""
+
+	        Purpose:
+	        --------
+	        Retrieve content for a vector store file.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        file_id: str
+	            OpenAI file identifier.
+
+	        Returns:
+	        --------
+	        Any:
+	            Vector store file content response.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.file_id = self.validate_file_id( file_id )
+			
+			self.response = self.client.vector_stores.files.content(
+				vector_store_id=self.store_id,
+				file_id=self.file_id )
+			
+			return self.response
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'retrieve_file_content( self, store_id: str, file_id: str )'
+			raise exception
+	
+	def create_file_batch( self, store_id: str, file_ids: List[ str ],
+			attributes: Dict[ str, Any ]=None,
+			chunking_strategy: Dict[ str, Any ]=None ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Create a vector store file batch.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        file_ids: List[str]
+	            OpenAI file identifiers.
+
+	        attributes: Dict[str, Any]
+	            Optional attributes applied to files.
+
+	        chunking_strategy: Dict[str, Any]
+	            Optional chunking strategy.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized file batch metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			clean_file_ids = self.validate_file_ids( file_ids )
+			throw_if( 'file_ids', clean_file_ids )
+			
+			if len( clean_file_ids ) > 2000:
+				raise ValueError( 'Vector store file batches cannot exceed 2000 files.' )
+			
+			self.request = {
+					'file_ids': clean_file_ids,
+			}
+			
+			if isinstance( attributes, dict ) and len( attributes ) > 0:
+				self.request[ 'attributes' ]=attributes
+			
+			if isinstance( chunking_strategy, dict ) and len( chunking_strategy ) > 0:
+				self.request[ 'chunking_strategy' ]=chunking_strategy
+			
+			self.response = self.client.vector_stores.file_batches.create(
+				vector_store_id=self.store_id,
+				**self.request )
+			
+			self.file_batch = self.normalize_file_batch( self.response )
+			self.batch_id = self.file_batch.get( 'id' )
+			return self.file_batch
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'create_file_batch( self, store_id: str, file_ids: List[ str ] )'
+			raise exception
+	
+	def retrieve_file_batch( self, store_id: str, batch_id: str ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Retrieve one vector store file batch.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        batch_id: str
+	            Vector store file batch identifier.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized file batch metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.batch_id = self.validate_batch_id( batch_id )
+			
+			self.response = self.client.vector_stores.file_batches.retrieve(
+				vector_store_id=self.store_id,
+				batch_id=self.batch_id )
+			
+			self.file_batch = self.normalize_file_batch( self.response )
+			return self.file_batch
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'retrieve_file_batch( self, store_id: str, batch_id: str )'
+			raise exception
+	
+	def list_file_batch_files( self, store_id: str, batch_id: str,
+			limit: int=100 ) -> List[ Dict[ str, Any ] ]:
+		"""
+
+	        Purpose:
+	        --------
+	        List files in a vector store file batch.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        batch_id: str
+	            Vector store file batch identifier.
+
+	        limit: int
+	            Maximum number of files to return.
+
+	        Returns:
+	        --------
+	        List[Dict[str, Any]]:
+	            Normalized vector store file rows.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.batch_id = self.validate_batch_id( batch_id )
+			
+			self.response = self.client.vector_stores.file_batches.files.list(
+				vector_store_id=self.store_id,
+				batch_id=self.batch_id,
+				limit=limit )
+			
+			items = getattr( self.response, 'data', [ ] )
+			self.vector_files = [ self.normalize_vector_store_file( item ) for item in items ]
+			return self.vector_files
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'list_file_batch_files( self, store_id: str, batch_id: str )'
+			raise exception
+	
+	def cancel_file_batch( self, store_id: str, batch_id: str ) -> Dict[ str, Any ] | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Cancel a vector store file batch.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        batch_id: str
+	            Vector store file batch identifier.
+
+	        Returns:
+	        --------
+	        Dict[str, Any] | None:
+	            Normalized file batch metadata.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			self.batch_id = self.validate_batch_id( batch_id )
+			
+			self.response = self.client.vector_stores.file_batches.cancel(
+				vector_store_id=self.store_id,
+				batch_id=self.batch_id )
+			
+			self.file_batch = self.normalize_file_batch( self.response )
+			return self.file_batch
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'cancel_file_batch( self, store_id: str, batch_id: str )'
+			raise exception
+	
+	def search( self, store_id: str, query: str, max_num_results: int=10,
+			filters: Dict[ str, Any ]=None, ranking_options: Dict[ str, Any ]=None,
+			rewrite_query: bool = None ) -> List[ Dict[ str, Any ] ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Backward-compatible native vector store search method.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        query: str
+	            Search query.
+
+	        max_num_results: int
+	            Maximum number of results.
+
+	        filters: Dict[str, Any]
+	            Optional attribute filters.
+
+	        ranking_options: Dict[str, Any]
+	            Optional ranking options.
+
+	        rewrite_query: bool
+	            Optional query rewriting flag.
+
+	        Returns:
+	        --------
+	        List[Dict[str, Any]]:
+	            Normalized search results.
+
+        """
+		try:
+			return self.search_store( store_id=store_id, query=query, max_num_results=max_num_results,
+				filters=filters, ranking_options=ranking_options, rewrite_query=rewrite_query )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'search( self, store_id: str, query: str )'
+			raise exception
+	
+	def search_store( self, store_id: str, query: str, max_num_results: int=10,
+			filters: Dict[ str, Any ]=None, ranking_options: Dict[ str, Any ]=None,
+			rewrite_query: bool = None ) -> List[ Dict[ str, Any ] ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Search a vector store using the native OpenAI Vector Stores Search API.
+
+	        Parameters:
+	        -----------
+	        store_id: str
+	            OpenAI vector store identifier.
+
+	        query: str
+	            Search query.
+
+	        max_num_results: int
+	            Maximum number of results.
+
+	        filters: Dict[str, Any]
+	            Optional attribute filters.
+
+	        ranking_options: Dict[str, Any]
+	            Optional ranking options.
+
+	        rewrite_query: bool
+	            Optional query rewriting flag.
+
+	        Returns:
+	        --------
+	        List[Dict[str, Any]]:
+	            Normalized search results.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.store_id = self.validate_store_id( store_id )
+			throw_if( 'query', query )
+			
+			self.request = {
+					'query': query.strip( ),
+					'max_num_results': self.validate_max_num_results( max_num_results ),
+			}
+			
+			if isinstance( filters, dict ) and len( filters ) > 0:
+				self.request[ 'filters' ]=filters
+			
+			if isinstance( ranking_options, dict ) and len( ranking_options ) > 0:
+				self.request[ 'ranking_options' ]=ranking_options
+			
+			if isinstance( rewrite_query, bool ):
+				self.request[ 'rewrite_query' ]=rewrite_query
+			
+			self.response = self.client.vector_stores.search(
+				vector_store_id=self.store_id,
+				**self.request )
+			
+			self.search_results = self.normalize_search_results( self.response )
+			return self.search_results
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'search_store( self, store_id: str, query: str )'
+			raise exception
+	
+	def answer_with_file_search( self, store_ids: List[ str ], prompt: str,
+			model: str='gpt-4o-mini', max_num_results: int=10,
+			instructions: str=None ) -> str | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Answer a prompt using Responses API file_search over vector store IDs.
+
+	        Parameters:
+	        -----------
+	        store_ids: List[str]
+	            Vector store identifiers.
+
+	        prompt: str
+	            User prompt.
+
+	        model: str
+	            Model used by the Responses API.
+
+	        max_num_results: int
+	            Maximum file_search results.
+
+	        instructions: str
+	            Optional system/developer instructions.
+
+	        Returns:
+	        --------
+	        str | None:
+	            Response output text.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			clean_store_ids = [
+					item.strip( ) for item in store_ids
+					if isinstance( item, str ) and item.strip( )
+			]
+			
+			throw_if( 'store_ids', clean_store_ids )
+			throw_if( 'prompt', prompt )
+			
+			model_value = model if isinstance( model, str ) and model.strip( ) else 'gpt-4o-mini'
+			
+			input_items: List[ Dict[ str, Any ] ]=[ ]
+			if isinstance( instructions, str ) and instructions.strip( ):
+				input_items.append(
+					{
+							'role': 'developer',
+							'content': [
+									{
+											'type': 'input_text',
+											'text': instructions.strip( ),
+									}, ],
+					} )
+			
+			input_items.append(
+				{
+						'role': 'user',
+						'content': [
+								{
+										'type': 'input_text',
+										'text': prompt.strip( ),
+								}, ],
+				} )
+			
+			self.request = {
+					'model': model_value,
+					'input': input_items,
+					'tools': [
+							{
+									'type': 'file_search',
+									'vector_store_ids': clean_store_ids,
+									'max_num_results': self.validate_max_num_results(
+										max_num_results ),
+							}, ],
+			}
+			
+			self.response = self.client.responses.create( **self.request )
+			self.output_text = getattr( self.response, 'output_text', None )
+			
+			if self.output_text:
+				return self.output_text
+			
+			return str( self.response )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'answer_with_file_search( self, store_ids: List[ str ], prompt: str )'
+			raise exception
+	
+	def survey( self, store_ids: List[ str ], prompt: str=None, model: str='gpt-4o-mini',
+			max_num_results: int=10, instructions: str=None ) -> str | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Run a Responses API file_search survey across one or more vector stores.
+
+	        Parameters:
+	        -----------
+	        store_ids: List[str]
+	            Vector store identifiers.
+
+	        prompt: str
+	            Optional survey prompt.
+
+	        model: str
+	            Model used by the Responses API.
+
+	        max_num_results: int
+	            Maximum file_search result count.
+
+	        instructions: str
+	            Optional system/developer instructions.
+
+	        Returns:
+	        --------
+	        str | None:
+	            Survey response text.
+
+        """
+		try:
+			query = prompt if isinstance( prompt, str ) and prompt.strip( ) else \
+				'Summarize the most relevant information available in the selected vector stores.'
+			
+			return self.answer_with_file_search(
+				store_ids=store_ids,
+				prompt=query,
+				model=model,
+				max_num_results=max_num_results,
+				instructions=instructions )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'VectorStores'
+			exception.method = 'survey( self, store_ids: List[ str ], prompt: str=None )'
 			raise exception
 	
 	def __dir__( self ) -> List[ str ] | None:
-		return [ 'client',
-		         'file_path',
-		         'response_format',
-		         'name',
-		         'content',
-		         'file_id',
-		         'collections',
-		         'retrieve',
-		         'list',
-		         'extract',
-		         'delete',
-		         'update', ]
+		'''
+	
+	        Purpose:
+	        --------
+	        Return member names for inspection.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[str] | None:
+	            Member names.
+
+        '''
+		return [
+				'api_key',
+				'client',
+				'name',
+				'description',
+				'store_id',
+				'file_id',
+				'batch_id',
+				'model',
+				'response',
+				'vector_store',
+				'vector_stores',
+				'vector_file',
+				'vector_files',
+				'file_batch',
+				'search_results',
+				'output_text',
+				'request',
+				'collections',
+				'max_search_results',
+				'model_options',
+				'ranker_options',
+				'chunking_strategy_options',
+				'validate_store_name',
+				'validate_store_id',
+				'validate_file_id',
+				'validate_batch_id',
+				'validate_file_ids',
+				'validate_max_num_results',
+				'build_expires_after',
+				'build_chunking_strategy',
+				'normalize_vector_store',
+				'normalize_vector_store_file',
+				'normalize_file_batch',
+				'normalize_search_results',
+				'create',
+				'list_stores',
+				'retrieve',
+				'update',
+				'delete',
+				'attach_file',
+				'list',
+				'list_files',
+				'retrieve_file',
+				'update_file',
+				'delete_file',
+				'retrieve_file_content',
+				'create_file_batch',
+				'retrieve_file_batch',
+				'list_file_batch_files',
+				'cancel_file_batch',
+				'search',
+				'search_store',
+				'answer_with_file_search',
+				'survey',
+		]
 		
