@@ -4231,168 +4231,764 @@ class Translation( GPT ):
 class Embeddings( GPT ):
 	"""
 	
-	    Purpose
-	    ___________
-	    Class used for creating vectors using OpenAI's embedding models
-	
-	    Parameters
-	    ------------
-	    None
-	
-	    Attributes
-	    -----------
-	    api_key
-	    client
-	    model
-	    embedding
-	    response
-	
-	    Methods
-	    ------------
-	    create( self, text: str ) -> get_list[ float ]
+	    Purpose:
+	    --------
+	    Provides a wrapper around the OpenAI Embeddings API for creating vector
+	    representations of text inputs.
 
+	    Attributes:
+	    -----------
+	    api_key:
+	        OpenAI API key loaded from config.py.
+
+	    client:
+	        OpenAI client instance.
+
+	    model:
+	        Embedding model name.
+
+	    input:
+	        Text input or list of text inputs submitted to the API.
+
+	    encoding_format:
+	        Embedding encoding format: float or base64.
+
+	    dimensions:
+	        Optional reduced embedding dimension for supported models.
+
+	    user:
+	        Optional end-user identifier.
+
+	    response:
+	        Last OpenAI embeddings response object.
+
+	    embedding:
+	        First embedding returned by the API.
+
+	    embeddings:
+	        All embeddings returned by the API.
+
+	    usage:
+	        Usage metadata returned by the API.
+
+	    request:
+	        Last OpenAI embeddings request dictionary.
+
+	    Methods:
+	    --------
+	    create:
+	        Create one or more embeddings from text input.
+
+	    count_tokens:
+	        Count tokens for one text string.
+
+	    count_total_tokens:
+	        Count tokens across one or more text inputs.
+
+	    validate_model:
+	        Validate and normalize the embedding model name.
+
+	    validate_encoding_format:
+	        Validate and normalize the embedding encoding format.
+
+	    validate_dimensions:
+	        Validate and normalize optional embedding dimensions.
+
+	    validate_input:
+	        Validate and normalize embedding input text.
+
+	    get_default_dimensions:
+	        Return default embedding dimensions for a model.
+
+	    get_max_dimensions:
+	        Return maximum supported dimensions for a model.
 
     """
+	api_key: Optional[ str ]
 	client: Optional[ OpenAI ]
-	response: Optional[ CreateEmbeddingResponse ]
 	model: Optional[ str ]
-	input_text: Optional[ str ]
-	embedding: Optional[ List[ float ] ]
+	input: Optional[ str | List[ str ] ]
 	encoding_format: Optional[ str ]
 	dimensions: Optional[ int ]
-	batch_size: Optional[ int ]
+	user: Optional[ str ]
+	response: Optional[ CreateEmbeddingResponse ]
+	embedding: Optional[ List[ float ] | str ]
+	embeddings: Optional[ List[ List[ float ] ] | List[ str ] ]
+	usage: Optional[ Any ]
+	request: Optional[ Dict[ str, Any ] ]
 	
-	def __init__( self ):
+	def __init__( self, text: str | List[ str ] = None, model: str = 'text-embedding-3-small',
+			format: str = 'float', dimensions: int = None, user: str = None ):
+		"""
+
+	        Purpose:
+	        --------
+	        Initialize an Embeddings wrapper instance.
+
+	        Parameters:
+	        -----------
+	        text: str | List[str]
+	            Optional text input or list of text inputs.
+
+	        model: str
+	            Optional OpenAI embedding model name.
+
+	        format: str
+	            Optional embedding encoding format: float or base64.
+
+	        dimensions: int
+	            Optional embedding dimension for supported models.
+
+	        user: str
+	            Optional end-user identifier.
+
+	        Returns:
+	        --------
+	        None
+
+        """
 		super( ).__init__( )
 		self.api_key = cfg.OPENAI_API_KEY
-		self.client = OpenAI( api_key=cfg.OPENAI_API_KEY )
-		self.dimensions = None
-		self.input_text = None
-		self.encoding_format = None
-		self.model = None
-		self.embedding = None
+		self.client = None
+		self.model = model
+		self.input = text
+		self.encoding_format = format
+		self.dimensions = dimensions
+		self.user = user
 		self.response = None
+		self.embedding = None
+		self.embeddings = None
+		self.usage = None
+		self.request = None
 	
 	@property
-	def model_options( self ) -> List[ str ]:
+	def model_options( self ) -> List[ str ] | None:
 		'''
-		
-			Returns:
-			--------
-			List[ str ] of embedding models
 
-		'''
-		return [ 'text-embedding-ada-002',
-		         'text-embedding-3-small',
-		         'text-embedding-3-large' ]
+	        Purpose:
+	        --------
+	        Return supported OpenAI embedding model names.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[str] | None:
+	            Embedding model names.
+
+        '''
+		return [
+				'text-embedding-3-small',
+				'text-embedding-3-large',
+				'text-embedding-ada-002',
+		]
 	
 	@property
-	def encoding_options( self ) -> List[ str ]:
+	def encoding_options( self ) -> List[ str ] | None:
 		'''
-			
-			Returns:
-			--------
-			List[ str ] of available format options
 
-		'''
-		return [ 'float', 'base64' ]
+	        Purpose:
+	        --------
+	        Return supported embedding encoding formats.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        List[str] | None:
+	            Embedding encoding formats.
+
+        '''
+		return [
+				'float',
+				'base64',
+		]
 	
-	def create( self, text: str | List[ str ], model: str='text-embedding-3-large', format: str='float',
-			dimensions: int=None ) -> List[ float ] | List[ List[ float ] ] | None:
+	@property
+	def model_default_dimensions( self ) -> Dict[ str, int ]:
+		'''
+
+	        Purpose:
+	        --------
+	        Return default embedding dimensions by model.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        Dict[str, int]:
+	            Default dimension values keyed by model name.
+
+        '''
+		return {
+				'text-embedding-3-small': 1536,
+				'text-embedding-3-large': 3072,
+				'text-embedding-ada-002': 1536,
+		}
+	
+	@property
+	def model_max_dimensions( self ) -> Dict[ str, int ]:
+		'''
+
+	        Purpose:
+	        --------
+	        Return maximum supported embedding dimensions by model.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        Dict[str, int]:
+	            Maximum dimension values keyed by model name.
+
+        '''
+		return {
+				'text-embedding-3-small': 1536,
+				'text-embedding-3-large': 3072,
+				'text-embedding-ada-002': 1536,
+		}
+	
+	@property
+	def model_dimension_support( self ) -> Dict[ str, bool ]:
+		'''
+
+	        Purpose:
+	        --------
+	        Return whether each embedding model supports the dimensions parameter.
+
+	        Parameters:
+	        -----------
+	        None
+
+	        Returns:
+	        --------
+	        Dict[str, bool]:
+	            Dimension-parameter support keyed by model name.
+
+        '''
+		return {
+				'text-embedding-3-small': True,
+				'text-embedding-3-large': True,
+				'text-embedding-ada-002': False,
+		}
+	
+	def validate_model( self, model: str = None ) -> str:
 		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the embedding model name.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Requested embedding model name.
+
+	        Returns:
+	        --------
+	        str:
+	            Valid embedding model name.
+
+        """
+		try:
+			value = model if isinstance( model, str ) and model.strip( ) else \
+				'text-embedding-3-small'
+			
+			value = value.strip( )
+			if value not in self.model_options:
+				raise ValueError( f'Unsupported embedding model: {value}' )
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'validate_model( self, model: str=None ) -> str'
+			raise exception
 	
-	        Purpose
-	        _______
-	        Creates an embedding ginve a text
+	def validate_encoding_format( self, format: str = None ) -> str:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize the embedding encoding format.
+
+	        Parameters:
+	        -----------
+	        format: str
+	            Requested encoding format.
+
+	        Returns:
+	        --------
+	        str:
+	            Valid encoding format: float or base64.
+
+        """
+		try:
+			value = format if isinstance( format, str ) and format.strip( ) else 'float'
+			value = value.strip( ).lower( )
+			if value not in self.encoding_options:
+				raise ValueError( f'Unsupported embedding encoding format: {value}' )
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'validate_encoding_format( self, format: str=None ) -> str'
+			raise exception
 	
+	def validate_dimensions( self, model: str, dimensions: int = None ) -> int | None:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize optional embedding dimensions for the selected model.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Valid embedding model name.
+
+	        dimensions: int
+	            Requested output dimensions.
+
+	        Returns:
+	        --------
+	        int | None:
+	            Valid dimensions value, or None when dimensions should be omitted.
+
+        """
+		try:
+			if dimensions is None:
+				return None
+			
+			try:
+				value = int( dimensions )
+			except Exception:
+				return None
+			
+			if value <= 0:
+				return None
+			
+			supports_dimensions = self.model_dimension_support.get( model, False )
+			if not supports_dimensions:
+				return None
+			
+			max_dimensions = self.get_max_dimensions( model )
+			if value > max_dimensions:
+				return max_dimensions
+			
+			return value
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'validate_dimensions( self, model: str, dimensions: int=None )'
+			raise exception
 	
-	        Parameters
-	        ----------
-	        text: str
-	
-	
-	        Returns
-	        -------
-	        get_list[ float ]
+	def validate_input( self, text: str | List[ str ] ) -> str | List[ str ]:
+		"""
+
+	        Purpose:
+	        --------
+	        Validate and normalize embedding input text.
+
+	        Parameters:
+	        -----------
+	        text: str | List[str]
+	            Text string or list of text strings to embed.
+
+	        Returns:
+	        --------
+	        str | List[str]:
+	            Clean embedding input.
 
         """
 		try:
 			throw_if( 'text', text )
-			self.input_text = text
-			self.model = model
-			self.encoding_format = format
-			self.dimensions = dimensions
-			self.client = OpenAI( api_key=self.api_key )
-			if self.model == 'text-embedding-3-large' and self.dimensions is not None:
-				self.response = self.client.embeddings.create( input=self.input_text, model=self.model,
-					encoding_format=self.encoding_format, dimensions=self.dimensions )
-			else:
-				self.response = self.client.embeddings.create( input=self.input_text, model=self.model,
-					encoding_format=self.encoding_format )
-			if isinstance( self.input_text, list ):
-				return [ item.embedding for item in self.response.data ]
-			else:
-				return self.response.data[ 0 ].embedding
+			
+			if isinstance( text, str ):
+				value = text.strip( )
+				throw_if( 'text', value )
+				return value
+			
+			if isinstance( text, list ):
+				values = [ ]
+				for item in text:
+					if not isinstance( item, str ):
+						continue
+					
+					clean = item.strip( )
+					if clean:
+						values.append( clean )
+				
+				throw_if( 'text', values )
+				return values
+			
+			raise ValueError( 'Embedding input must be a string or list of strings.' )
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
-			exception.cause = 'Embedding'
-			exception.method = 'create( self, text: str, model: str ) -> List[ float ]'
+			exception.cause = 'Embeddings'
+			exception.method = 'validate_input( self, text: str | List[ str ] )'
 			raise exception
 	
-	def count_tokens( self, text: str, coding: str='cl100k_base' ) -> int:
-		'''
+	def get_default_dimensions( self, model: str ) -> int:
+		"""
 
 	        Purpose:
-	        -------
-	        Returns the num of words in a documents path.
-	
+	        --------
+	        Return the default embedding dimensions for a model.
+
 	        Parameters:
 	        -----------
-	        text: str - The string that is tokenized
-	        coding: str - The encoding to use for tokenizing
-	
+	        model: str
+	            Embedding model name.
+
 	        Returns:
 	        --------
-	        int - The number of words
+	        int:
+	            Default embedding dimension count.
 
-        '''
+        """
 		try:
-			throw_if( 'text', text )
-			throw_if( 'coding', coding )
-			_encoding = tiktoken.get_encoding( coding )
-			_tokens = len( _encoding.encode( text ) )
-			return _tokens
+			return int( self.model_default_dimensions.get( model, 1536 ) )
 		except Exception as e:
 			exception = Error( e )
 			exception.module = 'gpt'
-			exception.cause = 'Embedding'
-			exception.method = 'count_tokens( self, text: str, coding: str ) -> int'
+			exception.cause = 'Embeddings'
+			exception.method = 'get_default_dimensions( self, model: str ) -> int'
+			raise exception
+	
+	def get_max_dimensions( self, model: str ) -> int:
+		"""
+
+	        Purpose:
+	        --------
+	        Return maximum supported embedding dimensions for a model.
+
+	        Parameters:
+	        -----------
+	        model: str
+	            Embedding model name.
+
+	        Returns:
+	        --------
+	        int:
+	            Maximum supported dimension count.
+
+        """
+		try:
+			return int( self.model_max_dimensions.get( model, 1536 ) )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'get_max_dimensions( self, model: str ) -> int'
+			raise exception
+	
+	def count_tokens( self, text: str, encoding_name: str = 'cl100k_base' ) -> int:
+		"""
+	
+	        Purpose:
+	        --------
+	        Count tokens in a text string using tiktoken.
+
+	        Parameters:
+	        -----------
+	        text: str
+	            Text to count.
+
+	        encoding_name: str
+	            Tiktoken encoding name.
+
+	        Returns:
+	        --------
+	        int:
+	            Token count.
+
+        """
+		try:
+			if not isinstance( text, str ) or not text:
+				return 0
+			
+			encoding = tiktoken.get_encoding( encoding_name )
+			return len( encoding.encode( text ) )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'count_tokens( self, text: str, encoding_name: str ) -> int'
+			raise exception
+	
+	def count_total_tokens( self, text: str | List[ str ],
+			encoding_name: str = 'cl100k_base' ) -> int:
+		"""
+	
+	        Purpose:
+	        --------
+	        Count total tokens across one text string or a list of text strings.
+
+	        Parameters:
+	        -----------
+	        text: str | List[str]
+	            Text input or list of text inputs.
+
+	        encoding_name: str
+	            Tiktoken encoding name.
+
+	        Returns:
+	        --------
+	        int:
+	            Total token count.
+
+        """
+		try:
+			if isinstance( text, str ):
+				return self.count_tokens( text, encoding_name=encoding_name )
+			
+			if isinstance( text, list ):
+				return sum( self.count_tokens( item, encoding_name=encoding_name )
+				            for item in text if isinstance( item, str ) )
+			
+			return 0
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'count_total_tokens( self, text: str | List[ str ] ) -> int'
+			raise exception
+	
+	def validate_token_limits( self, text: str | List[ str ],
+			max_input_tokens: int = 8192, max_total_tokens: int = 300000 ) -> None:
+		"""
+	
+	        Purpose:
+	        --------
+	        Validate per-input and total token limits before calling the Embeddings API.
+
+	        Parameters:
+	        -----------
+	        text: str | List[str]
+	            Text input or list of text inputs.
+
+	        max_input_tokens: int
+	            Maximum tokens allowed for a single input item.
+
+	        max_total_tokens: int
+	            Maximum total tokens allowed across the request.
+
+	        Returns:
+	        --------
+	        None
+
+        """
+		try:
+			values = text if isinstance( text, list ) else [ text ]
+			for index, item in enumerate( values ):
+				token_count = self.count_tokens( item )
+				if token_count > max_input_tokens:
+					raise ValueError(
+						f'Embedding input item {index + 1} has {token_count} tokens, '
+						f'which exceeds the {max_input_tokens} token per-input limit.' )
+			
+			total_tokens = self.count_total_tokens( text )
+			if total_tokens > max_total_tokens:
+				raise ValueError(
+					f'Embedding request has {total_tokens} total tokens, which exceeds '
+					f'the {max_total_tokens} token request limit.' )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'validate_token_limits( self, text: str | List[ str ] )'
+			raise exception
+	
+	def build_request( self, text: str | List[ str ], model: str = 'text-embedding-3-small',
+			format: str = 'float', dimensions: int = None, user: str = None ) -> Dict[ str, Any ]:
+		"""
+	
+	        Purpose:
+	        --------
+	        Build a validated OpenAI Embeddings API request dictionary.
+
+	        Parameters:
+	        -----------
+	        text: str | List[str]
+	            Text input or list of text inputs.
+
+	        model: str
+	            Embedding model name.
+
+	        format: str
+	            Encoding format: float or base64.
+
+	        dimensions: int
+	            Optional reduced dimensions for supported models.
+
+	        user: str
+	            Optional end-user identifier.
+
+	        Returns:
+	        --------
+	        Dict[str, Any]:
+	            Embeddings API request dictionary.
+
+        """
+		try:
+			self.input = self.validate_input( text )
+			self.model = self.validate_model( model )
+			self.encoding_format = self.validate_encoding_format( format )
+			self.dimensions = self.validate_dimensions( self.model, dimensions )
+			self.user = user if isinstance( user, str ) and user.strip( ) else None
+			
+			self.validate_token_limits( self.input )
+			
+			self.request = {
+					'model': self.model,
+					'input': self.input,
+					'encoding_format': self.encoding_format,
+			}
+			
+			if self.dimensions is not None:
+				self.request[ 'dimensions' ] = self.dimensions
+			
+			if self.user:
+				self.request[ 'user' ] = self.user.strip( )
+			
+			return self.request
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'build_request( self, text: str | List[ str ], **kwargs )'
+			raise exception
+	
+	def create( self, text: str | List[ str ], model: str = 'text-embedding-3-small',
+			format: str = 'float', dimensions: int = None,
+			user: str = None ) -> List[ float ] | List[ List[ float ] ] | str | List[ str ] | None:
+		"""
+	
+	        Purpose:
+	        --------
+	        Create one or more embeddings from text input using the OpenAI Embeddings API.
+
+	        Parameters:
+	        -----------
+	        text: str | List[str]
+	            Text input or list of text inputs.
+
+	        model: str
+	            Embedding model name.
+
+	        format: str
+	            Encoding format: float or base64.
+
+	        dimensions: int
+	            Optional reduced dimensions for supported embedding models.
+
+	        user: str
+	            Optional end-user identifier.
+
+	        Returns:
+	        --------
+	        List[float] | List[List[float]] | str | List[str] | None:
+	            Single embedding, list of embeddings, base64 embedding string, list of
+	            base64 strings, or None.
+
+        """
+		try:
+			self.client = OpenAI( api_key=self.api_key )
+			self.request = self.build_request( text=text, model=model, format=format,
+				dimensions=dimensions, user=user )
+			
+			self.response = self.client.embeddings.create( **self.request )
+			self.usage = getattr( self.response, 'usage', None )
+			self.data = getattr( self.response, 'data', None )
+			self.embeddings = [ ]
+			
+			if self.data is None or len( self.data ) == 0:
+				self.embedding = None
+				return None
+			
+			for item in self.data:
+				value = getattr( item, 'embedding', None )
+				if value is not None:
+					self.embeddings.append( value )
+			
+			if len( self.embeddings ) == 0:
+				self.embedding = None
+				return None
+			
+			self.embedding = self.embeddings[ 0 ]
+			
+			if isinstance( self.input, str ):
+				return self.embedding
+			
+			return self.embeddings
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'gpt'
+			exception.cause = 'Embeddings'
+			exception.method = 'create( self, text: str | List[ str ], **kwargs )'
 			raise exception
 	
 	def __dir__( self ) -> List[ str ] | None:
 		'''
+	
+	        Purpose:
+	        --------
+	        Return member names for inspection.
 
-		        Purpose:
-		        --------
-                Method returns a list of strings representing members
+	        Parameters:
+	        -----------
+	        None
 
-		        Parameters:
-		        ----------
-                self
-
-		        Returns:
-		        ---------
-                List[ str ] | None
+	        Returns:
+	        --------
+	        List[str] | None:
+	            Member names.
 
         '''
 		return [
-		         'api_key',
-		         'client',
-		         'model',
-		         'count_tokens',
-		         'input_text',
-		         'model_options', ]
+				'api_key',
+				'client',
+				'model',
+				'input',
+				'encoding_format',
+				'dimensions',
+				'user',
+				'response',
+				'embedding',
+				'embeddings',
+				'usage',
+				'request',
+				'model_options',
+				'encoding_options',
+				'model_default_dimensions',
+				'model_max_dimensions',
+				'model_dimension_support',
+				'validate_model',
+				'validate_encoding_format',
+				'validate_dimensions',
+				'validate_input',
+				'get_default_dimensions',
+				'get_max_dimensions',
+				'count_tokens',
+				'count_total_tokens',
+				'validate_token_limits',
+				'build_request',
+				'create',
+		]
 
 class Files( GPT ):
 	'''
