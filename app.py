@@ -6044,411 +6044,551 @@ elif mode == 'Images':
 				if st.button( 'Clear Messages', key='clear_image_edit',
 						on_click=clear_image_messages ):
 					st.rerun( )
-					
+
 # ======================================================================================
 # AUDIO MODE
 # ======================================================================================
 elif mode == 'Audio':
-	audio_model = st.session_state.get( 'audio_model', '' )
-	audio_input = st.session_state.get( 'audio_input', '' )
-	audio_task = st.session_state.get( 'audio_task', '' )
-	audio_language = st.session_state.get( 'audio_language', '' )
-	audio_mime_type = st.session_state.get( 'audio_mime_type', '' )
-	audio_response_format = st.session_state.get( 'audio_response_format', '' )
-	audio_file = st.session_state.get( 'audio_file', '' )
-	audio_reasoning = st.session_state.get( 'audio_reasoning', '' )
-	audio_choice = st.session_state.get( 'audio_tool_choice', '' )
-	audio_voice = st.session_state.get( 'audio_voice', '' )
-	audio_top_percent = st.session_state.get( 'audio_top_percent', 0.0 )
-	audio_freq = st.session_state.get( 'audio_frequency_penalty', 0.0 )
-	audio_presence = st.session_state.get( 'audio_presence_penalty', 0.0 )
-	audio_number = st.session_state.get( 'audio_number', 0 )
-	audio_temperature = st.session_state.get( 'audio_temperature', 0.0 )
-	audio_start = st.session_state.get( 'audio_start_time', 0.0 )
-	audio_end = st.session_state.get( 'audio_end_time', 0.0 )
-	audio_stream = st.session_state.get( 'audio_stream', False )
-	audio_store = st.session_state.get( 'audio_store', False )
-	audio_background = st.session_state.get( 'audio_background', False )
-	audio_loop = st.session_state.get( 'audio_loop', False )
-	audio_autoplay = st.session_state.get( 'audio_autoplay', False )
-	audio_messages = st.session_state.get( 'audio_messages', [ ] )
-	audio_rate = int( st.session_state.get( 'audio_rate',
-		int( cfg.SAMPLE_RATES[ 0 ] ) if cfg.SAMPLE_RATES else 44100 ) )
+	ensure_audio_mode_state( )
 	transcriber = Transcription( )
 	translator = Translation( )
 	tts = TTS( )
 	
-	available_tasks = [ 'Transcribe', 'Translate', 'Text-to-Speech' ]
-	model_options = [ ]
-	
+	# ------------------------------------------------------------------
+	# Session State
+	# ------------------------------------------------------------------
 	if st.session_state.get( 'clear_instructions' ):
 		st.session_state[ 'audio_system_instructions' ] = ''
-		st.session_state[ 'clear_audio_instructions' ] = False
 		st.session_state[ 'clear_instructions' ] = False
 	
+	if 'audio_tts_input' not in st.session_state:
+		st.session_state[ 'audio_tts_input' ] = ''
+	
+	if not isinstance( st.session_state.get( 'audio_messages' ), list ):
+		st.session_state.audio_messages = [ ]
+	
+	if not isinstance( st.session_state.get( 'audio_include' ), list ):
+		st.session_state[ 'audio_include' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'audio_speed' ), float ):
+		st.session_state[ 'audio_speed' ] = 1.0
+	
+	if not isinstance( st.session_state.get( 'audio_output' ), str ):
+		st.session_state[ 'audio_output' ] = ''
+	
+	if 'audio_output_bytes' not in st.session_state:
+		st.session_state[ 'audio_output_bytes' ] = None
+	
+	if not isinstance( st.session_state.get( 'audio_last_result' ), dict ):
+		st.session_state[ 'audio_last_result' ] = { }
+	
+	if not isinstance( st.session_state.get( 'audio_last_usage' ), dict ):
+		st.session_state[ 'audio_last_usage' ] = { }
+	
+	# ------------------------------------------------------------------
+	# Main UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
-		st.subheader( '🎧 Audio API', help=cfg.AUDIO_API )
+		st.subheader( '🎧 Audio API',
+			help=getattr( cfg, 'AUDIO_API',
+				'OpenAI audio transcription, translation, and text-to-speech workflows.' ) )
 		st.divider( )
+		
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
-			
-			with st.expander( 'LLM Options', icon='🧊', expanded=False, width='stretch' ):
-				aud_c1, aud_c2, aud_c3, aud_c4, aud_c5, aud_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+			with st.expander( label='LLM Options', icon='🧊', expanded=False, width='stretch' ):
+				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
-				with aud_c1:
-					if not available_tasks:
-						st.info( 'Audio is not supported by the selected provider.' )
-						audio_task = None
-					else:
-						audio_task = st.selectbox( label='Mode', options=available_tasks,
-							key='audio_task', placeholder='Options', index=None )
-						audio_task = st.session_state[ 'audio_task' ]
+				# ---------- Task ------------
+				with llm_c1:
+					audio_task = st.selectbox( label='Task',
+						options=get_audio_task_options( ), key='audio_task',
+						help='Select the Audio API workflow to run.',
+						index=None, placeholder='Options' )
+					
+					audio_task = st.session_state.get( 'audio_task', '' )
 				
-				with aud_c2:
+				# Normalize dependent widget-backed values before dependent widgets exist.
+				model_options = get_audio_model_options(
+					audio_task, transcriber, translator, tts )
+				if st.session_state.get( 'audio_model' ) not in model_options:
+					st.session_state[ 'audio_model' ] = ''
+				
+				format_options = get_audio_response_format_options(
+					audio_task, st.session_state.get( 'audio_model' ),
+					transcriber, translator, tts )
+				if st.session_state.get( 'audio_response_format' ) not in format_options:
+					st.session_state[ 'audio_response_format' ] = ''
+				
+				include_options = get_audio_include_options(
+					audio_task, st.session_state.get( 'audio_model' ), transcriber )
+				if len( include_options ) == 0:
+					st.session_state[ 'audio_include' ] = [ ]
+				else:
+					st.session_state[ 'audio_include' ] = [
+							value for value in st.session_state.get( 'audio_include', [ ] )
+							if value in include_options
+					]
+				
+				language_options = get_audio_language_options( transcriber )
+				if st.session_state.get( 'audio_language' ) not in language_options:
+					st.session_state[ 'audio_language' ] = ''
+				
+				voice_options = get_audio_voice_options( tts )
+				if st.session_state.get( 'audio_voice' ) not in voice_options:
+					st.session_state[ 'audio_voice' ] = ''
+				
+				speed_options = get_audio_speed_options( tts )
+				if st.session_state.get( 'audio_speed' ) not in speed_options:
+					st.session_state[ 'audio_speed' ] = 1.0
+				
+				# ---------- Model ------------
+				with llm_c2:
+					audio_model = st.selectbox( label='Model',
+						options=model_options, key='audio_model',
+						help='Task-aware OpenAI Audio API model.',
+						index=None, placeholder='Options' )
+					
+					audio_model = st.session_state.get( 'audio_model', '' )
+				
+				# Recompute format/include after model selection.
+				format_options = get_audio_response_format_options(
+					audio_task, audio_model, transcriber, translator, tts )
+				if st.session_state.get( 'audio_response_format' ) not in format_options:
+					st.session_state[ 'audio_response_format' ] = ''
+				
+				include_options = get_audio_include_options(
+					audio_task, audio_model, transcriber )
+				if len( include_options ) == 0:
+					st.session_state[ 'audio_include' ] = [ ]
+				else:
+					st.session_state[ 'audio_include' ] = [
+							value for value in st.session_state.get( 'audio_include', [ ] )
+							if value in include_options
+					]
+				
+				# ---------- Language ------------
+				with llm_c3:
 					if audio_task == 'Transcribe':
-						model_options = list( transcriber.model_options )
-					elif audio_task == 'Translate':
-						model_options = list( translator.model_options )
-					elif audio_task == 'Text-to-Speech':
-						model_options = list( tts.model_options )
+						audio_language = st.selectbox( label='Language',
+							options=language_options, key='audio_language',
+							help='Optional source-language hint for transcription.',
+							index=None, placeholder='Options' )
 					else:
-						model_options = [ 'gpt-4o-mini-tts',
-						                  'tts-1',
-						                  'tts-1-hd',
-						                  'gpt-4o-transcribe',
-						                  'gpt-4o-mini-transcribe',
-						                  'gpt-4o-mini-transcribe-2025-12-15',
-						                  'whisper-1',
-						                  'gpt-4o-transcribe-diarize' ]
-					
-					if model_options:
-						audio_model = st.selectbox( label='Model', options=model_options,
-							key='audio_model', placeholder='Options', index=None )
-						audio_model = st.session_state[ 'audio_model' ]
+						st.caption( 'Language' )
+						st.info( 'Only used as a transcription source-language hint.' )
+						audio_language = st.session_state.get( 'audio_language', '' )
 				
-				with aud_c3:
-					reasoning_options = [ 'low', 'medium', 'high', 'minimal', 'xhigh' ]
-					st.selectbox( label='Reasoning', options=reasoning_options, key='audio_reasoning',
-						help=cfg.REASONING, index=None, placeholder='Options' )
-					audio_reasoning = st.session_state[ 'audio_reasoning' ]
-				
-				with aud_c4:
-					audio_rate = st.selectbox( label='Sample Rate', options=cfg.SAMPLE_RATES,
-						key='audio_rate', placeholder='Options', index=0 )
-					audio_rate = int( st.session_state[ 'audio_rate' ] )
-				
-				with aud_c5:
-					mime_options = [ ]
-					if audio_task == 'Transcribe':
-						mime_options = list( transcriber.mime_options )
-					elif audio_task == 'Translate':
-						mime_options = list( translator.mime_options )
-					elif audio_task == 'Text-to-Speech':
-						mime_options = list( tts.mime_options )
-					
-					if mime_options:
-						audio_mime_type = st.selectbox( label='MIME type', options=mime_options,
-							key='audio_mime_type', placeholder='Options', index=None )
-						audio_mime_type = st.session_state[ 'audio_mime_type' ]
-				
-				with aud_c6:
-					st.toggle( label='Background', key='audio_background', help=cfg.BACKGROUND_MODE )
-					audio_background = st.session_state[ 'audio_background' ]
-		
-				# -------- Reset Settings ------------------
-				if st.button( 'Reset', key='audio_model_reset', width='stretch' ):
-					for key in [ 'audio_task', 'audio_model', 'audio_language',
-					             'audio_background', 'audio_reasoning',
-					             'audio_rate', 'audio_mime_type' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
-			
-			with st.expander( 'Inference Options', icon='🎚️', expanded=False, width='stretch' ):
-				prm_c1, prm_c2, prm_c3, prm_c4, prm_c5, prm_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-				
-				with prm_c1:
-					st.slider( label='Top-P', min_value=0.0, max_value=1.0,
-						value=float( st.session_state.get( 'audio_top_percent', 0.0 ) ),
-						step=0.01, help=cfg.TOP_P, key='audio_top_percent' )
-					audio_top_percent = st.session_state[ 'audio_top_percent' ]
-				
-				with prm_c2:
-					st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
-						value=float( st.session_state.get( 'audio_frequency_penalty', 0.0 ) ),
-						step=0.01, help=cfg.FREQUENCY_PENALTY, key='audio_frequency_penalty' )
-					audio_freq = st.session_state[ 'audio_frequency_penalty' ]
-				
-				with prm_c3:
-					st.slider( label='Presence Penalty', min_value=-2.0, max_value=2.0,
-						value=float( st.session_state.get( 'audio_presence_penalty', 0.0 ) ),
-						step=0.01, help=cfg.PRESENCE_PENALTY, key='audio_presence_penalty' )
-					audio_presence = st.session_state[ 'audio_presence_penalty' ]
-				
-				with prm_c4:
-					st.slider( label='Temperature', min_value=0.0, max_value=1.0,
-						value=float( st.session_state.get( 'audio_temperature', 0.0 ) ),
-						step=0.01, help=cfg.TEMPERATURE, key='audio_temperature' )
-					audio_temperature = st.session_state[ 'audio_temperature' ]
-				
-				with prm_c5:
-					modality_options = [ 'auto', 'text', 'image', 'audio' ]
-					audio_modalities = st.multiselect( label='Response Modalities',
-						options=modality_options, key='audio_modalities',
-						help='Optional. Modality of the response', placeholder='Options' )
-				
-				with prm_c6:
-					if audio_task == 'Transcribe':
-						selected_model = st.session_state.get( 'audio_model' ) or 'gpt-4o-transcribe'
-						format_options = transcriber.response_format_options.get(
-							selected_model, [ 'json', 'text' ] )
-					elif audio_task == 'Translate':
-						format_options = list( translator.response_format_options )
-					elif audio_task == 'Text-to-Speech':
-						format_options = list( tts.mime_options )
-					else:
-						format_options = [ 'json', 'text' ]
-					
-					audio_response_format = st.selectbox( label='Response Format',
+				# ---------- Format ------------
+				with llm_c4:
+					audio_response_format = st.selectbox( label='Format',
 						options=format_options, key='audio_response_format',
-						help='Optional. Format of the response', placeholder='Options',
-						index=None )
-					audio_response_format = st.session_state[ 'audio_response_format' ]
-		
-				# -------- Reset Settings ------------------
-				if st.button( 'Reset', key='audio_inference_reset', width='stretch' ):
-					for key in [ 'audio_top_percent', 'audio_temperature',
-					             'audio_presence_penalty', 'audio_modalities',
-					             'audio_frequency_penalty', 'audio_response_format' ]:
+						help='Task-aware response format or TTS audio output format.',
+						index=None, placeholder='Options' )
+					
+					audio_response_format = st.session_state.get( 'audio_response_format', '' )
+				
+				# ---------- Reset ------------
+				st.button( label='Reset', key='reset_audio_task',
+					width='stretch', on_click=reset_audio_task_controls )
+			
+			with st.expander( label='Inference Options', icon='🎛️',
+					expanded=False, width='stretch' ):
+				inf_c1, inf_c2, inf_c3, inf_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
+				
+				# ---------- Temperature ------------
+				with inf_c1:
+					audio_temperature = st.slider( label='Temperature',
+						min_value=0.0, max_value=1.0, step=0.01,
+						help=('Used by Whisper transcription/translation paths where supported. '
+						      'Ignored by TTS.'),
+						key='audio_temperature' )
+				
+				# ---------- Include ------------
+				with inf_c2:
+					if len( include_options ) > 0:
+						audio_include = st.multiselect( label='Include',
+							options=include_options, key='audio_include',
+							help='Optional transcription include fields.',
+							placeholder='Options' )
+					else:
+						st.caption( 'Include' )
+						st.info( 'No include options for the selected task/model.' )
+						audio_include = st.session_state.get( 'audio_include', [ ] )
+				
+				# ---------- Stream ------------
+				with inf_c3:
+					audio_stream = st.toggle( label='Stream',
+						key='audio_stream', help=getattr( cfg, 'STREAM',
+							'Streaming is retained but not sent until stream rendering is implemented.' ) )
+					
+					if audio_stream:
+						st.caption( 'Streaming is not sent until stream-event rendering is added.' )
+				
+				# ---------- Background ------------
+				with inf_c4:
+					audio_background = st.toggle( label='Background',
+						key='audio_background', help=getattr( cfg, 'BACKGROUND_MODE',
+							'Background mode is retained but not sent for Audio API calls.' ) )
+					
+					if audio_background:
+						st.caption( 'Background mode is not sent for these Audio API calls.' )
+				
+				# ---------- Reset ------------
+				if st.button( label='Reset', key='reset_audio_inference',
+						width='stretch' ):
+					for key in [ 'audio_temperature', 'audio_include',
+					             'audio_stream', 'audio_background' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					
 					st.rerun( )
 			
-			with st.expander( 'Sound Options', icon='👂', expanded=False, width='stretch' ):
-				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+			with st.expander( label='Sound Options', icon='🔊',
+					expanded=False, width='stretch' ):
+				snd_c1, snd_c2, snd_c3, snd_c4, snd_c5 = st.columns(
+					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
 				
-				with resp_c1:
-					if audio_task in ('Transcribe', 'Translate'):
-						obj = transcriber if audio_task == 'Transcribe' else translator
-						if obj and hasattr( obj, 'language_options' ):
-							audio_language = st.selectbox(
-								label='Language',
-								options=obj.language_options,
-								key='audio_language',
-								placeholder='Options',
-								index=None,
-								format_func=lambda code: obj.language_labels.get( code, code )
-							)
-							
-							audio_language = st.session_state[ 'audio_language' ]
-					else:
-						audio_language = st.selectbox(
-							label='Language',
-							options=[ '' ],
-							key='audio_language',
-							placeholder='Select Transcription or Translation Task',
-							index=None,
-							format_func=lambda value: 'Select Transcription or Translation Task'
-						)
-						
-						audio_language = st.session_state[ 'audio_language' ]
-				
-				with resp_c2:
-					if audio_task == 'Text-to-Speech' and tts:
-						audio_voice = st.selectbox( label='Voice', options=tts.voice_options,
-							key='audio_voice', placeholder='Options', index=None )
-						audio_voice = st.session_state[ 'audio_voice' ]
-					else:
+				# ---------- Voice ------------
+				with snd_c1:
+					if audio_task == 'Text-to-Speech':
 						audio_voice = st.selectbox( label='Voice',
-							options=[ 'Select Text-to-Speech Task' ], key='audio_voice',
-							placeholder='Options', index=None )
-						audio_voice = st.session_state[ 'audio_voice' ]
+							options=voice_options, key='audio_voice',
+							help='Text-to-speech voice.',
+							index=None, placeholder='Options' )
+					else:
+						st.caption( 'Voice' )
+						st.info( 'Only used by Text-to-Speech.' )
+						audio_voice = st.session_state.get( 'audio_voice', '' )
 				
-				with resp_c3:
-					st.toggle( label='Loop Audio', value=False, key='audio_loop' )
-					audio_loop = st.session_state[ 'audio_loop' ]
+				# ---------- Speed ------------
+				with snd_c2:
+					if audio_task == 'Text-to-Speech':
+						audio_speed = st.select_slider( label='Speed',
+							options=speed_options, key='audio_speed',
+							help='Text-to-speech playback speed.' )
+					else:
+						st.caption( 'Speed' )
+						st.info( 'Only used by Text-to-Speech.' )
+						audio_speed = st.session_state.get( 'audio_speed', 1.0 )
 				
-				with resp_c4:
-					st.toggle( label='Auto Play', value=False, key='audio_autoplay' )
-					audio_autoplay = st.session_state[ 'audio_autoplay' ]
+				# ---------- Start Time ------------
+				with snd_c3:
+					audio_start_time = st.slider( label='Start Time',
+						min_value=0.0, max_value=600.0, step=0.5,
+						help='Playback start time in seconds.',
+						key='audio_start_time' )
 				
-				with resp_c5:
-					st.slider( label='Start Time:', min_value=0.00, max_value=5.00,
-						value=float( st.session_state.get( 'audio_start_time', 0.0 ) ),
-						step=0.01, key='audio_start_time' )
-					audio_start = st.session_state[ 'audio_start_time' ]
+				# ---------- End Time ------------
+				with snd_c4:
+					audio_end_time = st.slider( label='End Time',
+						min_value=0.0, max_value=600.0, step=0.5,
+						help='Playback end time in seconds. Zero leaves playback unconstrained.',
+						key='audio_end_time' )
 				
-				with resp_c6:
-					st.slider( label='End Time:', min_value=0.00, max_value=5.00,
-						value=float( st.session_state.get( 'audio_end_time', 0.0 ) ),
-						step=0.01, key='audio_end_time' )
-					audio_end = st.session_state[ 'audio_end_time' ]
-		
-				# -------- Reset Settings ------------------
-				if st.button( 'Reset', key='audio_sound_reset', width='stretch' ):
-					for key in [ 'audio_language', 'audio_voice', 'audio_loop',
-					             'audio_autoplay', 'audio_start_time',
-					             'audio_end_time' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
+				# ---------- Loop / Autoplay ------------
+				with snd_c5:
+					audio_loop = st.toggle( label='Loop', key='audio_loop',
+						help='Loop local audio playback when supported.' )
 					
-					st.rerun( )
+					audio_autoplay = st.toggle( label='Autoplay', key='audio_autoplay',
+						help='Autoplay local audio playback when supported.' )
+				
+				# ---------- Reset ------------
+				st.button( label='Reset', key='reset_audio_tts',
+					width='stretch', on_click=reset_audio_tts_controls )
 		
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
+		with st.expander( label='System Instructions', icon='🖥️',
+				expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
 				prompt_names = [ '' ]
 			
+			# ---------- System Instructions ------------
 			with in_left:
-				st.text_area( label='Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='audio_system_instructions' )
+				st.text_area( label='Enter Text', height=70, width='stretch',
+					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
+						'Optional prompt/instructions for the selected Audio task.' ),
+					key='audio_system_instructions' )
 			
-			def _on_template_change( ) -> None:
-				name = st.session_state.get( 'instructions' )
-				if name and name != 'No Templates Found':
-					text = fetch_prompt_text( cfg.DB_PATH, name )
-					if text is not None:
-						st.session_state[ 'audio_system_instructions' ] = text
-			
+			# ---------- Template ------------
 			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=_on_template_change )
-			
-			def _on_clear( ) -> None:
-				st.session_state[ 'audio_system_instructions' ] = ''
-				st.session_state[ 'instructions' ] = ''
-			
-			def _on_convert_system_instructions( ) -> None:
-				text = st.session_state.get( 'audio_system_instructions', '' )
-				if not isinstance( text, str ) or not text.strip( ):
-					return
-				
-				src = text.strip( )
-				if cfg.XML_BLOCK_PATTERN.search( src ):
-					converted = convert_xml( src )
-				else:
-					converted = convert_markdown( src )
-				
-				st.session_state[ 'audio_system_instructions' ] = converted
+				st.selectbox( label='Use Template', options=prompt_names,
+					index=None, key='instructions',
+					on_change=load_audio_instruction_template )
 			
 			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
-			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
 			
+			# ---------- Clear Instructions ------------
+			with btn_c1:
+				st.button( label='Clear Instructions', width='stretch',
+					on_click=clear_audio_instructions )
+			
+			# ---------- XML <-> Markdown ------------
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=_on_convert_system_instructions )
+					on_click=convert_audio_system_instructions )
 		
-		left_audio, center_audio, right_audio = st.columns( [ 0.33, 0.33, 0.33 ],
-			border=True, gap='medium' )
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
-		with left_audio:
-			uploaded = st.file_uploader( 'Upload File',
-				type=[ 'flac', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'wav', 'webm' ] )
+		# ------------------------------------------------------------------
+		# Audio Body
+		# ------------------------------------------------------------------
+		upload_col, record_col, playback_col = st.columns(
+			[ 0.34, 0.33, 0.33 ], border=True, gap='small' )
+		
+		audio_input_types = sorted(
+			set( transcriber.mime_options or [ ] ) | set( translator.mime_options or [ ] ) )
+		
+		# ------------------------------------------------------------------
+		# Upload Column
+		# ------------------------------------------------------------------
+		with upload_col:
+			st.subheader( 'Upload Audio' )
+			uploaded_audio = st.file_uploader( label='Upload Audio File',
+				type=audio_input_types, accept_multiple_files=False,
+				key='audio_upload_file' )
 			
-			if uploaded:
-				tmp_path = save_temp( uploaded )
-				
-				if audio_task == 'Transcribe' and transcriber:
-					with st.spinner( 'Transcribing…' ):
-						try:
-							audio_language = st.session_state.get( 'audio_language' ) or None
-							audio_model = st.session_state.get( 'audio_model' ) or 'gpt-4o-transcribe'
-							audio_prompt = st.session_state.get( 'audio_system_instructions' ) or None
-							audio_format = st.session_state.get( 'audio_response_format' ) or None
-							audio_temperature = st.session_state.get( 'audio_temperature', 0.0 )
-							text = transcriber.transcribe( tmp_path, model=audio_model,
-								language=audio_language, prompt=audio_prompt,
-								format=audio_format, temperature=audio_temperature )
-							st.text_area( 'Transcript', value=text or '', height=300 )
-							try:
-								update_token_counters( getattr( transcriber, 'response', None ) )
-							except Exception:
-								pass
-						except Exception as exc:
-							st.error( f'Transcription failed: {exc}' )
-				
-				elif audio_task == 'Translate' and translator:
-					with st.spinner( 'Translating…' ):
-						try:
-							audio_model = st.session_state.get( 'audio_model' ) or 'whisper-1'
-							audio_prompt = st.session_state.get( 'audio_system_instructions' ) or None
-							audio_format = st.session_state.get( 'audio_response_format' ) or None
-							audio_temperature = st.session_state.get( 'audio_temperature', 0.0 )
-							text = translator.translate( tmp_path, model=audio_model, prompt=audio_prompt,
-								format=audio_format, temperature=audio_temperature,
-								language=st.session_state.get( 'audio_language' ) or None )
-							st.text_area( 'Translation', value=text or '', height=300 )
-							try:
-								update_token_counters( getattr( translator, 'response', None ) )
-							except Exception:
-								pass
-						except Exception as exc:
-							st.error( f'Translation failed: {exc}' )
-				
-				elif audio_task == 'Text-to-Speech' and tts:
-					st.info( 'Use the text box below to generate speech.' )
+			if uploaded_audio is not None:
+				st.audio( uploaded_audio,
+					format=f'audio/{Path( uploaded_audio.name ).suffix[ 1: ]}' )
 			
-			if audio_task == 'Text-to-Speech' and tts:
-				text = st.text_area( 'Enter Text to Synthesize', key='audio_input' )
-				if text and st.button( 'Generate Audio', key='audio_generate_tts' ):
-					with st.spinner( 'Synthesizing speech…' ):
+			if st.button( 'Process Uploaded Audio', key='process_uploaded_audio',
+					width='stretch' ):
+				with st.spinner( 'Processing uploaded audio…' ):
+					try:
+						file_path = save_audio_upload( uploaded_audio )
+						result_text = run_audio_file_task(
+							task=st.session_state.get( 'audio_task' ),
+							file_path=file_path,
+							transcriber=transcriber,
+							translator=translator )
+						
+						if result_text:
+							title = 'Transcript' if st.session_state.get(
+								'audio_task' ) == 'Transcribe' else 'Translation'
+							render_audio_text_result(
+								title=title,
+								result_text=result_text,
+								result=st.session_state.get( 'audio_last_result', { } ) )
+							
+							st.session_state.audio_messages.append(
+								{
+										'role': 'assistant',
+										'content': result_text,
+								} )
+						
 						try:
-							audio_voice = st.session_state.get( 'audio_voice' ) or 'alloy'
-							audio_model = st.session_state.get( 'audio_model' ) or 'gpt-4o-mini-tts'
-							audio_format = st.session_state.get( 'audio_response_format' ) or \
-							               st.session_state.get( 'audio_mime_type' ) or 'mp3'
-							audio_instruction = st.session_state.get( 'audio_system_instructions' ) or None
-							audio_bytes = tts.create_speech( text, model=audio_model, voice=audio_voice,
-								format=audio_format, speed=1.0, instruct=audio_instruction )
+							response_obj = getattr( transcriber, 'response', None )
+							if st.session_state.get( 'audio_task' ) == 'Translate':
+								response_obj = getattr( translator, 'response', None )
+							
+							update_token_counters( response_obj )
+						except Exception:
+							pass
+					except Exception as exc:
+						st.error( f'Audio processing failed: {exc}' )
+		
+		# ------------------------------------------------------------------
+		# Recording Column
+		# ------------------------------------------------------------------
+		with record_col:
+			st.subheader( 'Record Audio' )
+			recorded_audio = st.audio_input( label='Record Audio',
+				key='audio_recording_input' )
+			
+			if recorded_audio is not None:
+				st.audio( recorded_audio )
+			
+			if st.button( 'Process Recording', key='process_recorded_audio',
+					width='stretch' ):
+				with st.spinner( 'Processing recorded audio…' ):
+					try:
+						file_path = save_audio_upload( recorded_audio )
+						result_text = run_audio_file_task(
+							task=st.session_state.get( 'audio_task' ),
+							file_path=file_path,
+							transcriber=transcriber,
+							translator=translator )
+						
+						if result_text:
+							title = 'Transcript' if st.session_state.get(
+								'audio_task' ) == 'Transcribe' else 'Translation'
+							render_audio_text_result(
+								title=title,
+								result_text=result_text,
+								result=st.session_state.get( 'audio_last_result', { } ) )
+							
+							st.session_state.audio_messages.append(
+								{
+										'role': 'assistant',
+										'content': result_text,
+								} )
+						
+						try:
+							response_obj = getattr( transcriber, 'response', None )
+							if st.session_state.get( 'audio_task' ) == 'Translate':
+								response_obj = getattr( translator, 'response', None )
+							
+							update_token_counters( response_obj )
+						except Exception:
+							pass
+					except Exception as exc:
+						st.error( f'Recording processing failed: {exc}' )
+		
+		# ------------------------------------------------------------------
+		# Playback / TTS Column
+		# ------------------------------------------------------------------
+		with playback_col:
+			st.subheader( 'Playback / Speech' )
+			
+			if st.session_state.get( 'audio_task' ) == 'Text-to-Speech':
+				st.text_area( label='Text-to-Speech Input', height=180,
+					width='stretch', key='audio_tts_input',
+					help='Text that will be synthesized into speech.' )
+				
+				if st.button( 'Generate Speech', key='generate_audio_speech',
+						width='stretch' ):
+					with st.spinner( 'Generating speech…' ):
+						try:
+							audio_bytes = run_audio_tts_task(
+								text=st.session_state.get( 'audio_tts_input' ),
+								tts=tts )
+							
 							if audio_bytes:
-								st.audio( audio_bytes, format=f'audio/{audio_format}' )
-							else:
-								st.warning( 'No audio output was returned.' )
+								audio_format = get_audio_response_format_value(
+									task='Text-to-Speech',
+									selected_format=st.session_state.get(
+										'audio_response_format' ),
+									selected_mime_type=st.session_state.get(
+										'audio_mime_type' ) )
+								
+								st.audio( audio_bytes, format=f'audio/{audio_format or "mp3"}' )
+								st.session_state.audio_messages.append(
+									{
+											'role': 'assistant',
+											'content': 'Generated speech returned successfully.',
+									} )
+							
 							try:
 								update_token_counters( getattr( tts, 'response', None ) )
 							except Exception:
 								pass
 						except Exception as exc:
-							st.error( f'Text-to-speech failed: {exc}' )
-		
-		with center_audio:
-			recording = st.audio_input( label='Record Audio', sample_rate=audio_rate )
-			if recording is not None:
-				st.audio( recording, format='audio/wav' )
-		
-		with right_audio:
-			data = cfg.AUDIO_TEST_FILE
-			st.caption( 'Local Audio File' )
-			if data is not None:
-				st.audio( data, start_time=audio_start, end_time=audio_end,
-					format='audio/wav', width='stretch', loop=audio_loop,
-					autoplay=audio_autoplay )
+							st.error( f'Text-to-Speech failed: {exc}' )
 			else:
-				st.info( 'No local audio file is configured.' )
+				st.info( 'Select Text-to-Speech to generate speech from text.' )
+			
+			audio_bytes = st.session_state.get( 'audio_output_bytes' )
+			if isinstance( audio_bytes, bytes ) and len( audio_bytes ) > 0:
+				audio_format = get_audio_response_format_value(
+					task='Text-to-Speech',
+					selected_format=st.session_state.get( 'audio_response_format' ),
+					selected_mime_type=st.session_state.get( 'audio_mime_type' ) )
+				
+				st.caption( 'Last generated audio' )
+				st.audio( audio_bytes, format=f'audio/{audio_format or "mp3"}',
+					start_time=float( st.session_state.get( 'audio_start_time', 0.0 ) or 0.0 ),
+					loop=bool( st.session_state.get( 'audio_loop', False ) ),
+					autoplay=bool( st.session_state.get( 'audio_autoplay', False ) ) )
+			
+			output_text = st.session_state.get( 'audio_output', '' )
+			if isinstance( output_text, str ) and output_text.strip( ):
+				st.caption( 'Last text output' )
+				st.text_area( label='Audio Output', value=output_text,
+					height=140, width='stretch', disabled=True )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
-		if st.session_state.get( 'audio_messages' ):
+		# ---------------------------------------------------
+		#                   MESSAGES
+		# ---------------------------------------------------
+		if st.session_state.get( 'audio_messages' ) is not None:
 			for msg in st.session_state.audio_messages:
-				with st.chat_message( msg[ 'role' ], avatar='' ):
-					st.markdown( msg[ 'content' ] )
+				if not isinstance( msg, dict ):
+					continue
+				
+				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
+				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
+					st.markdown( msg.get( 'content', '' ) )
 		
-		prompt = st.chat_input( 'Enter audio generation prompt …', key='audio_messages_input' )
-		if prompt is not None and isinstance( prompt, str ) and prompt.strip( ):
-			st.session_state.audio_messages.append( { 'role': 'user', 'content': prompt } )
-			st.rerun( )
+		prompt = st.chat_input( 'Enter audio generation prompt …' )
+		if prompt is not None and str( prompt ).strip( ):
+			prompt = str( prompt ).strip( )
+			st.session_state.audio_messages.append(
+				{
+						'role': 'user',
+						'content': prompt,
+				} )
+			
+			if st.session_state.get( 'audio_task' ) == 'Text-to-Speech':
+				with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
+					with st.spinner( 'Generating speech…' ):
+						try:
+							audio_bytes = run_audio_tts_task( text=prompt, tts=tts )
+							
+							if audio_bytes:
+								audio_format = get_audio_response_format_value(
+									task='Text-to-Speech',
+									selected_format=st.session_state.get(
+										'audio_response_format' ),
+									selected_mime_type=st.session_state.get(
+										'audio_mime_type' ) )
+								
+								st.audio( audio_bytes, format=f'audio/{audio_format or "mp3"}' )
+								message = 'Generated speech returned successfully.'
+								st.markdown( message )
+								st.session_state.audio_messages.append(
+									{
+											'role': 'assistant',
+											'content': message,
+									} )
+							
+							try:
+								update_token_counters( getattr( tts, 'response', None ) )
+							except Exception:
+								pass
+						except Exception as exc:
+							st.error( f'Text-to-Speech failed: {exc}' )
+			else:
+				with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
+					message = (
+							'Audio chat input is routed to Text-to-Speech only. '
+							'Use Upload Audio or Record Audio for transcription and translation.'
+					)
+					st.markdown( message )
+					st.session_state.audio_messages.append(
+						{
+								'role': 'assistant',
+								'content': message,
+						} )
 		
-		if st.button( 'Clear Messages', key='audio_clear_messages' ):
-			st.session_state[ 'audio_messages' ] = [ ]
-			st.rerun( )
+		# ------------------------------------------------------------------
+		# Status / Usage
+		# ------------------------------------------------------------------
+		audio_last_usage = st.session_state.get( 'audio_last_usage', { } )
+		if isinstance( audio_last_usage, dict ) and len( audio_last_usage ) > 0:
+			with st.expander( label='Audio Usage', icon='📊',
+					expanded=False, width='stretch' ):
+				st.json( audio_last_usage )
+		
+		# ------------------------------------------------------------------
+		# Reset Buttons
+		# ------------------------------------------------------------------
+		reset_c1, reset_c2 = st.columns( [ 0.5, 0.5 ] )
+		with reset_c1:
+			if st.button( 'Clear Messages', key='clear_audio_messages',
+					width='stretch', on_click=clear_audio_messages ):
+				st.rerun( )
+		
+		with reset_c2:
+			if st.button( 'Clear Outputs', key='clear_audio_outputs',
+					width='stretch', on_click=clear_audio_outputs ):
+				st.rerun( )
 
 # ======================================================================================
 # DOCUMENTS MODE
