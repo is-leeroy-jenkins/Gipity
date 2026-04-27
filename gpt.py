@@ -5218,6 +5218,124 @@ class Files( GPT ):
 				'gpt-4o-mini',
 		]
 	
+	@property
+	def reasoning_options( self ) -> List[ str ] | None:
+		'''
+
+			Purpose:
+			--------
+			Return conservative reasoning effort options.
+
+			Parameters:
+			-----------
+			None
+
+			Returns:
+			--------
+			List[ str ] | None:
+				Reasoning effort names.
+
+		'''
+		return [
+				'none',
+				'minimal',
+				'low',
+				'medium',
+				'high',
+		]
+	
+	@property
+	def include_options( self ) -> List[ str ] | None:
+		'''
+
+			Purpose:
+			--------
+			Return conservative Responses API include options supported by Text mode.
+
+			Parameters:
+			-----------
+			None
+
+			Returns:
+			--------
+			List[ str ] | None:
+				Include option names.
+
+		'''
+		return [
+				'file_search_call.results',
+				'web_search_call.results',
+				'web_search_call.action.sources',
+				'code_interpreter_call.outputs',
+				'reasoning.encrypted_content',
+				'message.output_text.logprobs',
+		]
+	
+	@property
+	def tool_options( self ) -> List[ str ] | None:
+		'''
+
+			Purpose:
+			--------
+			Return built-in tool options that Text mode can safely configure.
+
+			Parameters:
+			-----------
+			None
+
+			Returns:
+			--------
+			List[ str ] | None:
+				Tool option names.
+
+		'''
+		return [
+				'web_search',
+				'file_search',
+		]
+	
+	@property
+	def choice_options( self ) -> List[ str ] | None:
+		'''
+
+			Purpose:
+			--------
+			Return supported tool-choice policies.
+
+			Parameters:
+			-----------
+			None
+
+			Returns:
+			--------
+			List[ str ] | None:
+				Tool-choice option names.
+
+		'''
+		return [ 'auto', 'required', 'none', ]
+	
+	@property
+	def modality_options( self ) -> List[ str ] | None:
+		'''
+		
+			Purpose:
+			--------
+			Return modality options retained for compatibility.
+
+			Parameters:
+			-----------
+			None
+
+			Returns:
+			--------
+			List[ str ] | None:
+				Modality names.
+
+		'''
+		return [
+				'text',
+		]
+	
 	def validate_upload_purpose( self, purpose: str=None ) -> str:
 		"""
 

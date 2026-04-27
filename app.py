@@ -3498,6 +3498,1341 @@ def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 	
 	return '\n\n'.join( prompt_parts ).strip( )
 
+# ------------ DOCUMENT Q&A MODE UTILITIES -----------------
+
+def ensure_docqna_mode_state( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Ensure Document Q&A mode session-state keys exist before widget instantiation.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	if 'docqna_model' not in st.session_state:
+		st.session_state[ 'docqna_model' ] = ''
+	
+	if 'docqna_source' not in st.session_state:
+		st.session_state[ 'docqna_source' ] = 'Local Upload'
+	
+	if 'docqna_uploaded' not in st.session_state:
+		st.session_state[ 'docqna_uploaded' ] = None
+	
+	if 'docqna_files' not in st.session_state:
+		st.session_state[ 'docqna_files' ] = [ ]
+	
+	if 'docqna_active_docs' not in st.session_state:
+		st.session_state[ 'docqna_active_docs' ] = [ ]
+	
+	if 'docqna_bytes' not in st.session_state:
+		st.session_state[ 'docqna_bytes' ] = None
+	
+	if 'docqna_texts' not in st.session_state:
+		st.session_state[ 'docqna_texts' ] = { }
+	
+	if 'docqna_chunks' not in st.session_state:
+		st.session_state[ 'docqna_chunks' ] = [ ]
+	
+	if 'docqna_last_hits' not in st.session_state:
+		st.session_state[ 'docqna_last_hits' ] = [ ]
+	
+	if 'docqna_last_sources' not in st.session_state:
+		st.session_state[ 'docqna_last_sources' ] = [ ]
+	
+	if 'docqna_last_answer' not in st.session_state:
+		st.session_state[ 'docqna_last_answer' ] = ''
+	
+	if 'docqna_context' not in st.session_state:
+		st.session_state[ 'docqna_context' ] = ''
+	
+	if 'docqna_messages' not in st.session_state:
+		st.session_state.docqna_messages = [ ]
+	
+	if not isinstance( st.session_state.get( 'docqna_messages' ), list ):
+		st.session_state.docqna_messages = [ ]
+	
+	if 'docqna_system_instructions' not in st.session_state:
+		st.session_state[ 'docqna_system_instructions' ] = ''
+	
+	if 'docqna_file_id' not in st.session_state:
+		st.session_state[ 'docqna_file_id' ] = ''
+	
+	if 'docqna_vector_store_id' not in st.session_state:
+		st.session_state[ 'docqna_vector_store_id' ] = ''
+	
+	if 'docqna_multi_mode' not in st.session_state:
+		st.session_state[ 'docqna_multi_mode' ] = False
+	
+	if 'docqna_top_k' not in st.session_state:
+		st.session_state[ 'docqna_top_k' ] = 6
+	
+	if 'docqna_chunk_size' not in st.session_state:
+		st.session_state[ 'docqna_chunk_size' ] = 900
+	
+	if 'docqna_chunk_overlap' not in st.session_state:
+		st.session_state[ 'docqna_chunk_overlap' ] = 150
+	
+	if 'docqna_vec_ready' not in st.session_state:
+		st.session_state[ 'docqna_vec_ready' ] = False
+	
+	if 'docqna_fingerprint' not in st.session_state:
+		st.session_state[ 'docqna_fingerprint' ] = ''
+	
+	if 'docqna_chunk_count' not in st.session_state:
+		st.session_state[ 'docqna_chunk_count' ] = 0
+	
+	if 'docqna_index_status' not in st.session_state:
+		st.session_state[ 'docqna_index_status' ] = 'Not indexed'
+	
+	if 'docqna_backend' not in st.session_state:
+		st.session_state[ 'docqna_backend' ] = 'local'
+	
+	if 'docqna_show_diagnostics' not in st.session_state:
+		st.session_state[ 'docqna_show_diagnostics' ] = True
+	
+	if 'last_answer' not in st.session_state:
+		st.session_state[ 'last_answer' ] = ''
+	
+	if 'last_sources' not in st.session_state:
+		st.session_state[ 'last_sources' ] = [ ]
+
+def clear_docqna_messages( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Document Q&A chat messages without clearing loaded documents or index state.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state.docqna_messages = [ ]
+
+def clear_docqna_outputs( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Document Q&A answer, context, source, and retrieval output state.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'docqna_last_answer' ] = ''
+	st.session_state[ 'docqna_last_hits' ] = [ ]
+	st.session_state[ 'docqna_last_sources' ] = [ ]
+	st.session_state[ 'docqna_context' ] = ''
+	st.session_state[ 'last_answer' ] = ''
+	st.session_state[ 'last_sources' ] = [ ]
+
+def unload_docqna_documents( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Unload active Document Q&A files, extracted text, chunks, and index state.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'docqna_uploaded' ] = None
+	st.session_state[ 'docqna_files' ] = [ ]
+	st.session_state[ 'docqna_active_docs' ] = [ ]
+	st.session_state[ 'docqna_bytes' ] = None
+	st.session_state[ 'docqna_texts' ] = { }
+	st.session_state[ 'docqna_chunks' ] = [ ]
+	st.session_state[ 'docqna_vec_ready' ] = False
+	st.session_state[ 'docqna_fingerprint' ] = ''
+	st.session_state[ 'docqna_chunk_count' ] = 0
+	st.session_state[ 'docqna_index_status' ] = 'Not indexed'
+	clear_docqna_outputs( )
+
+def reset_docqna_controls( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Document Q&A controls through a widget-safe callback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	for key in [ 'docqna_model', 'docqna_source', 'docqna_file_id',
+	             'docqna_vector_store_id', 'docqna_multi_mode', 'docqna_top_k',
+	             'docqna_chunk_size', 'docqna_chunk_overlap',
+	             'docqna_show_diagnostics' ]:
+		if key in st.session_state:
+			del st.session_state[ key ]
+
+def reset_docqna_all( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Reset Document Q&A controls, loaded documents, index state, outputs, and messages.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	reset_docqna_controls( )
+	unload_docqna_documents( )
+	clear_docqna_messages( )
+
+def clear_docqna_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Clear Document Q&A system instructions and selected prompt template.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	st.session_state[ 'docqna_system_instructions' ] = ''
+	st.session_state[ 'instructions' ] = ''
+
+def load_docqna_instruction_template( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Load the selected prompt template into Document Q&A system instructions.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	name = st.session_state.get( 'instructions' )
+	if name and name != 'No Templates Found':
+		text = fetch_prompt_text( cfg.DB_PATH, name )
+		if text is not None:
+			st.session_state[ 'docqna_system_instructions' ] = text
+
+def convert_docqna_system_instructions( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Convert Document Q&A system instructions between XML-like delimiters and Markdown
+		headings.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	text = st.session_state.get( 'docqna_system_instructions', '' )
+	if not isinstance( text, str ) or not text.strip( ):
+		return
+	
+	source = text.strip( )
+	if cfg.XML_BLOCK_PATTERN.search( source ):
+		converted = convert_xml( source )
+	else:
+		converted = convert_markdown( source )
+	
+	st.session_state[ 'docqna_system_instructions' ] = converted
+
+def get_docqna_source_options( ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return supported Document Q&A source options.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		list[str]
+			Document Q&A source option names.
+		
+	"""
+	return [
+			'Local Upload',
+			'OpenAI File ID',
+			'OpenAI Vector Store ID',
+	]
+
+def get_docqna_file_extension( filename: str | None ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Return a lowercase file extension for Document Q&A extraction and preview routing.
+		
+		Parameters:
+		-----------
+		filename: str | None
+			File name to inspect.
+		
+		Returns:
+		--------
+		str
+			Lowercase file extension including the leading period.
+		
+	"""
+	if not isinstance( filename, str ) or not filename.strip( ):
+		return ''
+	
+	return Path( filename ).suffix.lower( )
+
+def compute_docqna_fingerprint( documents: list[ dict[ str, Any ] ] ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Compute a stable fingerprint for active Document Q&A files.
+		
+		Parameters:
+		-----------
+		documents: list[dict[str, Any]]
+			Active document metadata and byte payloads.
+		
+		Returns:
+		--------
+		str
+			SHA-256 fingerprint for the active document set.
+		
+	"""
+	hasher = hashlib.sha256( )
+	
+	if not isinstance( documents, list ):
+		return ''
+	
+	for doc in documents:
+		if not isinstance( doc, dict ):
+			continue
+		
+		name = str( doc.get( 'name', '' ) )
+		content = doc.get( 'bytes', b'' )
+		hasher.update( name.encode( 'utf-8', errors='ignore' ) )
+		
+		if isinstance( content, bytes ):
+			hasher.update( content )
+	
+	return hasher.hexdigest( )
+
+def compute_fingerprint( file_bytes: bytes | None ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Backward-compatible fingerprint helper for a single byte payload.
+		
+		Parameters:
+		-----------
+		file_bytes: bytes | None
+			File byte payload.
+		
+		Returns:
+		--------
+		str
+			SHA-256 fingerprint.
+		
+	"""
+	if not isinstance( file_bytes, bytes ):
+		return ''
+	
+	return hashlib.sha256( file_bytes ).hexdigest( )
+
+def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Extract text from PDF bytes using PyMuPDF when available.
+		
+		Parameters:
+		-----------
+		file_bytes: bytes
+			PDF byte payload.
+		
+		Returns:
+		--------
+		str
+			Extracted PDF text.
+		
+	"""
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	
+	try:
+		import fitz
+		
+		pages: list[ str ] = [ ]
+		with fitz.open( stream=file_bytes, filetype='pdf' ) as doc:
+			for page in doc:
+				pages.append( page.get_text( 'text' ) )
+		
+		return '\n\n'.join( pages ).strip( )
+	except Exception:
+		try:
+			return extract_text_from_bytes( file_bytes )
+		except Exception:
+			return ''
+
+def extract_docqna_text_file( file_bytes: bytes ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Decode plain-text-like document bytes.
+		
+		Parameters:
+		-----------
+		file_bytes: bytes
+			Text byte payload.
+		
+		Returns:
+		--------
+		str
+			Decoded text.
+		
+	"""
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	
+	for encoding in [ 'utf-8', 'utf-8-sig', 'cp1252', 'latin-1' ]:
+		try:
+			return file_bytes.decode( encoding ).strip( )
+		except Exception:
+			continue
+	
+	return ''
+
+def extract_docqna_docx_text( file_bytes: bytes ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Extract text from DOCX bytes using the zipped WordprocessingML document body.
+		
+		Parameters:
+		-----------
+		file_bytes: bytes
+			DOCX byte payload.
+		
+		Returns:
+		--------
+		str
+			Extracted DOCX text.
+		
+	"""
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	
+	try:
+		with zipfile.ZipFile( io.BytesIO( file_bytes ) ) as archive:
+			xml_bytes = archive.read( 'word/document.xml' )
+		
+		root = ET.fromstring( xml_bytes )
+		namespace = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+		paragraphs: list[ str ] = [ ]
+		
+		for paragraph in root.iter( f'{namespace}p' ):
+			parts: list[ str ] = [ ]
+			
+			for node in paragraph.iter( f'{namespace}t' ):
+				if node.text:
+					parts.append( node.text )
+			
+			text = ''.join( parts ).strip( )
+			if text:
+				paragraphs.append( text )
+		
+		return '\n\n'.join( paragraphs ).strip( )
+	except Exception:
+		return ''
+
+def extract_docqna_text( filename: str, file_bytes: bytes ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Extract document text from supported Document Q&A file types.
+		
+		Parameters:
+		-----------
+		filename: str
+			Uploaded file name.
+		
+		file_bytes: bytes
+			Uploaded file bytes.
+		
+		Returns:
+		--------
+		str
+			Extracted text.
+		
+	"""
+	extension = get_docqna_file_extension( filename )
+	
+	if extension == '.pdf':
+		return extract_docqna_pdf_text( file_bytes )
+	
+	if extension == '.docx':
+		return extract_docqna_docx_text( file_bytes )
+	
+	if extension in [ '.txt', '.md', '.csv', '.json', '.xml', '.py', '.cs', '.sql',
+	                  '.yaml', '.yml', '.html', '.css', '.js', '.ts' ]:
+		return extract_docqna_text_file( file_bytes )
+	
+	return extract_docqna_text_file( file_bytes )
+
+def load_docqna_uploaded_files( uploaded: Any ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Load one or more Streamlit uploaded files into Document Q&A state.
+		
+		Parameters:
+		-----------
+		uploaded: Any
+			Streamlit uploaded file object or list of uploaded file objects.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Loaded active document records.
+		
+	"""
+	if uploaded is None:
+		return [ ]
+	
+	files = uploaded if isinstance( uploaded, list ) else [ uploaded ]
+	active_docs: list[ dict[ str, Any ] ] = [ ]
+	texts: dict[ str, str ] = { }
+	
+	for item in files:
+		if item is None:
+			continue
+		
+		name = getattr( item, 'name', 'uploaded_document' )
+		
+		try:
+			content = item.getvalue( ) if hasattr( item, 'getvalue' ) else item.read( )
+		except Exception:
+			content = None
+		
+		if not isinstance( content, bytes ) or len( content ) == 0:
+			continue
+		
+		text = extract_docqna_text( filename=name, file_bytes=content )
+		
+		active_docs.append(
+			{
+					'name': name,
+					'extension': get_docqna_file_extension( name ),
+					'bytes': content,
+					'text': text,
+					'size': len( content ),
+			} )
+		
+		texts[ name ] = text
+	
+	st.session_state[ 'docqna_uploaded' ] = uploaded
+	st.session_state[ 'docqna_files' ] = active_docs
+	st.session_state[ 'docqna_active_docs' ] = active_docs
+	st.session_state[ 'docqna_texts' ] = texts
+	
+	if len( active_docs ) == 1:
+		st.session_state[ 'docqna_bytes' ] = active_docs[ 0 ].get( 'bytes' )
+		st.session_state[ 'doc_bytes' ] = active_docs[ 0 ].get( 'bytes' )
+	elif len( active_docs ) > 1:
+		st.session_state[ 'docqna_bytes' ] = active_docs[ 0 ].get( 'bytes' )
+		st.session_state[ 'doc_bytes' ] = active_docs[ 0 ].get( 'bytes' )
+	
+	fingerprint = compute_docqna_fingerprint( active_docs )
+	if fingerprint != st.session_state.get( 'docqna_fingerprint', '' ):
+		st.session_state[ 'docqna_vec_ready' ] = False
+		st.session_state[ 'docqna_fingerprint' ] = fingerprint
+		st.session_state[ 'docqna_index_status' ] = 'Loaded; not indexed'
+	
+	return active_docs
+
+def get_docqna_active_document_names( ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Return active Document Q&A document names.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		list[str]
+			Active document names.
+		
+	"""
+	docs = st.session_state.get( 'docqna_active_docs', [ ] )
+	
+	if not isinstance( docs, list ):
+		return [ ]
+	
+	return [
+			doc.get( 'name', '' ) for doc in docs
+			if isinstance( doc, dict ) and doc.get( 'name' )
+	]
+
+def get_docqna_active_bytes( ) -> bytes | None:
+	"""
+	
+		Purpose:
+		--------
+		Return active Document Q&A bytes using the canonical key with legacy fallback.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		bytes | None
+			Active document bytes.
+		
+	"""
+	value = st.session_state.get( 'docqna_bytes', None )
+	
+	if isinstance( value, bytes ):
+		return value
+	
+	legacy = st.session_state.get( 'doc_bytes', None )
+	if isinstance( legacy, bytes ):
+		st.session_state[ 'docqna_bytes' ] = legacy
+		return legacy
+	
+	return None
+
+def render_docqna_document_preview( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render active Document Q&A document previews by file extension.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	docs = st.session_state.get( 'docqna_active_docs', [ ] )
+	
+	if not isinstance( docs, list ) or len( docs ) == 0:
+		st.info( 'No active document loaded.' )
+		return
+	
+	for doc in docs:
+		if not isinstance( doc, dict ):
+			continue
+		
+		name = doc.get( 'name', 'Document' )
+		extension = doc.get( 'extension', '' )
+		content = doc.get( 'bytes', b'' )
+		text = doc.get( 'text', '' )
+		
+		with st.expander( label=f'Preview: {name}', icon='📄',
+				expanded=False, width='stretch' ):
+			st.caption(
+				f'File type: {extension or "unknown"} | Size: {doc.get( "size", 0 )} bytes' )
+			
+			if extension == '.pdf' and isinstance( content, bytes ):
+				try:
+					st.pdf( content, height=420 )
+				except Exception:
+					st.text_area( label='Extracted Text Preview',
+						value=text[ :12000 ] if isinstance( text, str ) else '',
+						height=300, width='stretch', disabled=True )
+			elif extension == '.md' and isinstance( text, str ):
+				st.markdown( text[ :12000 ] )
+			elif isinstance( text, str ) and text.strip( ):
+				st.text_area( label='Extracted Text Preview',
+					value=text[ :12000 ],
+					height=300, width='stretch', disabled=True )
+			else:
+				st.warning( 'No readable text preview is available for this file.' )
+
+def normalize_docqna_text( text: str ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Normalize extracted document text for local Document Q&A retrieval.
+		
+		Parameters:
+		-----------
+		text: str
+			Extracted document text.
+		
+		Returns:
+		--------
+		str
+			Normalized document text.
+		
+	"""
+	if not isinstance( text, str ):
+		return ''
+	
+	value = text.replace( '\x00', ' ' )
+	value = re.sub( r'[ \t]+', ' ', value )
+	value = re.sub( r'\n{3,}', '\n\n', value )
+	return value.strip( )
+
+def chunk_docqna_text( text: str, chunk_size: int = 900,
+		chunk_overlap: int = 150 ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Split document text into overlapping word-based chunks for local retrieval.
+		
+		Parameters:
+		-----------
+		text: str
+			Document text.
+		
+		chunk_size: int
+			Maximum words per chunk.
+		
+		chunk_overlap: int
+			Words overlapping between adjacent chunks.
+		
+		Returns:
+		--------
+		list[str]
+			Document text chunks.
+		
+	"""
+	if not isinstance( text, str ) or not text.strip( ):
+		return [ ]
+	
+	try:
+		size = int( chunk_size )
+	except Exception:
+		size = 900
+	
+	try:
+		overlap = int( chunk_overlap )
+	except Exception:
+		overlap = 150
+	
+	if size <= 0:
+		size = 900
+	
+	if overlap < 0:
+		overlap = 0
+	
+	if overlap >= size:
+		overlap = max( 0, size // 5 )
+	
+	words = text.split( )
+	if len( words ) == 0:
+		return [ ]
+	
+	chunks: list[ str ] = [ ]
+	step = max( 1, size - overlap )
+	start = 0
+	
+	while start < len( words ):
+		end = min( start + size, len( words ) )
+		chunk = ' '.join( words[ start:end ] ).strip( )
+		
+		if chunk:
+			chunks.append( chunk )
+		
+		if end >= len( words ):
+			break
+		
+		start += step
+	
+	return chunks
+
+def rebuild_docqna_index( ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Rebuild the local Document Q&A retrieval index from active documents.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Indexed chunk records.
+		
+	"""
+	docs = st.session_state.get( 'docqna_active_docs', [ ] )
+	
+	if not isinstance( docs, list ) or len( docs ) == 0:
+		st.session_state[ 'docqna_chunks' ] = [ ]
+		st.session_state[ 'docqna_vec_ready' ] = False
+		st.session_state[ 'docqna_chunk_count' ] = 0
+		st.session_state[ 'docqna_index_status' ] = 'No documents loaded'
+		return [ ]
+	
+	chunk_records: list[ dict[ str, Any ] ] = [ ]
+	chunk_size = st.session_state.get( 'docqna_chunk_size', 900 )
+	chunk_overlap = st.session_state.get( 'docqna_chunk_overlap', 150 )
+	
+	for doc in docs:
+		if not isinstance( doc, dict ):
+			continue
+		
+		name = doc.get( 'name', 'Document' )
+		text = normalize_docqna_text( doc.get( 'text', '' ) )
+		
+		for index, chunk in enumerate( chunk_docqna_text(
+				text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap ) ):
+			chunk_records.append(
+				{
+						'document': name,
+						'chunk_index': index + 1,
+						'text': chunk,
+				} )
+	
+	st.session_state[ 'docqna_chunks' ] = chunk_records
+	st.session_state[ 'docqna_chunk_count' ] = len( chunk_records )
+	st.session_state[ 'docqna_vec_ready' ] = len( chunk_records ) > 0
+	st.session_state[ 'docqna_index_status' ] = 'Ready' if len(
+		chunk_records ) > 0 else 'No text extracted'
+	return chunk_records
+
+def tokenize_docqna_query( text: str ) -> list[ str ]:
+	"""
+	
+		Purpose:
+		--------
+		Tokenize text for lightweight local retrieval scoring.
+		
+		Parameters:
+		-----------
+		text: str
+			Text to tokenize.
+		
+		Returns:
+		--------
+		list[str]
+			Lowercase alphanumeric tokens.
+		
+	"""
+	if not isinstance( text, str ):
+		return [ ]
+	
+	return re.findall( r'[A-Za-z0-9_]+', text.lower( ) )
+
+def score_docqna_chunk( query_tokens: list[ str ], chunk_text: str ) -> float:
+	"""
+	
+		Purpose:
+		--------
+		Score a document chunk against query tokens using a lightweight cosine-like score.
+		
+		Parameters:
+		-----------
+		query_tokens: list[str]
+			Query tokens.
+		
+		chunk_text: str
+			Chunk text.
+		
+		Returns:
+		--------
+		float
+			Similarity score.
+		
+	"""
+	if not isinstance( query_tokens, list ) or len( query_tokens ) == 0:
+		return 0.0
+	
+	chunk_tokens = tokenize_docqna_query( chunk_text )
+	if len( chunk_tokens ) == 0:
+		return 0.0
+	
+	query_counts: dict[ str, int ] = { }
+	chunk_counts: dict[ str, int ] = { }
+	
+	for token in query_tokens:
+		query_counts[ token ] = query_counts.get( token, 0 ) + 1
+	
+	for token in chunk_tokens:
+		chunk_counts[ token ] = chunk_counts.get( token, 0 ) + 1
+	
+	dot = sum( query_counts.get( token, 0 ) * chunk_counts.get( token, 0 )
+	           for token in query_counts )
+	query_norm = math.sqrt( sum( value * value for value in query_counts.values( ) ) )
+	chunk_norm = math.sqrt( sum( value * value for value in chunk_counts.values( ) ) )
+	
+	if query_norm == 0 or chunk_norm == 0:
+		return 0.0
+	
+	return dot / (query_norm * chunk_norm)
+
+def retrieve_docqna_chunks( query: str, top_k: int | None = None ) -> list[ dict[ str, Any ] ]:
+	"""
+	
+		Purpose:
+		--------
+		Retrieve the most relevant local Document Q&A chunks for a user query.
+		
+		Parameters:
+		-----------
+		query: str
+			User query.
+		
+		top_k: int | None
+			Maximum number of chunks to return.
+		
+		Returns:
+		--------
+		list[dict[str, Any]]
+			Ranked retrieval hit records.
+		
+	"""
+	if not st.session_state.get( 'docqna_vec_ready', False ):
+		rebuild_docqna_index( )
+	
+	chunks = st.session_state.get( 'docqna_chunks', [ ] )
+	if not isinstance( chunks, list ) or len( chunks ) == 0:
+		return [ ]
+	
+	try:
+		k = int( top_k if top_k is not None else st.session_state.get( 'docqna_top_k', 6 ) )
+	except Exception:
+		k = 6
+	
+	if k <= 0:
+		k = 6
+	
+	query_tokens = tokenize_docqna_query( query )
+	hits: list[ dict[ str, Any ] ] = [ ]
+	
+	for chunk in chunks:
+		if not isinstance( chunk, dict ):
+			continue
+		
+		score = score_docqna_chunk( query_tokens, chunk.get( 'text', '' ) )
+		hits.append(
+			{
+					'rank': 0,
+					'document': chunk.get( 'document', '' ),
+					'chunk_index': chunk.get( 'chunk_index', 0 ),
+					'score': round( score, 6 ),
+					'text': chunk.get( 'text', '' ),
+			} )
+	
+	hits = sorted( hits, key=lambda item: item.get( 'score', 0.0 ), reverse=True )[ :k ]
+	
+	for index, hit in enumerate( hits ):
+		hit[ 'rank' ] = index + 1
+	
+	st.session_state[ 'docqna_last_hits' ] = hits
+	st.session_state[ 'docqna_last_sources' ] = [
+			{
+					'document': hit.get( 'document', '' ),
+					'chunk_index': hit.get( 'chunk_index', 0 ),
+					'score': hit.get( 'score', 0.0 ),
+			}
+			for hit in hits
+	]
+	st.session_state[ 'last_sources' ] = st.session_state[ 'docqna_last_sources' ]
+	return hits
+
+def build_docqna_local_prompt( query: str, hits: list[ dict[ str, Any ] ] ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Build a grounded local Document Q&A prompt from retrieved chunks.
+		
+		Parameters:
+		-----------
+		query: str
+			User query.
+		
+		hits: list[dict[str, Any]]
+			Retrieved chunk records.
+		
+		Returns:
+		--------
+		str
+			Prompt for the language model.
+		
+	"""
+	context_blocks: list[ str ] = [ ]
+	
+	for hit in hits:
+		if not isinstance( hit, dict ):
+			continue
+		
+		context_blocks.append(
+			f"[Source: {hit.get( 'document', '' )}, Chunk: {hit.get( 'chunk_index', 0 )}, "
+			f"Score: {hit.get( 'score', 0.0 )}]\n{hit.get( 'text', '' )}" )
+	
+	context = '\n\n---\n\n'.join( context_blocks )
+	st.session_state[ 'docqna_context' ] = context
+	
+	instructions = st.session_state.get( 'docqna_system_instructions', '' )
+	
+	return (
+			f"{instructions.strip( )}\n\n" if isinstance( instructions, str )
+			                                  and instructions.strip( ) else ''
+	) + (
+			'Answer the user question using only the document context below. '
+			'If the answer is not supported by the context, say that the document context '
+			'does not contain enough information.\n\n'
+			f'Document Context:\n{context}\n\n'
+			f'User Question:\n{query}'
+	)
+
+def docqna_call_openai_text_model( prompt: str ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Call the available OpenAI chat/text wrapper for a Document Q&A prompt.
+		
+		Parameters:
+		-----------
+		prompt: str
+			Prompt to submit.
+		
+		Returns:
+		--------
+		str
+			Model response text.
+		
+	"""
+	if not isinstance( prompt, str ) or not prompt.strip( ):
+		return ''
+	
+	model = st.session_state.get( 'docqna_model' ) or 'gpt-4o-mini'
+	
+	try:
+		run_turn = globals( ).get( 'run_llm_turn' )
+		if callable( run_turn ):
+			return str( run_turn(
+				prompt=prompt,
+				model=model,
+				temperature=st.session_state.get( 'docqna_temperature', 0.2 ),
+				top_p=st.session_state.get( 'docqna_top_percent', 1.0 ),
+				max_tokens=st.session_state.get( 'docqna_max_tokens', 2000 ) ) )
+	except Exception:
+		pass
+	
+	try:
+		chat = Chat( )
+		
+		for method_name in [ 'generate_text', 'create', 'ask', 'complete' ]:
+			method = getattr( chat, method_name, None )
+			if callable( method ):
+				try:
+					result = method( text=prompt, model=model )
+				except TypeError:
+					try:
+						result = method( prompt=prompt, model=model )
+					except TypeError:
+						result = method( prompt )
+				
+				return str( getattr( result, 'output_text', result ) )
+	except Exception as exc:
+		return f'Document Q&A model call failed: {exc}'
+	
+	return prompt
+
+def run_docqna_local_query( query: str ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Run a Document Q&A query against locally uploaded and indexed documents.
+		
+		Parameters:
+		-----------
+		query: str
+			User query.
+		
+		Returns:
+		--------
+		str
+			Generated answer.
+		
+	"""
+	if not isinstance( query, str ) or not query.strip( ):
+		return ''
+	
+	if not st.session_state.get( 'docqna_vec_ready', False ):
+		rebuild_docqna_index( )
+	
+	hits = retrieve_docqna_chunks(
+		query=query,
+		top_k=st.session_state.get( 'docqna_top_k', 6 ) )
+	
+	if len( hits ) == 0:
+		answer = 'No readable or retrievable document context is available.'
+		st.session_state[ 'docqna_last_answer' ] = answer
+		st.session_state[ 'last_answer' ] = answer
+		return answer
+	
+	prompt = build_docqna_local_prompt( query=query, hits=hits )
+	answer = docqna_call_openai_text_model( prompt )
+	
+	st.session_state[ 'docqna_last_answer' ] = answer
+	st.session_state[ 'last_answer' ] = answer
+	return answer
+
+def run_docqna_file_query( query: str ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Run a Document Q&A query against an OpenAI File ID using the Files wrapper.
+		
+		Parameters:
+		-----------
+		query: str
+			User query.
+		
+		Returns:
+		--------
+		str
+			Generated answer.
+		
+	"""
+	file_id = st.session_state.get( 'docqna_file_id', '' )
+	
+	if not isinstance( file_id, str ) or not file_id.strip( ):
+		return 'No OpenAI file ID is selected.'
+	
+	try:
+		files = Files( )
+		answer = files.search(
+			id=file_id.strip( ),
+			query=query,
+			model=st.session_state.get( 'docqna_model' ) or 'gpt-4o-mini' )
+		
+		answer = answer if isinstance( answer, str ) else str( answer )
+		st.session_state[ 'docqna_last_answer' ] = answer
+		st.session_state[ 'last_answer' ] = answer
+		st.session_state[ 'docqna_last_sources' ] = [ { 'file_id': file_id.strip( ) } ]
+		st.session_state[ 'last_sources' ] = st.session_state[ 'docqna_last_sources' ]
+		return answer
+	except Exception as exc:
+		return f'OpenAI file query failed: {exc}'
+
+def run_docqna_vector_store_query( query: str ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Run a Document Q&A query against an OpenAI Vector Store ID.
+		
+		Parameters:
+		-----------
+		query: str
+			User query.
+		
+		Returns:
+		--------
+		str
+			Generated answer.
+		
+	"""
+	store_id = st.session_state.get( 'docqna_vector_store_id', '' )
+	
+	if not isinstance( store_id, str ) or not store_id.strip( ):
+		return 'No OpenAI vector store ID is selected.'
+	
+	try:
+		vector = VectorStores( )
+		answer = vector.answer_with_file_search(
+			store_ids=[ store_id.strip( ) ],
+			prompt=query,
+			model=st.session_state.get( 'docqna_model' ) or 'gpt-4o-mini',
+			max_num_results=st.session_state.get( 'docqna_top_k', 6 ),
+			instructions=st.session_state.get( 'docqna_system_instructions', '' ) or None )
+		
+		answer = answer if isinstance( answer, str ) else str( answer )
+		st.session_state[ 'docqna_last_answer' ] = answer
+		st.session_state[ 'last_answer' ] = answer
+		st.session_state[ 'docqna_last_sources' ] = [ { 'vector_store_id': store_id.strip( ) } ]
+		st.session_state[ 'last_sources' ] = st.session_state[ 'docqna_last_sources' ]
+		return answer
+	except Exception as exc:
+		return f'OpenAI vector store query failed: {exc}'
+
+def route_document_query( prompt: str ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Route a Document Q&A prompt to the selected backend.
+		
+		Parameters:
+		-----------
+		prompt: str
+			User question or instruction.
+		
+		Returns:
+		--------
+		str
+			Backend answer text.
+		
+	"""
+	if not isinstance( prompt, str ) or not prompt.strip( ):
+		return ''
+	
+	source = st.session_state.get( 'docqna_source', 'Local Upload' )
+	
+	if source == 'OpenAI File ID':
+		return run_docqna_file_query( prompt )
+	
+	if source == 'OpenAI Vector Store ID':
+		return run_docqna_vector_store_query( prompt )
+	
+	return run_docqna_local_query( prompt )
+
+def summarize_active_document( ) -> str:
+	"""
+	
+		Purpose:
+		--------
+		Summarize the active document source using the selected Document Q&A backend.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		str
+			Summary text.
+		
+	"""
+	return route_document_query(
+		'Summarize the active document. Include the main topic, key sections, '
+		'important findings, and any limitations visible in the source.' )
+
+def render_docqna_retrieval_hits( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render Document Q&A retrieval hits and source diagnostics.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	hits = st.session_state.get( 'docqna_last_hits', [ ] )
+	
+	if not isinstance( hits, list ) or len( hits ) == 0:
+		st.info( 'No retrieval hits available.' )
+		return
+	
+	df_hits = pd.DataFrame( hits )
+	st.data_editor( df_hits, use_container_width=True, hide_index=True )
+
+def render_docqna_status( ) -> None:
+	"""
+	
+		Purpose:
+		--------
+		Render Document Q&A index and source status metrics.
+		
+		Parameters:
+		-----------
+		None
+		
+		Returns:
+		--------
+		None
+		
+	"""
+	c1, c2, c3, c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+		border=True, gap='xxsmall' )
+	
+	with c1:
+		st.metric( 'Documents', len( get_docqna_active_document_names( ) ) )
+	
+	with c2:
+		st.metric( 'Chunks', st.session_state.get( 'docqna_chunk_count', 0 ) )
+	
+	with c3:
+		st.metric( 'Source', st.session_state.get( 'docqna_source', 'Local Upload' ) )
+	
+	with c4:
+		st.metric( 'Index', st.session_state.get( 'docqna_index_status', 'Not indexed' ) )
+		
 # ------------ FILES API UTILITIES -----------------
 
 def ensure_files_mode_state( ) -> None:
@@ -9707,357 +11042,553 @@ elif mode == 'Audio':
 				st.rerun( )
 
 # ======================================================================================
-# DOCUMENTS MODE
+# DOCUMENT Q&A MODE
 # ======================================================================================
 elif mode == 'Document Q&A':
-	docqna_model = st.session_state.get( 'docqna_model', '' )
-	docqna_reasoning = st.session_state.get( 'docqna_reasoning', '' )
-	docqna_response_format = st.session_state.get( 'docqna_response_format', '' )
-	docqna_tool_choice = st.session_state.get( 'docqna_tool_choice', '' )
-	docqna_source = st.session_state.get( 'docqna_source', '' )
-	docqna_content = st.session_state.get( 'docqna_content', '' )
-	docqna_input = st.session_state.get( 'docqna_input', '' )
-	docqna_number = st.session_state.get( 'docqna_number', 0 )
-	docqna_max_calls = st.session_state.get( 'docqna_max_calls', 0 )
-	docqna_max_searches = st.session_state.get( 'docqna_max_searches', 0 )
-	docqna_max_tokens = st.session_state.get( 'docqna_max_tokens', 0 )
-	docqna_top_percent = st.session_state.get( 'docqna_top_percent', 0.0 )
-	docqna_frequency_penalty = st.session_state.get( 'docqna_frequency_penalty', 0.0 )
-	docqna_presence_penalty = st.session_state.get( 'docqna_presence_penalty', 0.0 )
-	docqna_temperature = st.session_state.get( 'docqna_temperature', 0.0 )
-	docqna_stream = st.session_state.get( 'docqna_stream', False )
-	docqna_parallel_tools = st.session_state.get( 'docqna_parallel_tools', False )
-	docqna_store = st.session_state.get( 'docqna_store', False )
-	docqna_background = st.session_state.get( 'docqna_background', False )
-	docqna_tools = st.session_state.get( 'docqna_tools', [ ] )
-	docqna_modalities = st.session_state.get( 'docqna_modalities', [ ] )
-	docqna_context = st.session_state.get( 'docqna_context', [ ] )
-	docqna_include = st.session_state.get( 'docqna_include', [ ] )
-	docqna_domains = st.session_state.get( 'docqna_domains', [ ] )
-	docqna_stops = st.session_state.get( 'docqna_stops', [ ] )
-	docqna_files = st.session_state.get( 'docqna_files', [ ] )
-	docqna_uploaded = st.session_state.get( 'docqna_uploaded' )
-	docqna_messages = st.session_state.get( 'docqna_messages', [ ] )
-	docqna_active_docs = st.session_state.get( 'docqna_active_docs', [ ] )
-	docqna_multi_mode = st.session_state.get( 'docqna_multi_mode' )
-	docqna = Files( )
+	ensure_docqna_mode_state( )
 	
-	for key in [ 'docqna_domains', 'docqna_stops', 'docqna_include',
-	             'docqna_input', 'docqna_tools', 'docqna_modalities',
-	             'docqna_context', 'docqna_messages', 'docqna_active_docs',
-	             'docqna_files' ]:
-		if key in st.session_state and isinstance( st.session_state[ key ], list ):
-			del st.session_state[ key ]
-			
 	# ------------------------------------------------------------------
-	#  DOCQNA SETTINGS
+	# Session State
 	# ------------------------------------------------------------------
+	if not isinstance( st.session_state.get( 'docqna_messages' ), list ):
+		st.session_state.docqna_messages = [ ]
+	
+	if not isinstance( st.session_state.get( 'docqna_active_docs' ), list ):
+		st.session_state[ 'docqna_active_docs' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'docqna_files' ), list ):
+		st.session_state[ 'docqna_files' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'docqna_texts' ), dict ):
+		st.session_state[ 'docqna_texts' ] = { }
+	
+	if not isinstance( st.session_state.get( 'docqna_chunks' ), list ):
+		st.session_state[ 'docqna_chunks' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'docqna_last_hits' ), list ):
+		st.session_state[ 'docqna_last_hits' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'docqna_last_sources' ), list ):
+		st.session_state[ 'docqna_last_sources' ] = [ ]
+	
+	if not isinstance( st.session_state.get( 'docqna_last_answer' ), str ):
+		st.session_state[ 'docqna_last_answer' ] = ''
+	
+	if not isinstance( st.session_state.get( 'docqna_context' ), str ):
+		st.session_state[ 'docqna_context' ] = ''
+	
 	if st.session_state.get( 'clear_instructions' ):
 		st.session_state[ 'docqna_system_instructions' ] = ''
-		st.session_state[ 'clear_docqa_instructions' ] = False
 		st.session_state[ 'clear_instructions' ] = False
 	
 	# ------------------------------------------------------------------
-	# Main Chat UI
+	# Main UI
 	# ------------------------------------------------------------------
-	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
+	left, center, right = st.columns( [ 0.05, 0.90, 0.05 ] )
 	with center:
-		st.subheader( '📖 Document Q & A', help=cfg.DOCUMENT_Q_AND_A )
+		st.subheader( '📖 Document Q & A', help=getattr( cfg, 'DOCUMENT_QNA',
+			'Ask questions against local uploads, OpenAI file IDs, or OpenAI vector stores.' ) )
 		st.divider( )
-		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
-			
-			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+		
+		# ------------------------------------------------------------------
+		# Mind Controls
+		# ------------------------------------------------------------------
+		with st.expander( label='Mind Controls', icon='🧠',
+				expanded=False, width='stretch' ):
+			# ------------------------------------------------------------------
+			# Source Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='Source Controls', icon='📚',
+					expanded=False, width='stretch' ):
+				source_c1, source_c2, source_c3, source_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
+				
+				# ---------- Source ------------
+				with source_c1:
+					source_options = get_docqna_source_options( )
+					if st.session_state.get( 'docqna_source' ) not in source_options:
+						st.session_state[ 'docqna_source' ] = 'Local Upload'
+					
+					docqna_source = st.selectbox( label='Source',
+						options=source_options,
+						key='docqna_source',
+						help='Select the backend used for Document Q&A.',
+						index=source_options.index(
+							st.session_state.get( 'docqna_source', 'Local Upload' ) )
+						if st.session_state.get( 'docqna_source' ) in source_options
+						else None,
+						placeholder='Options' )
 				
 				# ---------- Model ------------
-				with llm_c1:
-					model_options = list( docqna.model_options )
-					set_docqna_model = st.selectbox( label='Select Model', options=model_options,
-						key='docqna_model', placeholder='Options', index=None,
-						help='REQUIRED. Large Language Model used by the AI', )
+				with source_c2:
+					model_options = [ '', 'gpt-5-mini', 'gpt-5-nano',
+					                  'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o-mini' ]
 					
-					docqna_model = st.session_state[ 'docqna_model' ]
+					if st.session_state.get( 'docqna_model' ) not in model_options:
+						st.session_state[ 'docqna_model' ] = ''
+					
+					docqna_model = st.selectbox( label='Model',
+						options=model_options,
+						key='docqna_model',
+						help='Model used for local generated answers, file analysis, or vector store answers.',
+						index=None,
+						placeholder='Options' )
 				
-				# ---------- Reasoning ------------
-				with llm_c2:
-					reasoning_options = list( docqna.reasoning_options )
-					set_docqna_reasoning = st.selectbox( label='Reasoning',
-						options=reasoning_options, key='docqna_reasoning',
-						help=cfg.REASONING, index=None, placeholder='Options' )
-					
-					docqna_reasoning = st.session_state[ 'docqna_reasoning' ]
+				# ---------- Multi-Document Mode ------------
+				with source_c3:
+					docqna_multi_mode = st.toggle( label='Multi-Document',
+						key='docqna_multi_mode',
+						help='Allow multiple local uploaded documents.' )
 				
-				# ---------- Top-P ------------
-				with llm_c3:
-					set_docqna_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
-						step=0.01, help=cfg.TOP_P, key='docqna_top_percent' )
+				# ---------- Diagnostics ------------
+				with source_c4:
+					docqna_show_diagnostics = st.toggle( label='Diagnostics',
+						key='docqna_show_diagnostics',
+						help='Show retrieval and source diagnostics.' )
+				
+				# ---------- OpenAI File ID ------------
+				st.text_input( label='OpenAI File ID',
+					key='docqna_file_id',
+					value=st.session_state.get( 'docqna_file_id', '' ),
+					help='OpenAI file ID used when Source is OpenAI File ID.',
+					width='stretch',
+					placeholder='file-...' )
+				
+				# ---------- OpenAI Vector Store ID ------------
+				st.text_input( label='OpenAI Vector Store ID',
+					key='docqna_vector_store_id',
+					value=st.session_state.get( 'docqna_vector_store_id', '' ),
+					help='OpenAI vector store ID used when Source is OpenAI Vector Store ID.',
+					width='stretch',
+					placeholder='vs_...' )
+				
+				link_c1, link_c2 = st.columns( [ 0.50, 0.50 ] )
+				
+				# ---------- Use Current Files Mode ID ------------
+				with link_c1:
+					if st.button( 'Use Current Files ID', key='docqna_use_files_id',
+							width='stretch' ):
+						current_file_id = st.session_state.get( 'files_id', '' )
+						if isinstance( current_file_id, str ) and current_file_id.strip( ):
+							st.session_state[ 'docqna_file_id' ] = current_file_id.strip( )
+							st.session_state[ 'docqna_source' ] = 'OpenAI File ID'
+							st.rerun( )
+						else:
+							st.warning( 'No current Files mode file ID is available.' )
+				
+				# ---------- Use Current Vector Store ID ------------
+				with link_c2:
+					if st.button( 'Use Current Vector Store ID',
+							key='docqna_use_vector_store_id', width='stretch' ):
+						current_store_id = st.session_state.get( 'stores_id', '' )
+						if isinstance( current_store_id, str ) and current_store_id.strip( ):
+							st.session_state[ 'docqna_vector_store_id' ] = current_store_id.strip( )
+							st.session_state[ 'docqna_source' ] = 'OpenAI Vector Store ID'
+							st.rerun( )
+						else:
+							st.warning( 'No current Vector Stores mode store ID is available.' )
+			
+			# ------------------------------------------------------------------
+			# Retrieval Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='Retrieval Controls', icon='🧩',
+					expanded=False, width='stretch' ):
+				retrieval_c1, retrieval_c2, retrieval_c3 = st.columns(
+					[ 0.34, 0.33, 0.33 ], border=True, gap='xxsmall' )
+				
+				# ---------- Top-K ------------
+				with retrieval_c1:
+					st.slider( label='Top-K Chunks',
+						min_value=1, max_value=25, step=1,
+						key='docqna_top_k',
+						help='Number of local chunks or vector store results to retrieve.' )
+				
+				# ---------- Chunk Size ------------
+				with retrieval_c2:
+					try:
+						current_chunk_size = int(
+							st.session_state.get( 'docqna_chunk_size', 900 ) or 900 )
+					except Exception:
+						current_chunk_size = 900
 					
-					docqna_top_percent = st.session_state[ 'docqna_top_percent' ]
+					if current_chunk_size < 100:
+						st.session_state[ 'docqna_chunk_size' ] = 100
+					elif current_chunk_size > 5000:
+						st.session_state[ 'docqna_chunk_size' ] = 5000
+					
+					st.slider( label='Chunk Size',
+						min_value=100, max_value=5000, step=50,
+						key='docqna_chunk_size',
+						help='Local word-based chunk size.' )
+				
+				# ---------- Chunk Overlap ------------
+				with retrieval_c3:
+					max_overlap = max( 0, int( st.session_state.get(
+						'docqna_chunk_size', 900 ) or 900 ) - 1 )
+					
+					try:
+						current_overlap = int(
+							st.session_state.get( 'docqna_chunk_overlap', 150 ) or 150 )
+					except Exception:
+						current_overlap = 150
+					
+					if current_overlap < 0:
+						st.session_state[ 'docqna_chunk_overlap' ] = 0
+					elif current_overlap >= max_overlap:
+						st.session_state[ 'docqna_chunk_overlap' ] = max( 0, max_overlap // 5 )
+					
+					st.slider( label='Chunk Overlap',
+						min_value=0, max_value=max_overlap, step=25,
+						key='docqna_chunk_overlap',
+						help='Local word overlap between adjacent chunks.' )
+				
+				action_c1, action_c2, action_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
+				
+				# ---------- Rebuild Local Index ------------
+				with action_c1:
+					if st.button( 'Rebuild Local Index', key='docqna_rebuild_index',
+							width='stretch' ):
+						with st.spinner( 'Rebuilding local document index…' ):
+							try:
+								chunks = rebuild_docqna_index( )
+								if len( chunks ) > 0:
+									st.success( f'Rebuilt index with {len( chunks )} chunk(s).' )
+								else:
+									st.warning( 'No chunks were produced.' )
+							except Exception as exc:
+								st.error( f'Rebuild index failed: {exc}' )
+				
+				# ---------- Summarize Active Source ------------
+				with action_c2:
+					if st.button( 'Summarize Active Source', key='docqna_summarize_source',
+							width='stretch' ):
+						with st.spinner( 'Summarizing active source…' ):
+							try:
+								answer = summarize_active_document( )
+								
+								if isinstance( answer, str ) and answer.strip( ):
+									st.session_state.docqna_messages.append(
+										{
+												'role': 'assistant',
+												'content': answer.strip( ),
+										} )
+									st.success( 'Summary generated.' )
+							except Exception as exc:
+								st.error( f'Summary failed: {exc}' )
+				
+				# ---------- Clear Outputs ------------
+				with action_c3:
+					st.button( label='Clear Outputs',
+						key='docqna_clear_outputs',
+						width='stretch',
+						on_click=clear_docqna_outputs )
+			
+			# ------------------------------------------------------------------
+			# Generation Controls
+			# ------------------------------------------------------------------
+			with st.expander( label='Generation Controls', icon='🎛️',
+					expanded=False, width='stretch' ):
+				gen_c1, gen_c2, gen_c3, gen_c4 = st.columns(
+					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
 				# ---------- Temperature ------------
-				with llm_c4:
-					set_docqna_temperature = st.slider( label='Temperature', min_value=-2.0, max_value=2.0,
-						step=0.01,
-						help=cfg.TEMPERATURE, key='docqna_temperature' )
+				with gen_c1:
+					if 'docqna_temperature' not in st.session_state:
+						st.session_state[ 'docqna_temperature' ] = 0.2
 					
-					docqna_temperature = st.session_state[ 'docqna_temperature' ]
+					st.slider( label='Temperature',
+						min_value=0.0, max_value=2.0, step=0.05,
+						key='docqna_temperature',
+						help='Sampling temperature used by the generated-answer path.' )
 				
-				# ---------- Presense ------------
-				with llm_c5:
-					set_docqna_presence = st.slider( label='Presense Penalty', min_value=-2.0, max_value=2.0,
-						step=0.01, help=cfg.PRESENCE_PENALTY, key='docqna_presence_penalty' )
+				# ---------- Top-P ------------
+				with gen_c2:
+					if 'docqna_top_percent' not in st.session_state:
+						st.session_state[ 'docqna_top_percent' ] = 1.0
 					
-					docqna_presence_penalty = st.session_state[ 'docqna_presence_penalty' ]
-				
-				# ---------- Frequency ------------
-				with llm_c6:
-					set_docqna_freq = st.slider( label='Frequency Penalty', min_value=-2.0, max_value=2.0,
-						step=0.01, help=cfg.FREQUENCY_PENALTY, key='docqna_frequency_penalty' )
-					
-					docqna_fequency = st.session_state[ 'docqna_frequency_penalty' ]
-				
-				# ---------- Reset Model ------------
-				if st.button( label='Reset', key='reset_docqna_model', width='stretch' ):
-					for key in [ 'docqna_model', 'docqna_temperature', 'docqna_presence_penalty',
-					             'docqna_reasoning', 'docqna_top_percent',
-					             'docqna_frequency_penalty' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
-			
-			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
-				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-				
-				# ---------- Max Calls ------------
-				with tool_c1:
-					set_docqna_calls = st.slider( label='Max Calls', min_value=0, max_value=10,
-						value=int( st.session_state.get( 'docqna_max_calls', 0 ) ), step=1,
-						help=cfg.MAX_TOOL_CALLS, key='docqna_max_calls' )
-					
-					docqna_max_calls = st.session_state[ 'docqna_max_calls' ]
-				
-				# ---------- Choice ------------
-				with tool_c2:
-					choice_options = list( docqna.choice_options )
-					set_docqna_choice = st.selectbox( label='Choice', options=choice_options,
-						key='docqna_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
-					
-					docqna_tool_choice = st.session_state[ 'docqna_tool_choice' ]
-				
-				# ---------- Include ------------
-				with tool_c3:
-					include_options = list( docqna.include_options )
-					set_docqna_include = st.multiselect( label='Include', options=include_options,
-						key='docqna_include', help=cfg.INCLUDE, placeholder='Options' )
-					
-					docqna_include = [ d.strip( ) for d in set_docqna_include
-					                   if d.strip( ) ]
-					
-					docqna_include = st.session_state[ 'docqna_include' ]
-				
-				# ---------- Domains ------------
-				with tool_c4:
-					set_docqna_domains = st.text_input( label='Allowed Domains', key='docqna_domains_input',
-						value=','.join( st.session_state.get( 'docqna_domains', [ ] ) ),
-						help=cfg.ALLOWED_DOMAINS, width='stretch', placeholder='Enter Domains' )
-					
-					docqna_domains = [ d.strip( ) for d in set_docqna_domains.split( ',' )
-					                   if d.strip( ) ]
-					
-					st.session_state[ 'docqna_domains' ] = docqna_domains
-				
-				# ---------- Tools ------------
-				with tool_c5:
-					tool_options = list( docqna.tool_options )
-					set_docqna_tools = st.multiselect( label='Tools', options=tool_options,
-						key='docqna_tools', help=cfg.TOOLS, placeholder='Options' )
-					
-					docqna_tools = [ d.strip( ) for d in set_docqna_tools
-					                 if d.strip( ) ]
-					
-					docqna_tools = st.session_state[ 'docqna_tools' ]
-				
-				# ---------- Background ------------
-				with tool_c6:
-					set_docqna_background = st.toggle( label='Background', key='docqna_background',
-						help=cfg.BACKGROUND_MODE )
-					
-					docqna_background = st.session_state[ 'docqna_background' ]
-				
-				# ---------- Reset Tools ------------
-				if st.button( label='Reset', key='reset_docqna_tools', width='stretch' ):
-					for key in [ 'docqna_max_calls', 'docqna_tool_choice', 'docqna_include',
-					             'docqna_tools', 'docqna_domains', 'docqna_background' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
-			
-			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
-				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-				
-				# ---------- Number ------------
-				with resp_c1:
-					set_docqna_number = st.slider( label='Number', min_value=0, max_value=50,
-						value=int( st.session_state.get( 'docqna_number', 0 ) ), step=1,
-						help='Optional. Upper limit on the responses returned by the model',
-						key='docqna_number' )
-					
-					docqna_number = st.session_state[ 'docqna_number' ]
-				
-				# ---------- Stream ------------
-				with resp_c2:
-					set_docqna_stream = st.toggle( label='Stream', key='docqna_stream',
-						help=cfg.STREAM )
-					
-					docqna_stream = st.session_state[ 'docqna_stream' ]
-				
-				# ---------- Store ------------
-				with resp_c3:
-					set_docqna_store = st.toggle( label='Store', key='docqna_store', help=cfg.STORE )
-					
-					docqna_store = st.session_state[ 'docqna_store' ]
+					st.slider( label='Top-P',
+						min_value=0.0, max_value=1.0, step=0.05,
+						key='docqna_top_percent',
+						help='Nucleus sampling value used by the generated-answer path.' )
 				
 				# ---------- Max Tokens ------------
-				with resp_c4:
-					set_docqna_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
-						value=int( st.session_state.get( 'docqna_max_tokens', 0 ) ), step=500,
-						help=cfg.MAX_OUTPUT_TOKENS, key='docqna_max_tokens' )
+				with gen_c3:
+					if 'docqna_max_tokens' not in st.session_state:
+						st.session_state[ 'docqna_max_tokens' ] = 2000
 					
-					docqna_tokens = st.session_state[ 'docqna_max_tokens' ]
+					st.slider( label='Max Tokens',
+						min_value=256, max_value=16000, step=256,
+						key='docqna_max_tokens',
+						help='Maximum generated output tokens.' )
 				
-				# ---------- Modalities------------
-				with resp_c5:
-					modality_options = list( docqna.modality_options )
-					set_docqna_modalities = st.multiselect( label='Response Modalities', options=modality_options,
-						key='docqna_modalities', help='Optional. Modality of the response',
+				# ---------- Reasoning ------------
+				with gen_c4:
+					if 'docqna_reasoning' not in st.session_state:
+						st.session_state[ 'docqna_reasoning' ] = ''
+					
+					st.selectbox( label='Reasoning',
+						options=[ '', 'minimal', 'low', 'medium', 'high' ],
+						key='docqna_reasoning',
+						help='Reserved for compatible models and wrappers.',
+						index=None,
 						placeholder='Options' )
-					
-					docqna_modalities = [ d.strip( ) for d in set_docqna_modalities
-					                      if d.strip( ) ]
-					
-					docqna_modalities = st.session_state[ 'docqna_modalities' ]
-				
-				# ---------- Stops ------------
-				with resp_c6:
-					set_docqna_stops = st.text_input( label='Stop Sequences', key='docqna_stops_input',
-						value=','.join( st.session_state.get( 'docqna_stops', [ ] ) ),
-						help=cfg.STOP_SEQUENCE, width='stretch', placeholder='Enter Stop Strings' )
-					
-					docqna_stops = [ d.strip( ) for d in set_docqna_stops.split( ',' )
-					                 if d.strip( ) ]
-					
-					st.session_state[ 'docqna_stops' ] = docqna_stops
-				
-				# ---------- Reset Reponse ------------
-				if st.button( label='Reset', key='reset_docqna_response', width='stretch' ):
-					for key in [ 'docqna_stream', 'docqna_store', 'docqna_number', 'docqna_stops',
-					             'docqna_tools', 'docqna_max_tokens', 'docqna_modalities' ]:
-						if key in st.session_state:
-							del st.session_state[ key ]
-					
-					st.rerun( )
+			
+			# ------------------------------------------------------------------
+			# Reset Controls
+			# ------------------------------------------------------------------
+			reset_controls_c1, reset_controls_c2 = st.columns( [ 0.50, 0.50 ] )
+			
+			with reset_controls_c1:
+				st.button( label='Reset Controls',
+					key='docqna_reset_controls',
+					width='stretch',
+					on_click=reset_docqna_controls )
+			
+			with reset_controls_c2:
+				st.button( label='Unload Documents',
+					key='docqna_unload_documents',
+					width='stretch',
+					on_click=unload_docqna_documents )
 		
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
+		# ------------------------------------------------------------------
+		# System Instructions
+		# ------------------------------------------------------------------
+		with st.expander( label='System Instructions', icon='🖥️',
+				expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
 			if not prompt_names:
 				prompt_names = [ '' ]
 			
+			# ---------- System Instructions ------------
 			with in_left:
-				st.text_area( label='Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='docqna_system_instructions' )
+				st.text_area( label='Enter Text',
+					height=90, width='stretch',
+					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
+						'Optional instructions used by Document Q&A answering workflows.' ),
+					key='docqna_system_instructions' )
 			
-			def _on_template_change( ) -> None:
-				name = st.session_state.get( 'instructions' )
-				if name and name != 'No Templates Found':
-					text = fetch_prompt_text( cfg.DB_PATH, name )
-					if text is not None:
-						st.session_state[ 'docqna_system_instructions' ] = text
-			
+			# ---------- Template ------------
 			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=_on_template_change )
-			
-			def _on_clear( ) -> None:
-				st.session_state[ 'docqna_system_instructions' ] = ''
-				st.session_state[ 'instructions' ] = ''
-			
-			def _on_convert_system_instructions( ) -> None:
-				text = st.session_state.get( 'docqna_system_instructions', '' )
-				if not isinstance( text, str ) or not text.strip( ):
-					return
-				
-				src = text.strip( )
-				
-				# XML-delimited prompt blocks -> Markdown headings
-				if cfg.XML_BLOCK_PATTERN.search( src ):
-					converted = convert_xml( src )
-				
-				# Markdown headings <-> simple <hN> tags handled by existing helper
-				else:
-					converted = convert_markdown( src )
-				
-				st.session_state[ 'docqna_system_instructions' ] = converted
+				st.selectbox( label='Use Template',
+					options=prompt_names,
+					index=None,
+					key='instructions',
+					on_change=load_docqna_instruction_template )
 			
 			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			
+			# ---------- Clear Instructions ------------
 			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch', on_click=_on_clear )
+				st.button( label='Clear Instructions',
+					width='stretch',
+					on_click=clear_docqna_instructions )
 			
+			# ---------- XML <-> Markdown ------------
 			with btn_c2:
-				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=_on_convert_system_instructions )
-		
-		with st.expander( label='Document Loading', icon='📥', expanded=False, width='stretch' ):
-			doc_left, doc_right = st.columns( [ 0.2, 0.8 ], border=True )
-			with doc_left:
-				docqna_uploaded = st.file_uploader( 'Upload', type=[ 'pdf', 'txt', 'md', 'docx' ],
-					accept_multiple_files=False, label_visibility='visible' )
-				
-				if docqna_uploaded is not None:
-					st.session_state.docqna_active_docs = [ docqna_uploaded.name ]
-					st.session_state.doc_bytes = {
-							docqna_uploaded.name: docqna_uploaded.getvalue( ) }
-					st.success( f'{docqna_uploaded.name} has been loaded!' )
-				else:
-					st.info( 'Load a Document.' )
-				
-				unload = st.button( label='Unload Document', width='stretch' )
-				if unload:
-					docqna_uploaded = None
-					st.session_state.docqna_active_docs = None
-			
-			with doc_right:
-				if st.session_state.get( 'docqna_active_docs' ):
-					name = st.session_state.docqna_active_docs[ 0 ]
-					file_bytes = st.session_state.doc_bytes.get( name )
-					if file_bytes:
-						st.pdf( file_bytes, height=420 )
+				st.button( label='XML <-> Markdown',
+					width='stretch',
+					on_click=convert_docqna_system_instructions )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
-		# ---------------------------------------------------
-		#                   MESSAGES
-		# ---------------------------------------------------
-		for msg in st.session_state.docqna_messages:
-			with st.chat_message( msg[ 'role' ] ):
-				st.markdown( msg[ 'content' ] )
+		# ------------------------------------------------------------------
+		# Document Loading and Status
+		# ------------------------------------------------------------------
+		load_col, status_col = st.columns( [ 0.55, 0.45 ], border=True, gap='small' )
 		
-		if prompt := st.chat_input( 'Ask a question about the document' ):
-			st.session_state.docqna_messages.append( { 'role': 'user', 'content': prompt } )
-			response = route_document_query( prompt )
-			st.session_state.docqna_messages.append( { 'role': 'assistant', 'content': response } )
-			st.rerun( )
+		# ------------------------------------------------------------------
+		# Document Loading
+		# ------------------------------------------------------------------
+		with load_col:
+			st.subheader( 'Document Loading' )
+			
+			accepted_types = [ 'pdf', 'txt', 'md', 'docx', 'csv', 'json', 'xml',
+			                   'py', 'cs', 'sql', 'yaml', 'yml', 'html', 'css', 'js', 'ts' ]
+			
+			uploaded = st.file_uploader( label='Upload Document',
+				type=accepted_types,
+				accept_multiple_files=bool( st.session_state.get(
+					'docqna_multi_mode', False ) ),
+				key='docqna_upload_widget',
+				help='Upload one or more local documents for local Document Q&A.' )
+			
+			if uploaded is not None:
+				try:
+					active_docs = load_docqna_uploaded_files( uploaded )
+					
+					if len( active_docs ) > 0:
+						st.success( f'Loaded {len( active_docs )} document(s).' )
+						
+						if st.session_state.get( 'docqna_source' ) == 'Local Upload':
+							try:
+								if not st.session_state.get( 'docqna_vec_ready', False ):
+									rebuild_docqna_index( )
+							except Exception:
+								pass
+					else:
+						st.warning( 'No readable document bytes were loaded.' )
+				except Exception as exc:
+					st.error( f'Document loading failed: {exc}' )
+			
+			names = get_docqna_active_document_names( )
+			if len( names ) > 0:
+				st.caption( 'Active documents: ' + ', '.join( names ) )
+			else:
+				st.info( 'No local document is currently loaded.' )
+			
+			preview_c1, preview_c2 = st.columns( [ 0.50, 0.50 ] )
+			
+			# ---------- Preview Documents ------------
+			with preview_c1:
+				if st.button( 'Preview Documents', key='docqna_preview_documents',
+						width='stretch' ):
+					st.session_state[ 'docqna_show_preview' ] = True
+			
+			# ---------- Hide Preview ------------
+			with preview_c2:
+				if st.button( 'Hide Preview', key='docqna_hide_preview',
+						width='stretch' ):
+					st.session_state[ 'docqna_show_preview' ] = False
+			
+			if st.session_state.get( 'docqna_show_preview', True ):
+				render_docqna_document_preview( )
 		
-		# --------  Reset Button
-		if st.button( 'Clear Messages' ):
-			reset_state( )
-			st.rerun( )
+		# ------------------------------------------------------------------
+		# Status / Diagnostics
+		# ------------------------------------------------------------------
+		with status_col:
+			st.subheader( 'Document Status' )
+			render_docqna_status( )
+			
+			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
+			source = st.session_state.get( 'docqna_source', 'Local Upload' )
+			
+			if source == 'OpenAI File ID':
+				file_id = st.session_state.get( 'docqna_file_id', '' )
+				if isinstance( file_id, str ) and file_id.strip( ):
+					st.success( f'OpenAI File ID selected: {file_id.strip( )}' )
+				else:
+					st.warning( 'OpenAI File ID source selected, but no file ID is set.' )
+			
+			elif source == 'OpenAI Vector Store ID':
+				store_id = st.session_state.get( 'docqna_vector_store_id', '' )
+				if isinstance( store_id, str ) and store_id.strip( ):
+					st.success( f'OpenAI Vector Store ID selected: {store_id.strip( )}' )
+				else:
+					st.warning(
+						'OpenAI Vector Store ID source selected, but no vector store ID is set.' )
+			
+			else:
+				if st.session_state.get( 'docqna_vec_ready', False ):
+					st.success( 'Local document index is ready.' )
+				else:
+					st.warning( 'Local document index is not ready.' )
+			
+			if st.session_state.get( 'docqna_show_diagnostics', True ):
+				with st.expander( label='Retrieval Diagnostics', icon='🔎',
+						expanded=False, width='stretch' ):
+					st.write(
+						{
+								'source': st.session_state.get( 'docqna_source', 'Local Upload' ),
+								'index_status': st.session_state.get( 'docqna_index_status',
+									'Not indexed' ),
+								'chunk_count': st.session_state.get( 'docqna_chunk_count', 0 ),
+								'fingerprint': st.session_state.get( 'docqna_fingerprint', '' ),
+								'active_documents': get_docqna_active_document_names( ),
+								'file_id': st.session_state.get( 'docqna_file_id', '' ),
+								'vector_store_id': st.session_state.get( 'docqna_vector_store_id',
+									'' ),
+						} )
+					
+					render_docqna_retrieval_hits( )
+		
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Messages
+		# ------------------------------------------------------------------
+		if st.session_state.get( 'docqna_messages' ) is not None:
+			for msg in st.session_state.docqna_messages:
+				if not isinstance( msg, dict ):
+					continue
+				
+				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
+				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
+					st.markdown( msg.get( 'content', '' ) )
+		
+		prompt = st.chat_input( 'Ask a question about the active document source …' )
+		if prompt is not None and str( prompt ).strip( ):
+			prompt = str( prompt ).strip( )
+			
+			st.session_state.docqna_messages.append(
+				{
+						'role': 'user',
+						'content': prompt,
+				} )
+			
+			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
+				with st.spinner( 'Answering from the active document source…' ):
+					try:
+						answer = route_document_query( prompt )
+						
+						if isinstance( answer, str ) and answer.strip( ):
+							st.markdown( answer )
+							st.session_state.docqna_messages.append(
+								{
+										'role': 'assistant',
+										'content': answer.strip( ),
+								} )
+							st.session_state[ 'docqna_last_answer' ] = answer.strip( )
+							st.session_state[ 'last_answer' ] = answer.strip( )
+						else:
+							message = 'No Document Q&A answer was returned.'
+							st.warning( message )
+							st.session_state.docqna_messages.append(
+								{
+										'role': 'assistant',
+										'content': message,
+								} )
+					except Exception as exc:
+						st.error( f'Document Q&A failed: {exc}' )
+		
+		# ------------------------------------------------------------------
+		# Last Answer and Sources
+		# ------------------------------------------------------------------
+		last_answer = st.session_state.get( 'docqna_last_answer', '' )
+		if isinstance( last_answer, str ) and last_answer.strip( ):
+			with st.expander( label='Last Document Answer', icon='🧠',
+					expanded=False, width='stretch' ):
+				st.markdown( last_answer )
+		
+		last_sources = st.session_state.get( 'docqna_last_sources', [ ] )
+		if isinstance( last_sources, list ) and len( last_sources ) > 0:
+			with st.expander( label='Last Document Sources', icon='📌',
+					expanded=False, width='stretch' ):
+				df_sources = pd.DataFrame( last_sources )
+				st.data_editor( df_sources, use_container_width=True, hide_index=True )
+		
+		# ------------------------------------------------------------------
+		# Reset Buttons
+		# ------------------------------------------------------------------
+		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
+		
+		with reset_c1:
+			if st.button( 'Clear Messages', key='docqna_clear_messages',
+					width='stretch', on_click=clear_docqna_messages ):
+				st.rerun( )
+		
+		with reset_c2:
+			if st.button( 'Clear Outputs', key='docqna_clear_mode_outputs',
+					width='stretch', on_click=clear_docqna_outputs ):
+				st.rerun( )
+		
+		with reset_c3:
+			if st.button( 'Reset All', key='docqna_reset_all',
+					width='stretch', on_click=reset_docqna_all ):
+				st.rerun( )
 
 # ======================================================================================
 # EMBEDDINGS MODE
@@ -10195,12 +11726,9 @@ elif mode == 'Embeddings':
 					st.session_state[ 'embeddings_overlap_amount' ] = max(
 						0, int( st.session_state.get( 'embeddings_chunk_size', 800 ) ) // 5 )
 				
-				embeddings_overlap_amount = st.slider( label='Overlap Amount',
-					min_value=0,
-					max_value=max( 0, int( st.session_state.get(
-						'embeddings_chunk_size', 800 ) ) - 1 ),
-					step=10,
-					help='Token overlap between adjacent embedding chunks.',
+				embeddings_overlap_amount = st.slider( label='Overlap Amount', min_value=0,
+					max_value=max( 10, int( st.session_state.get( 'embeddings_chunk_size', 800 ) ) - 1 ),
+					step=10, help='Token overlap between adjacent embedding chunks.',
 					key='embeddings_overlap_amount' )
 				
 				embeddings_overlap_amount = st.session_state.get(
