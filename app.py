@@ -14186,7 +14186,7 @@ elif mode == 'Audio':
 		right_parts.append( 'Store: On' )
 	if audio_reasoning:
 		right_parts.append( 'Reasoning: On' )
-	if audio_input:
+	if audio_input_mode:
 		right_parts.append( 'Input: Set' )
 	if audio_tool_choice:
 		right_parts.append( f'Tool Choice: {audio_tool_choice}' )
