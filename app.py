@@ -10541,8 +10541,7 @@ elif mode == 'Audio':
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
-		st.subheader( '🎧 Audio API',
-			help=getattr( cfg, 'AUDIO_API',
+		st.subheader( '🎧 Audio API', help=getattr( cfg, 'AUDIO_API',
 				'OpenAI audio transcription, translation, and text-to-speech workflows.' ) )
 		st.divider( )
 		
@@ -10799,7 +10798,7 @@ elif mode == 'Audio':
 		# Upload Column
 		# ------------------------------------------------------------------
 		with upload_col:
-			st.subheader( 'Upload Audio' )
+			st.markdown( '#### Upload Audio' )
 			uploaded_audio = st.file_uploader( label='Upload Audio File',
 				type=audio_input_types, accept_multiple_files=False,
 				key='audio_upload_file' )
@@ -10848,7 +10847,7 @@ elif mode == 'Audio':
 		# Recording Column
 		# ------------------------------------------------------------------
 		with record_col:
-			st.subheader( 'Record Audio' )
+			st.markdown( '#### Record Audio' )
 			recorded_audio = st.audio_input( label='Record Audio',
 				key='audio_recording_input' )
 			
@@ -10895,7 +10894,7 @@ elif mode == 'Audio':
 		# Playback / TTS Column
 		# ------------------------------------------------------------------
 		with playback_col:
-			st.subheader( 'Playback / Speech' )
+			st.markdown( '#### Playback / Speech' )
 			
 			if st.session_state.get( 'audio_task' ) == 'Text-to-Speech':
 				st.text_area( label='Text-to-Speech Input', height=180,
@@ -11109,15 +11108,12 @@ elif mode == 'Document Q&A':
 					if st.session_state.get( 'docqna_source' ) not in source_options:
 						st.session_state[ 'docqna_source' ] = 'Local Upload'
 					
-					docqna_source = st.selectbox( label='Source',
-						options=source_options,
-						key='docqna_source',
-						help='Select the backend used for Document Q&A.',
+					docqna_source = st.selectbox( label='Source', options=source_options,
+						key='docqna_source', help='Select the backend used for Document Q&A.',
 						index=source_options.index(
 							st.session_state.get( 'docqna_source', 'Local Upload' ) )
 						if st.session_state.get( 'docqna_source' ) in source_options
-						else None,
-						placeholder='Options' )
+						else None, placeholder='Options' )
 				
 				# ---------- Model ------------
 				with source_c2:
@@ -11127,12 +11123,9 @@ elif mode == 'Document Q&A':
 					if st.session_state.get( 'docqna_model' ) not in model_options:
 						st.session_state[ 'docqna_model' ] = ''
 					
-					docqna_model = st.selectbox( label='Model',
-						options=model_options,
-						key='docqna_model',
-						help='Model used for local generated answers, file analysis, or vector store answers.',
-						index=None,
-						placeholder='Options' )
+					docqna_model = st.selectbox( label='Model', options=model_options, key='docqna_model',
+						help='Model used for local generated answers, file analysis, or vector stores.',
+						index=None, placeholder='Options' )
 				
 				# ---------- Multi-Document Mode ------------
 				with source_c3:
@@ -11143,24 +11136,19 @@ elif mode == 'Document Q&A':
 				# ---------- Diagnostics ------------
 				with source_c4:
 					docqna_show_diagnostics = st.toggle( label='Diagnostics',
-						key='docqna_show_diagnostics',
-						help='Show retrieval and source diagnostics.' )
+						key='docqna_show_diagnostics', help='Show retrieval and source diagnostics.' )
 				
 				# ---------- OpenAI File ID ------------
-				st.text_input( label='OpenAI File ID',
-					key='docqna_file_id',
+				st.text_input( label='OpenAI File ID', key='docqna_file_id',
 					value=st.session_state.get( 'docqna_file_id', '' ),
 					help='OpenAI file ID used when Source is OpenAI File ID.',
-					width='stretch',
-					placeholder='file-...' )
+					width='stretch', placeholder='file-...' )
 				
 				# ---------- OpenAI Vector Store ID ------------
-				st.text_input( label='OpenAI Vector Store ID',
-					key='docqna_vector_store_id',
+				st.text_input( label='OpenAI Vector Store ID', key='docqna_vector_store_id',
 					value=st.session_state.get( 'docqna_vector_store_id', '' ),
 					help='OpenAI vector store ID used when Source is OpenAI Vector Store ID.',
-					width='stretch',
-					placeholder='vs_...' )
+					width='stretch', placeholder='vs_...' )
 				
 				link_c1, link_c2 = st.columns( [ 0.50, 0.50 ] )
 				
@@ -11191,16 +11179,13 @@ elif mode == 'Document Q&A':
 			# ------------------------------------------------------------------
 			# Retrieval Controls
 			# ------------------------------------------------------------------
-			with st.expander( label='Retrieval Controls', icon='🧩',
-					expanded=False, width='stretch' ):
+			with st.expander( label='Retrieval Controls', icon='🧩', expanded=False, width='stretch' ):
 				retrieval_c1, retrieval_c2, retrieval_c3 = st.columns(
 					[ 0.34, 0.33, 0.33 ], border=True, gap='xxsmall' )
 				
 				# ---------- Top-K ------------
 				with retrieval_c1:
-					st.slider( label='Top-K Chunks',
-						min_value=1, max_value=25, step=1,
-						key='docqna_top_k',
+					st.slider( label='Top-K Chunks', min_value=1, max_value=25, step=1, key='docqna_top_k',
 						help='Number of local chunks or vector store results to retrieve.' )
 				
 				# ---------- Chunk Size ------------
@@ -11216,15 +11201,12 @@ elif mode == 'Document Q&A':
 					elif current_chunk_size > 5000:
 						st.session_state[ 'docqna_chunk_size' ] = 5000
 					
-					st.slider( label='Chunk Size',
-						min_value=100, max_value=5000, step=50,
-						key='docqna_chunk_size',
-						help='Local word-based chunk size.' )
+					st.slider( label='Chunk Size', min_value=100, max_value=5000, step=50,
+						key='docqna_chunk_size', help='Local word-based chunk size.' )
 				
 				# ---------- Chunk Overlap ------------
 				with retrieval_c3:
-					max_overlap = max( 0, int( st.session_state.get(
-						'docqna_chunk_size', 900 ) or 900 ) - 1 )
+					max_overlap = max( 0, int( st.session_state.get( 'docqna_chunk_size', 900 ) or 900 ) - 1 )
 					
 					try:
 						current_overlap = int(
@@ -11237,8 +11219,7 @@ elif mode == 'Document Q&A':
 					elif current_overlap >= max_overlap:
 						st.session_state[ 'docqna_chunk_overlap' ] = max( 0, max_overlap // 5 )
 					
-					st.slider( label='Chunk Overlap',
-						min_value=0, max_value=max_overlap, step=25,
+					st.slider( label='Chunk Overlap', min_value=0, max_value=max_overlap, step=25,
 						key='docqna_chunk_overlap',
 						help='Local word overlap between adjacent chunks.' )
 				
@@ -11278,16 +11259,13 @@ elif mode == 'Document Q&A':
 				
 				# ---------- Clear Outputs ------------
 				with action_c3:
-					st.button( label='Clear Outputs',
-						key='docqna_clear_outputs',
-						width='stretch',
-						on_click=clear_docqna_outputs )
+					st.button( label='Clear Outputs', key='docqna_clear_outputs',
+						width='stretch', on_click=clear_docqna_outputs )
 			
 			# ------------------------------------------------------------------
 			# Generation Controls
 			# ------------------------------------------------------------------
-			with st.expander( label='Generation Controls', icon='🎛️',
-					expanded=False, width='stretch' ):
+			with st.expander( label='Generation Controls', icon='🎛️', expanded=False, width='stretch' ):
 				gen_c1, gen_c2, gen_c3, gen_c4 = st.columns(
 					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
@@ -11296,10 +11274,8 @@ elif mode == 'Document Q&A':
 					if 'docqna_temperature' not in st.session_state:
 						st.session_state[ 'docqna_temperature' ] = 0.2
 					
-					st.slider( label='Temperature',
-						min_value=0.0, max_value=2.0, step=0.05,
-						key='docqna_temperature',
-						help='Sampling temperature used by the generated-answer path.' )
+					st.slider( label='Temperature', min_value=0.0, max_value=2.0, step=0.05,
+						key='docqna_temperature', help='Sampling temperature' )
 				
 				# ---------- Top-P ------------
 				with gen_c2:
@@ -11316,10 +11292,8 @@ elif mode == 'Document Q&A':
 					if 'docqna_max_tokens' not in st.session_state:
 						st.session_state[ 'docqna_max_tokens' ] = 2000
 					
-					st.slider( label='Max Tokens',
-						min_value=256, max_value=16000, step=256,
-						key='docqna_max_tokens',
-						help='Maximum generated output tokens.' )
+					st.slider( label='Max Tokens', min_value=256, max_value=16000, step=256,
+						key='docqna_max_tokens', help='Maximum output tokens.' )
 				
 				# ---------- Reasoning ------------
 				with gen_c4:
@@ -11327,11 +11301,9 @@ elif mode == 'Document Q&A':
 						st.session_state[ 'docqna_reasoning' ] = ''
 					
 					st.selectbox( label='Reasoning',
-						options=[ '', 'minimal', 'low', 'medium', 'high' ],
-						key='docqna_reasoning',
+						options=[ '', 'minimal', 'low', 'medium', 'high' ], key='docqna_reasoning',
 						help='Reserved for compatible models and wrappers.',
-						index=None,
-						placeholder='Options' )
+						index=None, placeholder='Options' )
 			
 			# ------------------------------------------------------------------
 			# Reset Controls
@@ -11345,16 +11317,13 @@ elif mode == 'Document Q&A':
 					on_click=reset_docqna_controls )
 			
 			with reset_controls_c2:
-				st.button( label='Unload Documents',
-					key='docqna_unload_documents',
-					width='stretch',
-					on_click=unload_docqna_documents )
+				st.button( label='Unload Documents', key='docqna_unload_documents',
+					width='stretch', on_click=unload_docqna_documents )
 		
 		# ------------------------------------------------------------------
 		# System Instructions
 		# ------------------------------------------------------------------
-		with st.expander( label='System Instructions', icon='🖥️',
-				expanded=False, width='stretch' ):
+		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -11363,17 +11332,14 @@ elif mode == 'Document Q&A':
 			
 			# ---------- System Instructions ------------
 			with in_left:
-				st.text_area( label='Enter Text',
-					height=90, width='stretch',
+				st.text_area( label='Enter Text', height=90, width='stretch',
 					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
 						'Optional instructions used by Document Q&A answering workflows.' ),
 					key='docqna_system_instructions' )
 			
 			# ---------- Template ------------
 			with in_right:
-				st.selectbox( label='Use Template',
-					options=prompt_names,
-					index=None,
+				st.selectbox( label='Use Template', options=prompt_names, index=None,
 					key='instructions',
 					on_change=load_docqna_instruction_template )
 			
@@ -11387,8 +11353,7 @@ elif mode == 'Document Q&A':
 			
 			# ---------- XML <-> Markdown ------------
 			with btn_c2:
-				st.button( label='XML <-> Markdown',
-					width='stretch',
+				st.button( label='XML <-> Markdown', width='stretch',
 					on_click=convert_docqna_system_instructions )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
@@ -11396,31 +11361,26 @@ elif mode == 'Document Q&A':
 		# ------------------------------------------------------------------
 		# Document Loading and Status
 		# ------------------------------------------------------------------
-		load_col, status_col = st.columns( [ 0.55, 0.45 ], border=True, gap='small' )
+		load_col, status_col = st.columns( [ 0.40, 0.60 ], border=True, gap='small' )
 		
 		# ------------------------------------------------------------------
 		# Document Loading
 		# ------------------------------------------------------------------
 		with load_col:
-			st.subheader( 'Document Loading' )
+			st.markdown( '#### Document Loading' )
 			
 			accepted_types = [ 'pdf', 'txt', 'md', 'docx', 'csv', 'json', 'xml',
 			                   'py', 'cs', 'sql', 'yaml', 'yml', 'html', 'css', 'js', 'ts' ]
 			
-			uploaded = st.file_uploader( label='Upload Document',
-				type=accepted_types,
-				accept_multiple_files=bool( st.session_state.get(
-					'docqna_multi_mode', False ) ),
-				key='docqna_upload_widget',
-				help='Upload one or more local documents for local Document Q&A.' )
+			uploaded = st.file_uploader( label='Upload Document', type=accepted_types,
+				accept_multiple_files=bool( st.session_state.get( 'docqna_multi_mode', False ) ),
+				key='docqna_upload_widget', help='Upload one or more local documents' )
 			
 			if uploaded is not None:
 				try:
 					active_docs = load_docqna_uploaded_files( uploaded )
-					
 					if len( active_docs ) > 0:
 						st.success( f'Loaded {len( active_docs )} document(s).' )
-						
 						if st.session_state.get( 'docqna_source' ) == 'Local Upload':
 							try:
 								if not st.session_state.get( 'docqna_vec_ready', False ):
@@ -11459,7 +11419,7 @@ elif mode == 'Document Q&A':
 		# Status / Diagnostics
 		# ------------------------------------------------------------------
 		with status_col:
-			st.subheader( 'Document Status' )
+			st.markdown( '#### Document Status' )
 			render_docqna_status( )
 			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
@@ -11624,13 +11584,11 @@ elif mode == 'Embeddings':
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
-		st.subheader( '🧬 Embeddings API',
-			help=getattr( cfg, 'EMBEDDINGS_API',
+		st.subheader( '🧬 Embeddings API', help=getattr( cfg, 'EMBEDDINGS_API',
 				'Create vector embeddings from text using the OpenAI Embeddings API.' ) )
 		st.divider( )
 		
-		with st.expander( label='Configuration', icon='🧊',
-				expanded=False, width='stretch' ):
+		with st.expander( label='Configuration', icon='🧊', expanded=False, width='stretch' ):
 			cfg_c1, cfg_c2, cfg_c3, cfg_c4, cfg_c5 = st.columns(
 				[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
 			
@@ -11695,8 +11653,7 @@ elif mode == 'Embeddings':
 			# ---------- Chunk Size ------------
 			with cfg_c4:
 				try:
-					current_chunk_size = int(
-						st.session_state.get( 'embeddings_chunk_size', 800 ) or 800 )
+					current_chunk_size = int( st.session_state.get( 'embeddings_chunk_size', 800 ) )
 				except Exception:
 					current_chunk_size = 800
 				
@@ -11705,9 +11662,8 @@ elif mode == 'Embeddings':
 				elif current_chunk_size > 8192:
 					st.session_state[ 'embeddings_chunk_size' ] = 8192
 				
-				embeddings_chunk_size = st.slider( label='Chunk Size',
-					min_value=1, max_value=8192, step=50,
-					help='Maximum chunk size in tokenizer tokens.',
+				embeddings_chunk_size = st.slider( label='Chunk Size', min_value=1, max_value=8192,
+					step=50, help='Maximum chunk size in tokenizer tokens.',
 					key='embeddings_chunk_size' )
 				
 				embeddings_chunk_size = st.session_state.get( 'embeddings_chunk_size', 800 )
@@ -11735,8 +11691,7 @@ elif mode == 'Embeddings':
 					'embeddings_overlap_amount', 0 )
 			
 			# ---------- Optional User ------------
-			st.text_input( label='User Identifier',
-				key='embeddings_user',
+			st.text_input( label='User Identifier', key='embeddings_user',
 				value=st.session_state.get( 'embeddings_user', '' ),
 				help='Optional OpenAI user identifier for abuse monitoring.',
 				width='stretch', placeholder='Optional user identifier' )
@@ -11785,10 +11740,8 @@ elif mode == 'Embeddings':
 								overlap_amount=st.session_state.get(
 									'embeddings_overlap_amount', 0 ) )
 							
-							chunks = chunk_text_for_embeddings(
-								text=normalized_text,
-								chunk_size=chunk_size,
-								overlap_amount=overlap_amount )
+							chunks = chunk_text_for_embeddings( text=normalized_text,
+								chunk_size=chunk_size, overlap_amount=overlap_amount )
 							
 							if len( chunks ) == 0:
 								st.warning( 'No valid chunks were produced from the input text.' )
@@ -11812,17 +11765,12 @@ elif mode == 'Embeddings':
 								usage = extract_embedding_usage(
 									getattr( embedding, 'response', None ) )
 								
-								df_embeddings = build_embeddings_dataframe(
-									chunks=chunks,
-									vectors=vectors,
-									encoding_format=encoding_format )
+								df_embeddings = build_embeddings_dataframe( chunks=chunks,
+									vectors=vectors, encoding_format=encoding_format )
 								
-								metrics = build_embedding_metrics(
-									source_text=source_text,
-									normalized_text=normalized_text,
-									chunks=chunks,
-									vectors=vectors,
-									usage=usage )
+								metrics = build_embedding_metrics( source_text=source_text,
+									normalized_text=normalized_text, chunks=chunks,
+									vectors=vectors, usage=usage )
 								
 								st.session_state[ 'embeddings' ] = normalize_embedding_vectors(
 									vectors )
@@ -11863,7 +11811,7 @@ elif mode == 'Embeddings':
 		# ------------------------------------------------------------------
 		df_embeddings = st.session_state.get( 'embeddings_df', pd.DataFrame( ) )
 		if isinstance( df_embeddings, pd.DataFrame ) and not df_embeddings.empty:
-			st.subheader( 'Embedding Output' )
+			st.markdown( '#### Embedding Output' )
 			render_embeddings_dataframe( df_embeddings )
 		
 		# ------------------------------------------------------------------
@@ -12179,7 +12127,7 @@ elif mode == 'Files':
 		# Upload Column
 		# ------------------------------------------------------------------
 		with upload_col:
-			st.subheader( 'Upload File' )
+			st.markdown( '#### Upload File' )
 			
 			uploaded_file = st.file_uploader( label='Select File',
 				accept_multiple_files=False,
@@ -12217,7 +12165,7 @@ elif mode == 'Files':
 		# Table Column
 		# ------------------------------------------------------------------
 		with table_col:
-			st.subheader( 'Files' )
+			st.markdown( '#### Files' )
 			
 			rows = st.session_state.get( 'files_table', [ ] )
 			render_files_table( rows )
@@ -12226,7 +12174,7 @@ elif mode == 'Files':
 		# Details Column
 		# ------------------------------------------------------------------
 		with detail_col:
-			st.subheader( 'Selected File Details' )
+			st.markdown( '#### Selected File Details' )
 			
 			metadata = st.session_state.get( 'files_metadata', { } )
 			if isinstance( metadata, dict ) and len( metadata ) > 0:
@@ -12710,7 +12658,7 @@ elif mode == 'Vector Stores':
 		# Left Column: Store Management
 		# ------------------------------------------------------------------
 		with left_col:
-			st.subheader( 'Vector Store Management' )
+			st.markdown( '#### Vector Store Management' )
 			
 			create_c1, create_c2 = st.columns( [ 0.50, 0.50 ] )
 			
@@ -12813,14 +12761,14 @@ elif mode == 'Vector Stores':
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 			
 			# ---------- Vector Stores Table ------------
-			st.subheader( 'Vector Stores' )
+			st.markdown( '#### Vector Stores' )
 			render_vector_stores_table( st.session_state.get( 'stores_table', [ ] ) )
 		
 		# ------------------------------------------------------------------
 		# Right Column: Store Details / Search
 		# ------------------------------------------------------------------
 		with right_col:
-			st.subheader( 'Selected Store Details' )
+			st.markdown( '#### Selected Store Details' )
 			
 			metadata = st.session_state.get( 'stores_store_metadata', { } )
 			if isinstance( metadata, dict ) and len( metadata ) > 0:
@@ -12874,7 +12822,7 @@ elif mode == 'Vector Stores':
 		# File Column
 		# ------------------------------------------------------------------
 		with file_col:
-			st.subheader( 'Vector Store Files' )
+			st.markdown( '#### Vector Store Files' )
 			
 			file_action_c1, file_action_c2, file_action_c3 = st.columns(
 				[ 0.34, 0.33, 0.33 ] )
@@ -12975,7 +12923,7 @@ elif mode == 'Vector Stores':
 		# Batch Column
 		# ------------------------------------------------------------------
 		with batch_col:
-			st.subheader( 'File Batches' )
+			st.markdown( '#### File Batches' )
 			
 			batch_c1, batch_c2, batch_c3 = st.columns(
 				[ 0.34, 0.33, 0.33 ] )
@@ -13532,7 +13480,7 @@ elif mode == 'Data Management':
 				# INSERT
 				# ------------------------------------------------------------------
 				with insert_col:
-					st.subheader( 'Insert Row' )
+					st.markdown( '#### Insert Row' )
 					insert_data = { }
 					
 					for column, col_type in type_map.items( ):
@@ -13578,7 +13526,7 @@ elif mode == 'Data Management':
 				# UPDATE
 				# ------------------------------------------------------------------
 				with update_col:
-					st.subheader( 'Update Row' )
+					st.markdown( '#### Update Row' )
 					rowid = st.number_input(
 						'Row ID',
 						min_value=1,
@@ -13634,7 +13582,7 @@ elif mode == 'Data Management':
 				# DELETE
 				# ------------------------------------------------------------------
 				with delete_col:
-					st.subheader( 'Delete Row' )
+					st.markdown( '#### Delete Row' )
 					delete_id = st.number_input(
 						'Row ID to Delete',
 						min_value=1,
@@ -13654,12 +13602,9 @@ elif mode == 'Data Management':
 				# PREVIEW
 				# ------------------------------------------------------------------
 				with preview_col:
-					st.subheader( 'Current Data Preview' )
-					st.data_editor(
-						df.head( 25 ),
-						key=f'dm_crud_preview_{table}',
-						use_container_width=True,
-						disabled=True )
+					st.markdown( '#### Current Data Preview' )
+					st.data_editor( df.head( 25 ), key=f'dm_crud_preview_{table}',
+						use_container_width=True, disabled=True )
 		
 		# ------------------------------------------------------------------------------
 		# EXPLORE
@@ -13747,7 +13692,7 @@ elif mode == 'Data Management':
 			
 			st.divider( )
 			
-			st.subheader( 'Data Profiling' )
+			st.markdown( '#### Data Profiling' )
 			tables = list_tables( )
 			if tables:
 				table = st.selectbox( 'Select Table', tables, key='profile_table' )
@@ -13755,7 +13700,7 @@ elif mode == 'Data Management':
 					profile_df = create_profile_table( table )
 					render_table( profile_df )
 			
-			st.subheader( 'Drop Table' )
+			st.markdown( '#### Drop Table' )
 			
 			tables = list_tables( )
 			if tables:
@@ -13799,7 +13744,7 @@ elif mode == 'Data Management':
 			
 			st.divider( )
 			
-			st.subheader( 'Create Custom Table' )
+			st.markdown( '#### Create Custom Table' )
 			new_table_name = st.text_input( 'Table Name' )
 			column_count = st.number_input( 'Number of Columns', min_value=1, max_value=20, value=1 )
 			columns = [ ]
@@ -13830,7 +13775,7 @@ elif mode == 'Data Management':
 					st.error( f'Error: {e}' )
 			
 			st.divider( )
-			st.subheader( 'Schema Viewer' )
+			st.markdown( '#### Schema Viewer' )
 			
 			tables = list_tables( )
 			if tables:
@@ -13874,7 +13819,7 @@ elif mode == 'Data Management':
 					st.info( "No indexes defined." )
 			
 			st.divider( )
-			st.subheader( "ALTER TABLE Operations" )
+			st.markdown( '#### ALTER TABLE Operations' )
 			
 			tables = list_tables( )
 			if tables:
