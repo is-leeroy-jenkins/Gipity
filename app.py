@@ -12351,8 +12351,7 @@ elif mode == 'Vector Stores':
 			# ------------------------------------------------------------------
 			# Store Controls
 			# ------------------------------------------------------------------
-			with st.expander( label='Store Controls', icon='🗄️',
-					expanded=False, width='stretch' ):
+			with st.expander( label='Store Controls', icon='🗄️', expanded=False, width='stretch' ):
 				ctrl_c1, ctrl_c2, ctrl_c3, ctrl_c4 = st.columns(
 					[ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 				
