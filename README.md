@@ -16,7 +16,7 @@ Rather than being a local-only application, Gipity combines:
 
 
 ## 🎥 Demo
-![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/Gipity-streamlit.gif)
+![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
 
 
 ## 🔑 API KEY SETUP
