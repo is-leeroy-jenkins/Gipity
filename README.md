@@ -14,9 +14,17 @@ Rather than being a local-only application, Gipity combines:
 * **retrieval and vector workflows** backed by SQLite and [sqlite-vec](https://github.com/asg017/sqlite-vec?tab=readme-ov-file)
 * **embedding pipelines** using [sentence-transformers](https://github.com/huggingface/sentence-transformers?tab=readme-ov-file) and related NLP tooling
 
-## [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
 
+## 🎥 Demo
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/Gipity-streamlit.gif)
+
+
+## 🔑 API KEY SETUP
+
+- [OpenAI API Key](https://github.com/is-leeroy-jenkins/Buddy/blob/main/resources/setup/openai.md)
+
+## 🕸️ Web 
+- [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
 
 ## ✨ Key Features
 
