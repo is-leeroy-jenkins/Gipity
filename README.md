@@ -19,11 +19,11 @@ Rather than being a local-only application, Gipity combines:
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
 
 
-### 🔑 API KEY SETUP
+#### 🔑 API KEY SETUP
 
 - [OpenAI API Key](https://github.com/is-leeroy-jenkins/Buddy/blob/main/resources/setup/openai.md)
 
-### 🕸️ Web 
+#### 🕸️ Web 
 
 - [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
 
