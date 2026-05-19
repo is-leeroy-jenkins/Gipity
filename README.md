@@ -19,11 +19,12 @@ Rather than being a local-only application, Gipity combines:
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
 
 
-## 🔑 API KEY SETUP
+### 🔑 API KEY SETUP
 
 - [OpenAI API Key](https://github.com/is-leeroy-jenkins/Buddy/blob/main/resources/setup/openai.md)
 
-## 🕸️ Web 
+### 🕸️ Web 
+
 - [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
 
 ## ✨ Key Features
@@ -68,7 +69,7 @@ The application is intended to support multimodal workflows across:
 
 For local text-generation fallback, Gipity also points to a GGUF model at:
 
-[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
+- [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
 
 ```text
 models/gipity-oss-20b-Q4_K_M.gguf
