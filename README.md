@@ -39,6 +39,7 @@ Rather than being a chat-only interface, Gipity combines:
 ## 🕸️ Streamlit(Web)
 
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
+
 - A Python framework to build dynamic, interactive web applications.
 
 ## ✨ Key Features
@@ -62,6 +63,7 @@ Rather than being a chat-only interface, Gipity combines:
 ## Custom LLM
 
 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
+
 -  Fine-tuned
 -  Post-trained
 
