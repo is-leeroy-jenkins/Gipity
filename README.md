@@ -58,6 +58,11 @@ Rather than being a chat-only interface, Gipity combines:
 | Local retrieval    | Use sentence-transformers and sqlite-vec for local semantic workflows where available.                                         |
 | Usage tracking     | Track last-call and cumulative token usage for supported responses.                                                            |
 
+
+### Custom LLM
+
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
+
 ## 🧭 Application Modes
 
 The attached `app.py` exposes the following Streamlit modes.
@@ -311,10 +316,6 @@ under the project `models` directory when local fallback support is enabled.
 ```text
 models/gipity-3-270m-it-Q4_K_M.gguf
 ```
-
-### Hugging Face Model Badge
-
-[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
 
 ## 📦 Requirements
 
