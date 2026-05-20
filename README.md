@@ -14,7 +14,6 @@
   <a href="#-document-and-retrieval-workflows">Workflows</a> ·
   <a href="#-data-management">Data</a> ·
   <a href="#-requirements">Requirements</a> ·
-  <a href="#-configuration">Configuration</a> 
 </p>
 
 Gipity is a Streamlit application for multimodal AI workflows centered on OpenAI GPT models,
