@@ -2,102 +2,125 @@
 
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity_project.gif)
 
-Gipity is a Python application for multimodal AI workflows centered primarily on **OpenAI GPT-5.x**,
-with a lightweight **local GGUF fallback** for text generation. It is designed to provide a unified
-workspace for text, image and vision, audio, embeddings, files, vector stores, prompt engineering,
-and document-grounded analysis in a single Streamlit application.
+<p align="center">
+  <a href="#-key-features">Key Features</a> ·
+  <a href="#-application-modes">Application Modes</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="#-repository-structure">Repository Structure</a> ·
+  <a href="#-installation--setup">Installation</a> ·
+  <a href="#-running-gipity">Running Gipity</a> ·
+  <a href="#-api-key-setup">API Keys</a> ·
+  <a href="#-mode-details">Mode Details</a> ·
+  <a href="#-document-and-retrieval-workflows">Document Workflows</a> ·
+  <a href="#-data-management">Data Management</a> ·
+  <a href="#-requirements">Requirements</a> ·
+  <a href="#-configuration">Configuration</a> ·
+  <a href="#-privacy-and-deployment-notes">Privacy</a> ·
+  <a href="#-license">License</a>
+</p>
 
-Rather than being a local-only application, Gipity combines:
+Gipity is a Streamlit application for multimodal AI workflows centered on OpenAI GPT models,
+OpenAI platform services, local document retrieval, vector search, prompt engineering, and local
+SQLite-backed data management. It provides a single workspace for text generation, image generation
+and vision, audio transcription and speech generation, embeddings, document-grounded question
+answering, OpenAI Files, OpenAI Vector Stores, prompt templates, export workflows, and structured
+local data operations.
 
-* **cloud-hosted GPT workflows** for its primary multimodal experience
-* **local GGUF inference** through [llama-cpp-python](https://llama-cpp-python.readthedocs.io/en/latest/) as a fallback path
-* **retrieval and vector workflows** backed by SQLite and [sqlite-vec](https://github.com/asg017/sqlite-vec?tab=readme-ov-file)
-* **embedding pipelines** using [sentence-transformers](https://github.com/huggingface/sentence-transformers?tab=readme-ov-file) and related NLP tooling
+Rather than being a chat-only interface, Gipity combines:
 
+* Cloud-hosted OpenAI workflows for text, images, audio, embeddings, files, and vector stores.
+* Local document ingestion and retrieval for Document Q&A.
+* SQLite and sqlite-vec infrastructure for local persistence and vector search.
+* Sentence-transformers support for semantic retrieval workflows.
+* Prompt engineering tools backed by local prompt-template storage.
+* Data export and local data-management utilities for operational workflows.
 
 ## 🎥 Demo
-![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
 
+![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/Gipity-streamlit.gif)
 
-#### 🔑 API KEY SETUP
+## 🕸️ Web
 
-- [OpenAI API Key](https://github.com/is-leeroy-jenkins/Buddy/blob/main/resources/setup/openai.md)
+[![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
 
-#### 🕸️ Web 
-
-- [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
 
 ## ✨ Key Features
 
-* 🧠 **GPT-5.x-first application design** for modern multimodal workflows
-* 🖥️ **Local GGUF fallback model** via `llama-cpp-python`
-* 📝 **Text generation and chat**
-* 🖼️ **Image generation, editing, and vision workflows**
-* 🔊 **Audio workflows** including text-to-speech, translation, and transcription
-* 🔍 **Embeddings and semantic search**
-* 📄 **Document Q&A and retrieval-augmented generation**
-* 🗂️ **Files and vector store integrations**
-* 🧩 **Prompt engineering utilities**
-* 🗄️ **SQLite-backed local data management**
-* 📊 **Configurable inference and workflow controls**
+| Feature            | Description                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| Text generation    | Chat, drafting, reasoning, structured output, web search, file search, and conversation-state controls.                        |
+| Image workflows    | Image generation, editing, and visual analysis with image-model, quality, size, background, compression, and detail controls.  |
+| Audio workflows    | Text-to-speech, transcription, and translation using OpenAI audio wrappers.                                                    |
+| Embeddings         | Token-aware chunking, embedding generation, dimensionality controls, encoding format selection, metrics, and dataframe output. |
+| Document Q&A       | Ask grounded questions over local uploads, OpenAI File IDs, or OpenAI Vector Store IDs.                                        |
+| Files API          | Upload, list, retrieve, inspect, extract, delete, and analyze OpenAI Files.                                                    |
+| Vector Stores      | Create, list, retrieve, update, delete, attach files, create batches, search, and answer with file search.                     |
+| Prompt Engineering | Create, search, sort, edit, cascade, and reuse prompt templates stored in SQLite.                                              |
+| Data Export        | Export application outputs and generated artifacts.                                                                            |
+| Data Management    | Browse, import, query, and manage local SQLite application data.                                                               |
+| Local retrieval    | Use sentence-transformers and sqlite-vec for local semantic workflows where available.                                         |
+| Usage tracking     | Track last-call and cumulative token usage for supported responses.                                                            |
 
-## 🧠 Model Architecture
+## 🧭 Application Modes
 
-Gipity is designed around two complementary inference paths:
+The attached `app.py` exposes the following Streamlit modes.
 
-### Primary Path: OpenAI GPT Models
+| Mode                   | Purpose                                                                             | Representative Controls / Outputs                                                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Text**               | Generate text and analytical responses through the GPT wrapper.                     | Model, reasoning, temperature, top-p, max tokens, tools, include fields, vector store IDs, JSON output format, previous response ID, conversation ID. |
+| **Images**             | Generate, edit, and analyze images.                                                 | Image mode, image model, analysis model, size, quality, background, compression, detail, uploaded image context, generated image output.              |
+| **Audio**              | Run speech and language audio workflows.                                            | Task selection, transcription model, translation model, TTS model, voice, speed, language, uploaded audio, generated audio bytes.                     |
+| **Document Q&A**       | Ask questions against local documents, OpenAI File IDs, or OpenAI Vector Store IDs. | Source controls, local uploads, file/vector IDs, top-k, chunk size, chunk overlap, diagnostics, retrieval hits, grounded answers.                     |
+| **Embeddings**         | Generate vector embeddings from input text.                                         | Embedding model, dimensions, chunk size, overlap, encoding format, user tag, metrics, embedding dataframe.                                            |
+| **Files**              | Manage OpenAI Files API assets.                                                     | Upload purpose, file filters, list/retrieve/extract/delete operations, metadata, content preview, selected-file analysis.                             |
+| **Vector Stores**      | Manage OpenAI Vector Store resources.                                               | Store create/list/retrieve/update/delete, file attachment, file batches, native search, answer-with-file-search workflows.                            |
+| **Prompt Engineering** | Maintain reusable prompt templates.                                                 | Prompt search, sorting, editing, cascade into system instructions, version and ID fields.                                                             |
+| **Data Export**        | Export application outputs and generated artifacts.                                 | Export controls for persisted results and generated content.                                                                                          |
+| **Data Management**    | Work with local SQLite data.                                                        | Tables, SQL operations, local persistence, application metadata, and data inspection workflows.                                                       |
 
-The current configuration defines GPT-family models including:
-
-* `gpt-5-nano-2025-08-07`
-* `gpt-4.1-nano-2025-04-14`
-* `gpt-5-mini`
-
-The application is intended to support multimodal workflows across:
-
-* Text
-* Images / Vision
-* Audio
-* Embeddings
-* Document Q&A
-* Files
-* Vector Stores
-* Prompt Engineering
-* Data Management
-
-### Local Fallback Path
-
-For local text-generation fallback, Gipity also points to a GGUF model at:
-
-- [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
+## 🏛️ Architecture
 
 ```text
-models/gipity-oss-20b-Q4_K_M.gguf
+Streamlit UI
+    │
+    ├── Text / Images / Audio ───────────────► OpenAI platform wrappers in gpt.py
+    │
+    ├── Document Q&A ────────────────────────► Local files, OpenAI Files, or Vector Stores
+    │                                            │
+    │                                            ├── PyMuPDF / text extraction
+    │                                            ├── sentence-transformers
+    │                                            ├── sqlite-vec
+    │                                            └── OpenAI file_search
+    │
+    ├── Embeddings ──────────────────────────► OpenAI Embeddings API + token-aware chunking
+    │
+    ├── Files / Vector Stores ───────────────► OpenAI Files API and Vector Stores API
+    │
+    ├── Prompt Engineering ──────────────────► SQLite prompt template table
+    │
+    └── Data Management / Export ────────────► SQLite, pandas, ReportLab, Streamlit outputs
 ```
-
-This local llm is intended for use with `llama.cpp` / `llama-cpp-python` and provides a small,
-portable inference option when a local path is preferred.
 
 ## 🗂 Repository Structure
 
 ```text
 Gipity/
-├─ app.py                     # Main Streamlit application
-├─ config.py                  # Application configuration and provider settings
-├─ gpt.py                     # GPT / provider integration logic
-├─ requirements.txt           # Python dependencies
+├─ app.py                         # Main Streamlit application
+├─ config.py                      # Application configuration, model lists, paths, constants
+├─ gpt.py                         # OpenAI wrappers: Chat, Images, Embeddings, Audio, Files, Vector Stores
+├─ requirements.txt               # Python dependencies
 ├─ models/
-│  └─ gipity-3-270m-it-Q4_K_M.gguf    # Local LLM for privacy
+│  └─ gipity-3-270m-it-Q4_K_M.gguf # Optional local fallback model path
 ├─ resources/
 │  ├─ images/
 │  │  ├─ favicon.ico
 │  │  ├─ gipity_logo.png
 │  │  └─ gpt.png
 │  └─ audio/
-│     └─ conditions.mp3        # For testing the Audio API
+│     └─ conditions.mp3           # Audio API test asset
 ├─ stores/
 │  └─ sqlite/
-│     └─ gipity.db
+│     └─ gipity.db                # Local SQLite database
 └─ README.md
 ```
 
@@ -112,34 +135,63 @@ cd Gipity
 
 ### 2️⃣ Create and Activate a Virtual Environment
 
-#### Windows (Git Bash / PowerShell)
+#### Windows PowerShell
 
-```bash
+```powershell
 python -m venv .venv
-source .venv/Scripts/activate
+.venv\Scripts\Activate.ps1
 ```
 
-You should see:
+#### Linux / macOS
 
-```text
-(.venv)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 ### 3️⃣ Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
+
+## ▶️ Running Gipity
+
+Run Streamlit through Python so the active virtual environment is used.
+
+```bash
+python -m streamlit run app.py
+```
+
+The application starts with a collapsed sidebar and a wide layout. Select the active workflow from
+**AI Mode** in the sidebar.
+
+## 🔑 API KEY SETUP
+
+| Provider | Setup Link                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------ |
+| OpenAI   | [OpenAI API Key](https://github.com/is-leeroy-jenkins/Buddy/blob/main/resources/setup/openai.md) |
+
+### Data Services
+
+| Service      | Link                                                                              | Service       | Link                                                                                       |
+| ------------ | --------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------ |
+| OpenAI       | [Platform](https://platform.openai.com/home)                                      | Google Search | [Custom Search](https://developers.google.com/custom-search/v1/introduction)               |
+| Google Maps  | [Google Maps](https://developers.google.com/maps/documentation/embed/get-api-key) | Geocoding     | [Google Geocoding](https://developers.google.com/maps/documentation/geocoding/get-api-key) |
+| Hugging Face | [Models](https://huggingface.co/models)                                           | Streamlit     | [Cloud](https://streamlit.io/cloud)                                                        |
 
 ## 🔑 Environment Variables
 
-At minimum, Gipity is configured to use environment variables such as:
+At minimum, Gipity supports the following environment variables and configuration values.
 
-* `OPENAI_API_KEY`
-* `GOOGLEMAPS_API_KEY`
-* `GOOGLE_API_KEY`
-* `GEOCODING_API_KEY`
-* `GOOGLE_CSE_ID`
+| Variable             | Purpose                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `OPENAI_API_KEY`     | Required for OpenAI text, image, audio, embeddings, files, and vector store workflows. |
+| `GOOGLE_API_KEY`     | Optional Google service key used where configured.                                     |
+| `GOOGLE_CSE_ID`      | Optional Google Custom Search Engine identifier used where configured.                 |
+| `GOOGLEMAPS_API_KEY` | Optional Google Maps key used where configured.                                        |
+| `GEOCODING_API_KEY`  | Optional geocoding key used where configured.                                          |
 
 ### Example: OpenAI API Key
 
@@ -149,190 +201,205 @@ At minimum, Gipity is configured to use environment variables such as:
 $env:OPENAI_API_KEY="your_api_key_here"
 ```
 
-#### Windows System Environment Variables
+#### Linux / macOS
 
-Set a user or system environment variable named:
-
-```text
-OPENAI_API_KEY
+```bash
+export OPENAI_API_KEY="your_api_key_here"
 ```
 
-Then restart your terminal or IDE.
+## 🧩 Mode Details
+
+### Text
+
+Text mode is the primary GPT workflow. It supports model selection, response formatting,
+structured JSON schema output, conversation IDs, previous response IDs, tool selection, include
+fields, vector store IDs for file search, and configurable generation parameters.
+
+### Images
+
+Images mode supports generation, editing, and analysis. It exposes model, analysis model, output
+size, quality, MIME type, background, detail, and compression controls. It can render bytes, URLs,
+or markdown-style image outputs.
+
+### Audio
+
+Audio mode supports transcription, translation, and text-to-speech. It manages audio task selection,
+model selection, language, voice, rate/speed, uploaded audio files, generated output bytes, and
+response metadata.
+
+### Document Q&A
+
+Document Q&A supports three source paths:
+
+| Source                 | Description                                                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Local Upload           | Extracts text from uploaded documents, chunks content, retrieves relevant chunks, and grounds answers in local context. |
+| OpenAI File ID         | Queries an OpenAI File ID through the Files wrapper.                                                                    |
+| OpenAI Vector Store ID | Uses OpenAI Vector Store file search for grounded answers.                                                              |
+
+Supported local document extraction includes PDF, DOCX, TXT, Markdown, CSV, JSON, XML, Python,
+C#, SQL, YAML, HTML, CSS, JavaScript, and TypeScript-style text files.
+
+### Embeddings
+
+Embeddings mode normalizes text, performs token-aware chunking, calls the OpenAI Embeddings API,
+and displays metrics and embedding vectors. It supports float and base64 encoding formats and
+model-specific dimension limits.
+
+### Files
+
+Files mode supports OpenAI Files API operations:
+
+| Operation | Description                                              |
+| --------- | -------------------------------------------------------- |
+| Upload    | Upload a local file with a selected OpenAI file purpose. |
+| List      | List files with optional purpose filtering.              |
+| Retrieve  | Retrieve selected file metadata.                         |
+| Extract   | Retrieve file content where supported.                   |
+| Delete    | Delete a selected OpenAI file.                           |
+| Analyze   | Ask a model to analyze a selected file.                  |
+
+### Vector Stores
+
+Vector Stores mode supports OpenAI vector store lifecycle and retrieval workflows:
+
+| Operation   | Description                                                                      |
+| ----------- | -------------------------------------------------------------------------------- |
+| Create      | Create vector stores with metadata, expiration, file IDs, and chunking strategy. |
+| List        | List available vector stores.                                                    |
+| Retrieve    | Inspect vector store metadata.                                                   |
+| Update      | Update store name, description, metadata, or expiration policy.                  |
+| Delete      | Delete a vector store.                                                           |
+| Attach File | Attach OpenAI file IDs to a vector store.                                        |
+| File Batch  | Create, retrieve, cancel, or inspect file batches.                               |
+| Search      | Run native vector store search with ranker and score threshold options.          |
+| Answer      | Answer prompts using file search over selected vector stores.                    |
+
+### Prompt Engineering
+
+Prompt Engineering mode stores prompt templates in SQLite and supports search, sorting, editing,
+versioning, and cascade into mode-specific system instructions.
+
+### Data Export
+
+Data Export mode supports export-oriented application workflows for generated outputs and stored
+content.
+
+## 📄 Document and Retrieval Workflows
+
+Gipity includes local and cloud-backed retrieval paths. Local retrieval extracts text, creates chunks,
+and ranks chunks against a user query. Cloud-backed retrieval can use OpenAI Files and OpenAI Vector
+Stores for file search. This allows Gipity to support both lightweight local document analysis and
+OpenAI-managed retrieval backends.
+
+## 🗄️ Data Management
+
+Gipity uses SQLite for local persistence. The application initializes and uses local database paths
+from `config.py`, stores prompt templates, tracks chat history, and supports local data workflows
+through the Data Management mode.
+
+| Component        | Purpose                                                                          |
+| ---------------- | -------------------------------------------------------------------------------- |
+| SQLite database  | Local persistence for prompts, chat history, embeddings, and application tables. |
+| Prompt table     | Stores reusable prompt captions, names, text, versions, and IDs.                 |
+| Chat history     | Stores role/content pairs for conversation history where enabled.                |
+| Embeddings table | Stores chunk/vector records for local workflows.                                 |
+| sqlite-vec       | Enables vector search where the extension is available.                          |
 
 ## 📥 Local Model Setup
 
-If you want to use Gipity's local fallback model path, place the GGUF model file here:
+The README and configuration reference a local GGUF fallback model path. Place the GGUF model file
+under the project `models` directory when local fallback support is enabled.
 
 ```text
 models/gipity-3-270m-it-Q4_K_M.gguf
 ```
 
-### Option A: Download from the Hugging Face Web UI
+### Hugging Face Model Badge
 
-1. Open the Hugging Face model repository for Gipity's backup GGUF model.
-2. Sign in to Hugging Face if the repository or license requires authentication.
-3. Open the **Files and versions** section.
-4. Download `gipity-3-270m-it-Q4_K_M.gguf`.
-5. Create the `models` folder in the project root if it does not already exist.
-6. Move the downloaded file into:
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
 
-```text
-Gipity/models/gipity-3-270m-it-Q4_K_M.gguf
-```
+## 📦 Requirements
 
-### Option B: Download with the Hugging Face CLI
+The table below reflects the active imports and runtime features used by the attached `app.py`.
+Version pins should follow the repository `requirements.txt` when present.
 
-Install the CLI support:
+| Requirement           | Package / Import               | Purpose                                                                      | Used By                                                        |
+| --------------------- | ------------------------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Python                | `python>=3.10`                 | Runtime for modern type hints and Streamlit execution.                       | Entire application.                                            |
+| Streamlit             | `streamlit`                    | Web UI framework, widgets, layout, session state, file upload, data editors. | All modes.                                                     |
+| Streamlit Components  | `streamlit.components.v1.html` | Inline HTML/component rendering.                                             | UI rendering and custom output sections.                       |
+| OpenAI                | `openai`                       | OpenAI client for text, image, audio, embeddings, files, and vector stores.  | `gpt.py` wrappers and OpenAI workflows.                        |
+| NumPy                 | `numpy`                        | Numeric arrays, vector operations, cosine similarity.                        | Embeddings and Document Q&A retrieval.                         |
+| Pandas                | `pandas`                       | Dataframes, tables, data editors, local data views.                          | Embeddings, Files, Vector Stores, Data Management.             |
+| Plotly                | `plotly.graph_objects`         | Chart and visualization support.                                             | Data Management and metrics visualization.                     |
+| ReportLab             | `reportlab`                    | PDF page/canvas generation.                                                  | Data Export and report output workflows.                       |
+| SQLite                | `sqlite3`                      | Local application database.                                                  | Prompt Engineering, chat history, Data Management, embeddings. |
+| sqlite-vec            | `sqlite_vec`                   | SQLite vector extension for semantic search.                                 | Document Q&A local retrieval.                                  |
+| Sentence Transformers | `sentence-transformers`        | Local embedding model loading and semantic vectors.                          | Document Q&A local retrieval.                                  |
+| Tiktoken              | `tiktoken`                     | Token counting and token-aware chunking.                                     | Text metrics and Embeddings mode.                              |
+| PyMuPDF               | `fitz` / `pymupdf`             | PDF text extraction.                                                         | Document Q&A and PDF extraction workflows.                     |
+| Pillow                | `pillow`                       | Image processing support where required by image workflows.                  | Images mode and supporting image utilities.                    |
+| Requests / HTTPX      | `requests`, `httpx`            | HTTP transport used by API clients and supporting wrappers.                  | Provider and API calls.                                        |
+| Pydantic              | `pydantic`                     | Validation and structured model support for SDKs/wrappers.                   | OpenAI SDK and wrapper models.                                 |
+| Typing Extensions     | `typing_extensions`            | Backported typing support.                                                   | Compatibility.                                                 |
+| PyYAML                | `pyyaml`                       | YAML parsing where configuration or uploaded files require it.               | Document Q&A text extraction and configuration workflows.      |
+| OpenPyXL              | `openpyxl`                     | Excel workbook support.                                                      | Data Management and file workflows.                            |
+| Llama CPP Python      | `llama-cpp-python`             | Optional local GGUF inference runtime.                                       | Local fallback workflows where enabled.                        |
+| Hugging Face Hub      | `huggingface_hub`              | Model download and repository access.                                        | Local model setup.                                             |
+| Transformers          | `transformers`                 | Hugging Face model/tokenizer support.                                        | Local and embedding-adjacent workflows.                        |
+| Torch                 | `torch`                        | PyTorch runtime for sentence-transformers and local ML components.           | Sentence-transformers.                                         |
+| Scikit-learn          | `scikit-learn`                 | Classical ML utilities and similarity/data tooling where required.           | Supporting analysis workflows.                                 |
+| SciPy                 | `scipy`                        | Scientific computing support.                                                | ML and embedding dependencies.                                 |
+| Regex                 | `regex`                        | Enhanced regular expression support.                                         | Text utilities.                                                |
+| Python Dotenv         | `python-dotenv`                | Optional `.env`-based configuration.                                         | Local development.                                             |
 
-```bash
-python -m pip install huggingface_hub
-```
+## 🔧 Configuration
 
-
-Then download the GGUF file directly into Gipity's `models` folder:
-
-```bash
-hf download <your-hf-username-or-org>/<your-gipity-model-repo> \
-  gipity-3-270m-it-Q4_K_M.gguf \
-  --local-dir models
-```
-
-### Option C: Download with Python
-
-```python
-from huggingface_hub import hf_hub_download
-
-hf_hub_download(
-    repo_id="<your-hf-username-or-org>/<your-gipity-model-repo>",
-    filename="gipity-3-270m-it-Q4_K_M.gguf",
-    local_dir="models",
-)
-```
-
-### Folder Layout After Download
-
-```text
-Gipity/
-├─ app.py
-├─ config.py
-├─ gpt.py
-├─ requirements.txt
-├─ models/
-│  └─ gipity-3-270m-it-Q4_K_M.gguf
-└─ ...
-```
-
-### Verification
-
-Before launching Gipity, confirm that:
-
-* the `models` folder exists at the project root
-* the file name is exactly `gipity-3-270m-it-Q4_K_M.gguf`
-* the file path matches the configured relative path in the application
-
-## ▶️ Running Gipity
-
-Always run Streamlit through Python so the correct virtual environment is used:
-
-```bash
-python -m streamlit run app.py
-```
-
-If your configuration is valid, Gipity should launch in your browser.
-
-## 🧭 Application Modes
-
-Gipity supports the following major workflow areas:
-
-| Mode               | Purpose                                                  |
-| ------------------ | -------------------------------------------------------- |
-| Text               | Chat, drafting, reasoning, and analytical generation     |
-| Images / Vision    | Image generation, editing, and visual analysis workflows |
-| Audio              | Text-to-speech, translation, and transcription           |
-| Embeddings         | Semantic vector generation                               |
-| Document Q&A       | Retrieval-grounded answers over uploaded content         |
-| Files              | File upload and document lifecycle operations            |
-| Vector Stores      | Managed retrieval backends and semantic search           |
-| Prompt Engineering | Prompt templates and instruction workflows               |
-| Data Management    | Local storage and structured document handling           |
-
-## 📄 Document and Retrieval Workflows
-
-Gipity includes infrastructure for document-aware workflows rather than simple chat alone. The
-current project configuration and dependencies indicate support for:
-
-* PDF and document ingestion
-* semantic embeddings
-* vector-based retrieval with `sqlite-vec`
-* file-backed grounding workflows
-* document question answering
-
-This makes Gipity suitable for structured analysis over user-provided materials in addition to
-general multimodal prompting.
-
-## 🧪 Local Inference Notes
-
-The default local fallback configuration uses a **4096-token context window** and a small GGUF
-model.
-This is a practical local option, but it should be understood as a fallback or companion path rather
-than the sole centerpiece of the application.
+| Configuration Area       | Description                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| `cfg.FAVICON`            | Streamlit page icon.                                                              |
+| `cfg.APP_SUBTITLE`       | Subtitle/caption rendered at startup.                                             |
+| `cfg.LOGO_PATH`          | Sidebar logo path.                                                                |
+| `cfg.GPT_MODES`          | Mode list used by the sidebar AI Mode selector.                                   |
+| `cfg.DB_PATH`            | SQLite database path.                                                             |
+| `cfg.OPENAI_API_KEY`     | Default OpenAI key loaded into session state and environment.                     |
+| `cfg.GOOGLE_API_KEY`     | Default Google API key loaded into session state and environment.                 |
+| `cfg.GOOGLE_CSE_ID`      | Default Google Custom Search Engine ID loaded into session state and environment. |
+| `cfg.GOOGLEMAPS_API_KEY` | Default Google Maps API key loaded into session state and environment.            |
+| `cfg.GEOCODING_API_KEY`  | Default geocoding key loaded into session state and environment.                  |
+| `cfg.SAMPLE_RATES`       | Audio sample-rate defaults.                                                       |
+| `cfg.XML_BLOCK_PATTERN`  | XML-like prompt delimiter conversion pattern.                                     |
 
 ## 🔒 Privacy and Deployment Notes
 
+| Workflow                | Data Location / Consideration                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| OpenAI-backed workflows | Prompts, files, images, audio, embeddings, and vector store data may be sent to OpenAI APIs.                      |
+| Local Document Q&A      | Uploaded files can be extracted and chunked locally before a model call is made.                                  |
+| SQLite storage          | Prompt templates, chat history, embeddings, and application tables are stored locally according to `cfg.DB_PATH`. |
+| Local GGUF fallback     | Local inference can run on-machine when the GGUF model and runtime are configured.                                |
+| Streamlit deployment    | Secrets should be configured through environment variables or Streamlit secrets rather than hard-coded values.    |
 
-In practice, Gipity interfaces with OpenAI's API with the option for local privacy depending on the 
-feature set in use:
+## 🧪 Local Inference Notes
 
-* **OpenAI-backed workflows** involve remote API usage
-* **local GGUF fallback workflows** can run on-machine
-* **SQLite-backed data handling** keeps parts of application state local
-
-## 📦 Dependency Table
-
-| Package                 | Version / Constraint | Primary Role                                     |
-| ----------------------- | -------------------- | ------------------------------------------------ |
-| `openai`                | `==2.21.0`           | Primary OpenAI GPT API client                    |
-| `numpy`                 | `==1.26.4`           | Numerical computing foundation                   |
-| `openpyxl`              | not pinned           | Excel workbook read and write support            |
-| `pydantic`              | `>=2.10,<2.12`       | Data validation and structured models            |
-| `typing_extensions`     | `>=4.12,<5`          | Extended typing support                          |
-| `pymupdf`               | not pinned           | PDF parsing and document processing              |
-| `httpx`                 | `>=0.28.1`           | HTTP client support                              |
-| `reportlab`             | `>=4.0.8`            | PDF generation and export                        |
-| `sentence-transformers` | `==2.7.0`            | Embeddings and semantic similarity               |
-| `transformers`          | `==4.41.2`           | Hugging Face transformer model support           |
-| `huggingface_hub`       | `==0.23.4`           | Hugging Face repository and download integration |
-| `tokenizers`            | `==0.19.1`           | Fast tokenizer back end                          |
-| `safetensors`           | `==0.4.3`            | Safe tensor serialization support                |
-| `tiktoken`              | not pinned           | Token counting and tokenization utilities        |
-| `pillow`                | `>=10.0.0`           | Image processing support                         |
-| `requests`              | `==2.32.4`           | HTTP utility requests                            |
-| `sqlite-vec`            | not pinned           | SQLite vector search extension                   |
-| `llama-cpp-python`      | not pinned           | Local GGUF inference runtime                     |
-| `torch`                 | `==2.3.1`            | PyTorch runtime                                  |
-| `torchvision`           | `==0.18.1`           | Vision utilities for PyTorch workflows           |
-| `scikit-learn`          | `==1.5.1`            | Classical machine learning utilities             |
-| `scipy`                 | `==1.13.1`           | Scientific computing support                     |
-| `streamlit`             | `==1.55.0`           | Web application UI framework                     |
-| `regex`                 | `==2024.5.15`        | Enhanced regular expressions                     |
-| `sentencepiece`         | `==0.2.0`            | SentencePiece tokenizer support                  |
-| `tqdm`                  | `==4.66.4`           | Progress bars                                    |
-| `filelock`              | `==3.15.4`           | File-based locking support                       |
-| `fsspec`                | `==2024.6.1`         | Filesystem abstraction layer                     |
-| `packaging`             | `==24.1`             | Version and package utility helpers              |
-| `pyyaml`                | `==6.0.1`            | YAML parsing and configuration support           |
+The local GGUF fallback is a practical companion path for offline or lower-cost text workflows, but
+OpenAI-backed workflows remain the primary path for multimodal capabilities, Files API operations,
+Vector Stores, audio processing, and managed embeddings.
 
 ## 📜 License
 
-Gipity is published under the MIT license for open source use located [MIT General Public License v3](https://github.com/is-leeroy-jenkins/Gipity/blob/main/LICENSE.txt).
+Gipity is published under the MIT license for open-source use:
+
+[MIT License](https://github.com/is-leeroy-jenkins/Gipity/blob/main/LICENSE.txt)
 
 ## 🙌 Acknowledgements
 
 * OpenAI
 * Hugging Face
-* `llama.cpp` and `llama-cpp-python`
+* llama.cpp and llama-cpp-python
 * Streamlit
-* `sentence-transformers`
-* `sqlite-vec`
-* the broader open-source Python and ML tooling ecosystem
+* sentence-transformers
+* sqlite-vec
+* The broader open-source Python and machine-learning tooling ecosystem
 
