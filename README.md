@@ -23,6 +23,10 @@ and vision, audio transcription and speech generation, embeddings, document-grou
 answering, OpenAI Files, OpenAI Vector Stores, prompt templates, export workflows, and structured
 local data operations.
 
+## 🎥 Demo
+
+![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
+
 Rather than being a chat-only interface, Gipity combines:
 
 * Cloud-hosted OpenAI workflows for text, images, audio, embeddings, files, and vector stores.
@@ -32,14 +36,10 @@ Rather than being a chat-only interface, Gipity combines:
 * Prompt engineering tools backed by local prompt-template storage.
 * Data export and local data-management utilities for operational workflows.
 
-## 🎥 Demo
-
-![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
-
-## 🕸️ Web
+## 🕸️ Streamlit(Web)
 
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
-
+- A Python framework to build dynamic, interactive web applications.
 
 ## ✨ Key Features
 
@@ -59,9 +59,11 @@ Rather than being a chat-only interface, Gipity combines:
 | Usage tracking     | Track last-call and cumulative token usage for supported responses.                                                            |
 
 
-### Custom LLM
+## Custom LLM
 
 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
+-  Fine-tuned
+-  Post-trained
 
 ## 🧭 Application Modes
 
