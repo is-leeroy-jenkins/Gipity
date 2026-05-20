@@ -14,8 +14,7 @@
   <a href="#-document-and-retrieval-workflows">Workflows</a> ·
   <a href="#-data-management">Data</a> ·
   <a href="#-requirements">Requirements</a> ·
-  <a href="#-configuration">Configuration</a> ·
-  <a href="#-license">License</a>
+  <a href="#-configuration">Configuration</a> 
 </p>
 
 Gipity is a Streamlit application for multimodal AI workflows centered on OpenAI GPT models,
@@ -36,7 +35,7 @@ Rather than being a chat-only interface, Gipity combines:
 
 ## 🎥 Demo
 
-![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/Gipity-streamlit.gif)
+![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
 
 ## 🕸️ Web
 
