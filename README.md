@@ -42,6 +42,18 @@ Rather than being a chat-only interface, Gipity combines:
 
 - A Python framework to build dynamic, interactive web applications.
 
+## 🧱 Databricks
+[![Gipity](https://img.shields.io/badge/Databricks-Gipity-FF3621?logo=databricks&logoColor=white)](https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152440239?o=7474645703081351)
+- A data engineering, analytics, and artificial intelligence collaborative workspace
+- Codebase
+
+## Custom LLM
+
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
+
+-  Fine-tuned
+-  Post-trained
+
 ## ✨ Key Features
 
 | Feature            | Description                                                                                                                    |
@@ -60,12 +72,6 @@ Rather than being a chat-only interface, Gipity combines:
 | Usage tracking     | Track last-call and cumulative token usage for supported responses.                                                            |
 
 
-## Custom LLM
-
-[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
-
--  Fine-tuned
--  Post-trained
 
 ## 🧭 Application Modes
 
