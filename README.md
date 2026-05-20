@@ -3,19 +3,18 @@
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity_project.gif)
 
 <p align="center">
-  <a href="#-key-features">Key Features</a> ·
-  <a href="#-application-modes">Application Modes</a> ·
+  <a href="#-key-features">Features</a> ·
+  <a href="#-application-modes">Modes</a> ·
   <a href="#-architecture">Architecture</a> ·
-  <a href="#-repository-structure">Repository Structure</a> ·
-  <a href="#-installation--setup">Installation</a> ·
-  <a href="#-running-gipity">Running Gipity</a> ·
-  <a href="#-api-key-setup">API Keys</a> ·
-  <a href="#-mode-details">Mode Details</a> ·
-  <a href="#-document-and-retrieval-workflows">Document Workflows</a> ·
-  <a href="#-data-management">Data Management</a> ·
+  <a href="#-repository-structure">Structure</a> ·
+  <a href="#-installation--setup">Install</a> ·
+  <a href="#-running-gipity">Running</a> ·
+  <a href="#-api-key-setup">Keys</a> ·
+  <a href="#-mode-details">Mode</a> ·
+  <a href="#-document-and-retrieval-workflows">Workflows</a> ·
+  <a href="#-data-management">Data</a> ·
   <a href="#-requirements">Requirements</a> ·
   <a href="#-configuration">Configuration</a> ·
-  <a href="#-privacy-and-deployment-notes">Privacy</a> ·
   <a href="#-license">License</a>
 </p>
 
