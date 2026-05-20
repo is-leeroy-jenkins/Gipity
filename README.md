@@ -36,7 +36,7 @@ Rather than being a chat-only interface, Gipity combines:
 * Prompt engineering tools backed by local prompt-template storage.
 * Data export and local data-management utilities for operational workflows.
 
-## 🕸️ Streamlit(Web)
+## 🕸️ Streamlit (Web)
 
 [![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
 
