@@ -12420,15 +12420,13 @@ elif mode == 'Vector Stores':
 					if st.session_state.get( 'stores_chunking_strategy' ) not in chunking_options:
 						st.session_state[ 'stores_chunking_strategy' ] = 'auto'
 					
-					st.selectbox( label='Chunking Strategy',
-						options=chunking_options,
+					st.selectbox( label='Chunking Strategy', options=chunking_options,
 						key='stores_chunking_strategy',
 						help='Chunking strategy used when creating stores or attaching files.',
 						index=chunking_options.index(
 							st.session_state.get( 'stores_chunking_strategy', 'auto' ) )
 						if st.session_state.get( 'stores_chunking_strategy' ) in chunking_options
-						else None,
-						placeholder='Options' )
+						else None, placeholder='Options' )
 				
 				# ---------- Max Chunk Size ------------
 				with chunk_c2:
@@ -12479,31 +12477,26 @@ elif mode == 'Vector Stores':
 				
 				# ---------- Single File ID ------------
 				with file_c1:
-					st.text_input( label='File ID',
-						key='stores_file_id',
+					st.text_input( label='File ID', key='stores_file_id',
 						value=st.session_state.get( 'stores_file_id', '' ),
 						help='OpenAI file ID used when attaching or managing one vector store file.',
 						width='stretch', placeholder='file-...' )
 				
 				# ---------- Batch File IDs ------------
 				with file_c2:
-					st.text_input( label='File IDs',
-						key='stores_file_ids',
+					st.text_input( label='File IDs', key='stores_file_ids',
 						value=st.session_state.get( 'stores_file_ids', '' ),
 						help='Comma-delimited OpenAI file IDs used for create/store file batch workflows.',
 						width='stretch', placeholder='file-..., file-...' )
 				
 				# ---------- File Attributes ------------
-				st.text_area( label='File Attributes JSON',
-					key='stores_file_attributes',
-					value=st.session_state.get( 'stores_file_attributes', '' ),
-					height=90, width='stretch',
+				st.text_area( label='File Attributes JSON', key='stores_file_attributes',
+					value=st.session_state.get( 'stores_file_attributes', '' ), height=90, width='stretch',
 					help='Optional JSON object used as vector store file attributes.',
 					placeholder='{ "source": "manual-upload" }' )
 				
 				# ---------- Batch ID ------------
-				st.text_input( label='Batch ID',
-					key='stores_batch_id',
+				st.text_input( label='Batch ID', key='stores_batch_id',
 					value=st.session_state.get( 'stores_batch_id', '' ),
 					help='Vector store file batch ID used for retrieve/cancel workflows.',
 					width='stretch', placeholder='vsfb_...' )
@@ -12511,23 +12504,20 @@ elif mode == 'Vector Stores':
 			# ------------------------------------------------------------------
 			# Search Controls
 			# ------------------------------------------------------------------
-			with st.expander( label='Search Controls', icon='🔎',
-					expanded=False, width='stretch' ):
+			with st.expander( label='Search Controls', icon='🔎', expanded=False, width='stretch' ):
 				search_c1, search_c2, search_c3, search_c4 = st.columns(
 					[ 0.40, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
 				
 				# ---------- Search Query ------------
 				with search_c1:
-					st.text_input( label='Search Query',
-						key='stores_search_query',
+					st.text_input( label='Search Query', key='stores_search_query',
 						value=st.session_state.get( 'stores_search_query', '' ),
 						help='Native vector store search query.',
 						width='stretch', placeholder='Enter search query' )
 				
 				# ---------- Max Results ------------
 				with search_c2:
-					st.slider( label='Max Results',
-						min_value=1, max_value=50, step=1,
+					st.slider( label='Max Results', min_value=1, max_value=50, step=1,
 						key='stores_max_results',
 						help='Maximum number of native search or file_search results.' )
 				
@@ -12561,8 +12551,7 @@ elif mode == 'Vector Stores':
 			# ------------------------------------------------------------------
 			# Current Store Selection
 			# ------------------------------------------------------------------
-			with st.expander( label='Current Store', icon='🎯',
-					expanded=False, width='stretch' ):
+			with st.expander( label='Current Store', icon='🎯', expanded=False, width='stretch' ):
 				store_rows = st.session_state.get( 'stores_table', [ ] )
 				store_options = build_vector_store_selection_options( store_rows )
 				store_labels = [ '' ] + list( store_options.keys( ) )
