@@ -15,6 +15,9 @@
   <a href="#-data-management">Data</a> ·
   <a href="#-requirements">Requirements</a> ·
 </p>
+___
+
+![License: Public Domain](https://img.shields.io/badge/license-public%20domain-brightgreen.svg)
 
 Gipity is a Streamlit application for multimodal AI workflows centered on OpenAI GPT models,
 OpenAI platform services, local document retrieval, vector search, prompt engineering, and local
