@@ -1,0 +1,92 @@
+site_name: Gipity Documentation
+site_description: Documentation for the Gipity multimodal AI python application.
+site_author: Terry D. Eppler
+site_url: https://is-leeroy-jenkins.github.io/Gipity/
+repo_url: https://github.com/is-leeroy-jenkins/Gipity
+repo_name: is-leeroy-jenkins/Gipity
+
+theme:
+  name: material
+  language: en
+  icon:
+    logo: material/brain
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - toc.follow
+    - content.code.copy
+    - content.code.select
+    - search.highlight
+    - search.share
+    - search.suggest
+  font:
+    text: Roboto
+    code: Roboto Mono
+  palette:
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - .
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - User Guide: user-guide.md
+  - Architecture: architecture.md
+  - API Reference:
+      - Configuration: api/config.md
+      - GPT: api/gpt.md
+      - Application: api/app.md

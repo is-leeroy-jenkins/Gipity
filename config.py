@@ -1,16 +1,16 @@
 '''
   ******************************************************************************************
       Assembly:                Gipity
-      Filename:                config.py
+      Filename:                config.md
       Author:                  Terry D. Eppler
       Created:                 05-31-2022
 
       Last Modified By:        Terry D. Eppler
       Last Modified On:        05-01-2025
   ******************************************************************************************
-  <copyright file="config.py" company="Terry D. Eppler">
+  <copyright file="config.md" company="Terry D. Eppler">
 
-	     config.py
+	     config.md
 	     Copyright ©  2022  Terry Eppler
 
      Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -37,7 +37,7 @@
 
   </copyright>
   <summary>
-    config.py
+    config.md
   </summary>
   ******************************************************************************************
 '''

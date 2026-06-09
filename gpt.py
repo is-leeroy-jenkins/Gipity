@@ -8,7 +8,7 @@
 	    Last Modified By:        Terry D. Eppler
 	    Last Modified On:        05-01-2025
 	******************************************************************************************
-	<copyright file="gpt.py" company="Terry D. Eppler">
+	<copyright file="gpt.md" company="Terry D. Eppler">
 	
 	           Boo is a df analysis tool integrating various Generative GPT, GptText-Processing, and
 	           Machine-Learning algorithms for federal analysts.

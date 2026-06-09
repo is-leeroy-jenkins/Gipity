@@ -616,32 +616,32 @@ if 'token_usage' not in st.session_state:
 @st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
 	"""Load embedder.
-
-Purpose:
-    Loads the embedder resource or state required by the Gipity workflow and returns the
-    prepared value for caller use.
-
-Returns:
-    Value produced by the load_embedder helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Loads the embedder resource or state required by the Gipity workflow and returns the
+            prepared value for caller use.
+    
+        Returns:
+            Value produced by the load_embedder helper according to its function annotation and
+            return statements.
+    """
 	return SentenceTransformer( 'all-MiniLM-L6-v2' )
 
 def throw_if( name: str, value: object ) -> None:
 	"""Throw if.
-
-Purpose:
-    Provides the throw if helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    name (str): Value supplied to the helper.
-    value (object): Value supplied to the helper.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Provides the throw if helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            name (str): Value supplied to the helper.
+            value (object): Value supplied to the helper.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	if value is None:
 		raise ValueError( f'Argument "{name}" cannot be empty!' )
 	if isinstance( value, str ) and (not value.strip( )):
@@ -651,18 +651,18 @@ Raises:
 
 def extract_usage( resp: Any ) -> Dict[ str, int ]:
 	"""Extract usage.
-
-Purpose:
-    Extracts the usage value from the supplied object or payload while handling missing or
-    unsupported content safely.
-
-Args:
-    resp (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_usage helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Extracts the usage value from the supplied object or payload while handling missing or
+            unsupported content safely.
+    
+        Args:
+            resp (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_usage helper according to its function annotation and
+            return statements.
+    """
 	throw_if( 'resp', resp )
 	usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0 }
 	if not resp:
@@ -705,13 +705,13 @@ Returns:
 
 def update_token_counters( resp: Any ) -> None:
 	"""Update token counters.
-
-Purpose:
-    Updates the token counters state or persisted value used by the Gipity workflow.
-
-Args:
-    resp (Any): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Updates the token counters state or persisted value used by the Gipity workflow.
+    
+        Args:
+            resp (Any): Value supplied to the helper.
+    """
 	throw_if( 'resp', resp )
 	usage = extract_usage( resp )
 	st.session_state.last_call_usage = usage
@@ -721,19 +721,19 @@ Args:
 
 def display_value( val: Any ) -> str:
 	"""Display value.
-
-Purpose:
-    Provides the display value helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    val (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the display_value helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the display value helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            val (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the display_value helper according to its function annotation and
+            return statements.
+    """
 	throw_if( 'val', val )
 	if val is None:
 		return '—'
@@ -749,18 +749,18 @@ Returns:
 
 def extract_response_text( response: object ) -> str:
 	"""Extract response text.
-
-Purpose:
-    Extracts the response text value from the supplied object or payload while handling
-    missing or unsupported content safely.
-
-Args:
-    response (object): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_response_text helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Extracts the response text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            response (object): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_response_text helper according to its function annotation
+            and return statements.
+    """
 	throw_if( 'respose', response )
 	if response is None:
 		return ''
@@ -784,40 +784,40 @@ Returns:
 
 def encode_image( image_path: str ) -> str:
 	"""Encode image.
-
-Purpose:
-    Provides the encode image helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    image_path (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the encode_image helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the encode image helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            image_path (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the encode_image helper according to its function annotation and
+            return statements.
+    """
 	throw_if( 'image_path', image_path )
 	with open( image_path, 'rb' ) as image_file:
 		return base64.b64encode( image_file.read( ) ).decode( 'utf-8' )
 
 def normalize_text( text: str ) -> str:
 	"""Normalize text.
-
-Purpose:
-    Normalizes the text input into the stable shape expected by downstream Gipity helpers
-    and display logic.
-
-Args:
-    text (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize_text helper according to its function annotation and
-    return statements.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Normalizes the text input into the stable shape expected by downstream Gipity helpers
+            and display logic.
+    
+        Args:
+            text (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize_text helper according to its function annotation and
+            return statements.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	try:
 		throw_if( 'text', text )
 		if not text:
@@ -837,20 +837,20 @@ Raises:
 
 def chunk_text( text: str, max_tokens: int = 400 ) -> list[ str ]:
 	"""Chunk text.
-
-Purpose:
-    Provides the chunk text helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    text (str): Value supplied to the helper.
-    max_tokens (int): Value supplied to the helper.
-
-Returns:
-    Value produced by the chunk_text helper according to its function annotation and return
-    statements.
-"""
+    
+        Purpose:
+            Provides the chunk text helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            text (str): Value supplied to the helper.
+            max_tokens (int): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the chunk_text helper according to its function annotation and return
+            statements.
+    """
 	if not text:
 		return [ ]
 	sentences = re.split( '(?<=[.!?])\\s+', text )
@@ -874,41 +874,41 @@ Returns:
 
 def cosine_sim( a: np.ndarray, b: np.ndarray ) -> float:
 	"""Cosine sim.
-
-Purpose:
-    Provides the cosine sim helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    a (np.ndarray): Value supplied to the helper.
-    b (np.ndarray): Value supplied to the helper.
-
-Returns:
-    Value produced by the cosine_sim helper according to its function annotation and return
-    statements.
-"""
+    
+        Purpose:
+            Provides the cosine sim helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            a (np.ndarray): Value supplied to the helper.
+            b (np.ndarray): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the cosine_sim helper according to its function annotation and return
+            statements.
+    """
 	denom = np.linalg.norm( a ) * np.linalg.norm( b )
 	return float( np.dot( a, b ) / denom ) if denom else 0.0
 
 def sanitize_markdown( text: str ) -> str:
 	"""Sanitize markdown.
-
-Purpose:
-    Provides the sanitize markdown helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    text (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the sanitize_markdown helper according to its function annotation and
-    return statements.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Provides the sanitize markdown helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            text (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the sanitize_markdown helper according to its function annotation and
+            return statements.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	try:
 		throw_if( 'text', text )
 		text = re.sub( '\\*\\*(.*?)\\*\\*', '\\1', text )
@@ -924,23 +924,23 @@ Raises:
 
 def init_state( ) -> None:
 	"""Init state.
-
-Purpose:
-    Provides the init state helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the init state helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    """
 	for k in ('audio_system_instructions', 'image_system_instructions',
 	          'docqna_system_instructions', 'text_system_instructions'):
 		st.session_state.setdefault( k, '' )
 
 def reset_state( ) -> None:
 	"""Reset state.
-
-Purpose:
-    Resets the state state used by the application. The function clears related Streamlit
-    keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the state state used by the application. The function clears related Streamlit
+            keys without performing provider calls.
+    """
 	st.session_state.chat_history = [ ]
 	st.session_state.messages = [ ]
 	st.session_state.last_answer = ''
@@ -948,22 +948,22 @@ Purpose:
 
 def normalize( obj ):
 	"""Normalize.
-
-Purpose:
-    Provides the normalize helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    obj (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize helper according to its function annotation and return
-    statements.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Provides the normalize helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            obj (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize helper according to its function annotation and return
+            statements.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	try:
 		throw_if( 'obj', obj )
 		if obj is None or isinstance( obj, (str, int, float, bool) ):
@@ -993,18 +993,18 @@ Raises:
 
 def extract_sources( response: Any ) -> List[ Dict[ str, Any ] ]:
 	"""Extract sources.
-
-Purpose:
-    Extracts the sources value from the supplied object or payload while handling missing or
-    unsupported content safely.
-
-Args:
-    response (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_sources helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Extracts the sources value from the supplied object or payload while handling missing or
+            unsupported content safely.
+    
+        Args:
+            response (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_sources helper according to its function annotation and
+            return statements.
+    """
 	sources: List[ Dict[ str, Any ] ] = [ ]
 	if response is None:
 		return sources
@@ -1041,18 +1041,18 @@ Returns:
 
 def save_temp( upload ) -> str | None:
 	"""Save temp.
-
-Purpose:
-    Saves the temp value for later workflow use while preserving the caller-facing return
-    contract.
-
-Args:
-    upload (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the save_temp helper according to its function annotation and return
-    statements.
-"""
+    
+        Purpose:
+            Saves the temp value for later workflow use while preserving the caller-facing return
+            contract.
+    
+        Args:
+            upload (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the save_temp helper according to its function annotation and return
+            statements.
+    """
 	if upload is None:
 		return None
 	try:
@@ -1072,19 +1072,19 @@ Returns:
 
 def display_value( val: Any ) -> str:
 	"""Display value.
-
-Purpose:
-    Provides the display value helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    val (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the display_value helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the display value helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            val (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the display_value helper according to its function annotation and
+            return statements.
+    """
 	if val is None:
 		return '—'
 	try:
@@ -1099,19 +1099,19 @@ Returns:
 
 def format_results( results ):
 	"""Format results.
-
-Purpose:
-    Provides the format results helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    results (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the format_results helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the format results helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            results (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the format_results helper according to its function annotation and
+            return statements.
+    """
 	formatted_results = ''
 	for result in results.data:
 		formatted_result = f'<li> "{result.name}" '
@@ -1120,41 +1120,41 @@ Returns:
 
 def count_tokens( text: str ) -> int:
 	"""Count tokens.
-
-Purpose:
-    Provides the count tokens helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    text (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the count_tokens helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the count tokens helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            text (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the count_tokens helper according to its function annotation and
+            return statements.
+    """
 	encoding = tiktoken.get_encoding( 'cl100k_base' )
 	num_tokens = len( encoding.encode( text ) )
 	return num_tokens
 
 def convert_xml( text: str ) -> str:
 	"""Convert xml.
-
-Purpose:
-    Provides the convert xml helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    text (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the convert_xml helper according to its function annotation and return
-    statements.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Provides the convert xml helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            text (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the convert_xml helper according to its function annotation and return
+            statements.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	try:
 		throw_if( 'text', text )
 		markdown_blocks: List[ str ] = [ ]
@@ -1176,19 +1176,19 @@ Raises:
 
 def convert_markdown( text: Any ) -> str:
 	"""Convert markdown.
-
-Purpose:
-    Provides the convert markdown helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    text (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the convert_markdown helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the convert markdown helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            text (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the convert_markdown helper according to its function annotation and
+            return statements.
+    """
 	if not isinstance( text, str ) or not text.strip( ):
 		return ''
 	src = text.replace( '\r\n', '\n' ).replace( '\r', '\n' )
@@ -1198,19 +1198,19 @@ Returns:
 	if contains_htags:
 		def _htag_to_md( match: re.Match ) -> str:
 			"""Htag to md.
-
-Purpose:
-    Provides the htag to md helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    match (re.Match): Value supplied to the helper.
-
-Returns:
-    Value produced by the _htag_to_md helper according to its function annotation and return
-    statements.
-"""
+            
+                Purpose:
+                    Provides the htag to md helper used by the Gipity Streamlit application. The function
+                    supports UI state management, provider coordination, data normalization, or display
+                    behavior required by the surrounding workflow.
+            
+                Args:
+                    match (re.Match): Value supplied to the helper.
+            
+                Returns:
+                    Value produced by the _htag_to_md helper according to its function annotation and return
+                    statements.
+            """
 			level = int( match.group( 1 ) )
 			content = match.group( 2 ).strip( )
 			content = re.sub( '[ \\t]+\\n', '\n', content )
@@ -1222,19 +1222,19 @@ Returns:
 	
 	def _md_to_htag( match: re.Match ) -> str:
 		"""Md to htag.
-
-Purpose:
-    Provides the md to htag helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    match (re.Match): Value supplied to the helper.
-
-Returns:
-    Value produced by the _md_to_htag helper according to its function annotation and return
-    statements.
-"""
+        
+            Purpose:
+                Provides the md to htag helper used by the Gipity Streamlit application. The function
+                supports UI state management, provider coordination, data normalization, or display
+                behavior required by the surrounding workflow.
+        
+            Args:
+                match (re.Match): Value supplied to the helper.
+        
+            Returns:
+                Value produced by the _md_to_htag helper according to its function annotation and return
+                statements.
+        """
 		hashes = match.group( 1 )
 		content = match.group( 2 ).strip( )
 		level = len( hashes )
@@ -1245,73 +1245,73 @@ Returns:
 
 def inject_response_css( ) -> None:
 	"""Inject response css.
-
-Purpose:
-    Provides the inject response css helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the inject response css helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    """
 	st.markdown(
 		'\n\t\t<style>\n\t\t/* Chat message text */\n\t\t.stChatMessage p {\n\t\t\tcolor: rgb(220, 220, 220);\n\t\t\tfont-size: 1rem;\n\t\t\tline-height: 1.6;\n\t\t}\n\n\t\t/* Headings inside chat responses */\n\t\t.stChatMessage h1 {\n\t\t\tcolor: rgb(0, 120, 252); /* DoD Blue */\n\t\t\tfont-size: 1.6rem;\n\t\t}\n\n\t\t.stChatMessage h2 {\n\t\t\tcolor: rgb(0, 120, 252);\n\t\t\tfont-size: 1.35rem;\n\t\t}\n\n\t\t.stChatMessage h3 {\n\t\t\tcolor: rgb(0, 120, 252);\n\t\t\tfont-size: 1.15rem;\n\t\t}\n\t\t\n\t\t.stChatMessage a {\n\t\t\tcolor: rgb(0, 120, 252); /* DoD Blue */\n\t\t\ttext-decoration: underline;\n\t\t}\n\t\t\n\t\t.stChatMessage a:hover {\n\t\t\tcolor: rgb(80, 160, 255);\n\t\t}\n\n\t\t</style>\n\t\t',
 		unsafe_allow_html=True )
 
 def style_subheaders( ) -> None:
 	"""Style subheaders.
-
-Purpose:
-    Provides the style subheaders helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the style subheaders helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    """
 	st.markdown(
 		'\n\t\t<style>\n\t\tdiv[data-testid="stMarkdownContainer"] h2,\n\t\tdiv[data-testid="stMarkdownContainer"] h3,\n\t\tdiv[data-testid="stChatMessage"] div[data-testid="stMarkdownContainer"] h2,\n\t\tdiv[data-testid="stChatMessage"] div[data-testid="stMarkdownContainer"] h3 {\n\t\t\tcolor: rgb(0, 120, 252) !important;\n\t\t}\n\t\t</style>\n\t\t',
 		unsafe_allow_html=True )
 
 def save_message( role: str, content: str ) -> None:
 	"""Save message.
-
-Purpose:
-    Saves the message value for later workflow use while preserving the caller-facing return
-    contract.
-
-Args:
-    role (str): Value supplied to the helper.
-    content (str): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Saves the message value for later workflow use while preserving the caller-facing return
+            contract.
+    
+        Args:
+            role (str): Value supplied to the helper.
+            content (str): Value supplied to the helper.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( 'INSERT INTO chat_history (role, content) VALUES (?, ?)', (role, content) )
 
 def load_history( ) -> List[ Tuple[ str, str ] ]:
 	"""Load history.
-
-Purpose:
-    Loads the history resource or state required by the Gipity workflow and returns the
-    prepared value for caller use.
-
-Returns:
-    Value produced by the load_history helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Loads the history resource or state required by the Gipity workflow and returns the
+            prepared value for caller use.
+    
+        Returns:
+            Value produced by the load_history helper according to its function annotation and
+            return statements.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		return conn.execute( 'SELECT role, content FROM chat_history ORDER BY id' ).fetchall( )
 
 def clear_history( ) -> None:
 	"""Clear history.
-
-Purpose:
-    Clears the history state used by the current workflow so the user interface can start
-    from a clean output state.
-"""
+    
+        Purpose:
+            Clears the history state used by the current workflow so the user interface can start
+            from a clean output state.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( 'DELETE FROM chat_history' )
 
 def ensure_text_mode_state( ) -> None:
 	"""Ensure text mode state.
-
-Purpose:
-    Ensures the required text mode state session-state keys or runtime resources exist
-    before the related interface controls are rendered.
-"""
+    
+        Purpose:
+            Ensures the required text mode state session-state keys or runtime resources exist
+            before the related interface controls are rendered.
+    """
 	if 'text_vector_store_ids' not in st.session_state:
 		st.session_state[ 'text_vector_store_ids' ] = ''
 	if 'text_json_schema_name' not in st.session_state:
@@ -1329,19 +1329,19 @@ Purpose:
 
 def parse_text_vector_store_ids( value: str | list[ str ] | None ) -> list[ str ]:
 	"""Parse text vector store ids.
-
-Purpose:
-    Provides the parse text vector store ids helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-
-Args:
-    value (str | list[str] | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the parse_text_vector_store_ids helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the parse text vector store ids helper used by the Gipity Streamlit
+            application. The function supports UI state management, provider coordination, data
+            normalization, or display behavior required by the surrounding workflow.
+    
+        Args:
+            value (str | list[str] | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the parse_text_vector_store_ids helper according to its function
+            annotation and return statements.
+    """
 	if value is None:
 		return [ ]
 	if isinstance( value, list ):
@@ -1353,21 +1353,21 @@ Returns:
 def build_text_response_format( response_format: str | None, schema_name: str = None,
 		schema_text: str = None, strict: bool = True ) -> dict[ str, Any ] | None:
 	"""Build text response format.
-
-Purpose:
-    Builds the text response format value used by the Gipity interface or provider wrapper.
-    The function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    response_format (str | None): Value supplied to the helper.
-    schema_name (str): Value supplied to the helper.
-    schema_text (str): Value supplied to the helper.
-    strict (bool): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_text_response_format helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the text response format value used by the Gipity interface or provider wrapper.
+            The function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            response_format (str | None): Value supplied to the helper.
+            schema_name (str): Value supplied to the helper.
+            schema_text (str): Value supplied to the helper.
+            strict (bool): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_text_response_format helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( response_format, str ) or not response_format.strip( ):
 		return None
 	format_name = response_format.strip( )
@@ -1398,19 +1398,19 @@ Returns:
 def build_text_tools( selected_tools: list[ str ] | None, vector_store_ids: list[ str ] = None ) -> \
 list[ dict[ str, Any ] ]:
 	"""Build text tools.
-
-Purpose:
-    Builds the text tools value used by the Gipity interface or provider wrapper. The
-    function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    selected_tools (list[str] | None): Value supplied to the helper.
-    vector_store_ids (list[str]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_text_tools helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Builds the text tools value used by the Gipity interface or provider wrapper. The
+            function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            selected_tools (list[str] | None): Value supplied to the helper.
+            vector_store_ids (list[str]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_text_tools helper according to its function annotation and
+            return statements.
+    """
 	tools: list[ dict[ str, Any ] ] = [ ]
 	vector_ids = vector_store_ids if vector_store_ids is not None else [ ]
 	if selected_tools is None or len( selected_tools ) == 0:
@@ -1433,19 +1433,19 @@ Returns:
 def build_text_include( selected_include: list[ str ] | None,
 		selected_tools: list[ dict[ str, Any ] ] = None ) -> list[ str ]:
 	"""Build text include.
-
-Purpose:
-    Builds the text include value used by the Gipity interface or provider wrapper. The
-    function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    selected_include (list[str] | None): Value supplied to the helper.
-    selected_tools (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_text_include helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Builds the text include value used by the Gipity interface or provider wrapper. The
+            function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            selected_include (list[str] | None): Value supplied to the helper.
+            selected_tools (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_text_include helper according to its function annotation and
+            return statements.
+    """
 	if selected_include is None or len( selected_include ) == 0:
 		return [ ]
 	tool_types: list[ str ] = [ ]
@@ -1475,19 +1475,19 @@ Returns:
 def build_text_tool_choice( tool_choice: str | None,
 		selected_tools: list[ dict[ str, Any ] ] | None = None ) -> str | None:
 	"""Build text tool choice.
-
-Purpose:
-    Builds the text tool choice value used by the Gipity interface or provider wrapper. The
-    function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    tool_choice (str | None): Value supplied to the helper.
-    selected_tools (list[dict[str, Any]] | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_text_tool_choice helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Builds the text tool choice value used by the Gipity interface or provider wrapper. The
+            function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            tool_choice (str | None): Value supplied to the helper.
+            selected_tools (list[dict[str, Any]] | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_text_tool_choice helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( tool_choice, str ) or not tool_choice.strip( ):
 		return None
 	choice = tool_choice.strip( )
@@ -1502,19 +1502,19 @@ Returns:
 def build_text_context( messages: list[ dict[ str, Any ] ] | None,
 		include_last_message: bool = False ) -> list[ dict[ str, str ] ]:
 	"""Build text context.
-
-Purpose:
-    Builds the text context value used by the Gipity interface or provider wrapper. The
-    function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    messages (list[dict[str, Any]] | None): Value supplied to the helper.
-    include_last_message (bool): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_text_context helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Builds the text context value used by the Gipity interface or provider wrapper. The
+            function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            messages (list[dict[str, Any]] | None): Value supplied to the helper.
+            include_last_message (bool): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_text_context helper according to its function annotation and
+            return statements.
+    """
 	if messages is None or not isinstance( messages, list ):
 		return [ ]
 	items = messages if include_last_message else messages[ :-1 ]
@@ -1533,19 +1533,19 @@ Returns:
 
 def get_text_conversation_id( input_mode: str | None, conversation_id: str | None ) -> str | None:
 	"""Get text conversation id.
-
-Purpose:
-    Returns the text conversation id value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    input_mode (str | None): Value supplied to the helper.
-    conversation_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_text_conversation_id helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the text conversation id value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            input_mode (str | None): Value supplied to the helper.
+            conversation_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_text_conversation_id helper according to its function
+            annotation and return statements.
+    """
 	if input_mode != 'conversation':
 		return None
 	if not isinstance( conversation_id, str ) or not conversation_id.strip( ):
@@ -1554,19 +1554,19 @@ Returns:
 
 def get_text_previous_response_id( input_mode: str | None, previous_id: str | None ) -> str | None:
 	"""Get text previous response id.
-
-Purpose:
-    Returns the text previous response id value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    input_mode (str | None): Value supplied to the helper.
-    previous_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_text_previous_response_id helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the text previous response id value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            input_mode (str | None): Value supplied to the helper.
+            previous_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_text_previous_response_id helper according to its function
+            annotation and return statements.
+    """
 	if input_mode == 'single_turn':
 		return None
 	if input_mode == 'conversation':
@@ -1577,14 +1577,14 @@ Returns:
 
 def get_text_stream_value( stream_value: bool | None ) -> None:
 	"""Get text stream value.
-
-Purpose:
-    Returns the text stream value value used by the Gipity interface. The helper centralizes
-    option lookup and fallback behavior for callers.
-
-Args:
-    stream_value (bool | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Returns the text stream value value used by the Gipity interface. The helper centralizes
+            option lookup and fallback behavior for callers.
+    
+        Args:
+            stream_value (bool | None): Value supplied to the helper.
+    """
 	if bool( stream_value ):
 		st.info(
 			'Streaming is not sent in this Text mode path until stream-event rendering is added.' )
@@ -1592,73 +1592,73 @@ Args:
 
 def get_text_background_value( background_value: bool | None ) -> None:
 	"""Get text background value.
-
-Purpose:
-    Returns the text background value value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    background_value (bool | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Returns the text background value value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            background_value (bool | None): Value supplied to the helper.
+    """
 	if bool( background_value ):
 		st.info( 'Background mode is not sent in this Text mode path until polling is added.' )
 	return None
 
 def reset_text_structured_output_controls( ) -> None:
 	"""Reset text structured output controls.
-
-Purpose:
-    Resets the text structured output controls state used by the application. The function
-    clears related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the text structured output controls state used by the application. The function
+            clears related Streamlit keys without performing provider calls.
+    """
 	for key in [ 'text_json_schema_name', 'text_json_schema', 'text_json_schema_strict' ]:
 		if key in st.session_state:
 			del st.session_state[ key ]
 
 def reset_text_api_state_controls( ) -> None:
 	"""Reset text api state controls.
-
-Purpose:
-    Resets the text api state controls state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the text api state controls state used by the application. The function clears
+            related Streamlit keys without performing provider calls.
+    """
 	for key in [ 'text_previous_response_id', 'text_conversation_id' ]:
 		if key in st.session_state:
 			del st.session_state[ key ]
 
 def clear_image_messages( ) -> None:
 	"""Clear image messages.
-
-Purpose:
-    Clears the image messages state used by the current workflow so the user interface can
-    start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the image messages state used by the current workflow so the user interface can
+            start from a clean output state.
+    """
 	st.session_state[ 'image_input' ] = [ ]
 	st.session_state[ 'image_messages' ] = [ ]
 	st.session_state[ 'image_output_bytes' ] = None
 
 def clear_image_instructions( ) -> None:
 	"""Clear image instructions.
-
-Purpose:
-    Clears the image instructions state used by the current workflow so the user interface
-    can start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the image instructions state used by the current workflow so the user interface
+            can start from a clean output state.
+    """
 	st.session_state[ 'image_system_instructions' ] = ''
 	st.session_state[ 'instructions' ] = ''
 
 def append_image_message( role: str, content: str ) -> None:
 	"""Append image message.
-
-Purpose:
-    Provides the append image message helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    role (str): Value supplied to the helper.
-    content (str): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Provides the append image message helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            role (str): Value supplied to the helper.
+            content (str): Value supplied to the helper.
+    """
 	if 'image_input' not in st.session_state or not isinstance( st.session_state[ 'image_input' ],
 			list ):
 		st.session_state[ 'image_input' ] = [ ]
@@ -1671,11 +1671,11 @@ Args:
 
 def load_image_instruction_template( ) -> None:
 	"""Load image instruction template.
-
-Purpose:
-    Loads the image instruction template resource or state required by the Gipity workflow
-    and returns the prepared value for caller use.
-"""
+    
+        Purpose:
+            Loads the image instruction template resource or state required by the Gipity workflow
+            and returns the prepared value for caller use.
+    """
 	name = st.session_state.get( 'instructions' )
 	if name and name != 'No Templates Found':
 		text = fetch_prompt_text( cfg.DB_PATH, name )
@@ -1684,12 +1684,12 @@ Purpose:
 
 def convert_image_system_instructions( ) -> None:
 	"""Convert image system instructions.
-
-Purpose:
-    Provides the convert image system instructions helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the convert image system instructions helper used by the Gipity Streamlit
+            application. The function supports UI state management, provider coordination, data
+            normalization, or display behavior required by the surrounding workflow.
+    """
 	text = st.session_state.get( 'image_system_instructions', '' )
 	if not isinstance( text, str ) or not text.strip( ):
 		return
@@ -1702,22 +1702,22 @@ Purpose:
 
 def reset_image_llm_settings( ) -> None:
 	"""Reset image llm settings.
-
-Purpose:
-    Resets the image llm settings state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the image llm settings state used by the application. The function clears related
+            Streamlit keys without performing provider calls.
+    """
 	for key in [ 'image_mode', 'image_model', 'image_analysis_model', 'image_number' ]:
 		if key in st.session_state:
 			del st.session_state[ key ]
 
 def reset_image_visual_settings( ) -> None:
 	"""Reset image visual settings.
-
-Purpose:
-    Resets the image visual settings state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the image visual settings state used by the application. The function clears
+            related Streamlit keys without performing provider calls.
+    """
 	for key in [ 'image_mime_type', 'image_size', 'image_quality', 'image_backcolor',
 	             'image_compression' ]:
 		if key in st.session_state:
@@ -1725,18 +1725,18 @@ Purpose:
 
 def get_image_models( image: Images ) -> list[ str ]:
 	"""Get image models.
-
-Purpose:
-    Returns the image models value used by the Gipity interface. The helper centralizes
-    option lookup and fallback behavior for callers.
-
-Args:
-    image (Images): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_image_models helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Returns the image models value used by the Gipity interface. The helper centralizes
+            option lookup and fallback behavior for callers.
+    
+        Args:
+            image (Images): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_image_models helper according to its function annotation and
+            return statements.
+    """
 	options = getattr( image, 'model_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -1744,18 +1744,18 @@ Returns:
 
 def get_image_analysis_models( image: Images = None ) -> list[ str ]:
 	"""Get image analysis models.
-
-Purpose:
-    Returns the image analysis models value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    image (Images): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_image_analysis_models helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the image analysis models value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            image (Images): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_image_analysis_models helper according to its function
+            annotation and return statements.
+    """
 	if image is not None:
 		options = getattr( image, 'analysis_model_options', None )
 		if isinstance( options, list ) and len( options ) > 0:
@@ -1764,18 +1764,18 @@ Returns:
 
 def get_image_size_options( image: Images ) -> list[ str ]:
 	"""Get image size options.
-
-Purpose:
-    Returns the image size options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    image (Images): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_image_size_options helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Returns the image size options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            image (Images): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_image_size_options helper according to its function annotation
+            and return statements.
+    """
 	options = getattr( image, 'size_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -1783,18 +1783,18 @@ Returns:
 
 def get_image_quality_options( image: Images ) -> list[ str ]:
 	"""Get image quality options.
-
-Purpose:
-    Returns the image quality options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    image (Images): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_image_quality_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the image quality options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            image (Images): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_image_quality_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( image, 'quality_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -1802,18 +1802,18 @@ Returns:
 
 def get_image_mime_options( image: Images ) -> list[ str ]:
 	"""Get image mime options.
-
-Purpose:
-    Returns the image mime options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    image (Images): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_image_mime_options helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Returns the image mime options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            image (Images): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_image_mime_options helper according to its function annotation
+            and return statements.
+    """
 	options = getattr( image, 'mime_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -1821,18 +1821,18 @@ Returns:
 
 def get_image_background_options( image: Images ) -> list[ str ]:
 	"""Get image background options.
-
-Purpose:
-    Returns the image background options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    image (Images): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_image_background_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the image background options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            image (Images): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_image_background_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( image, 'backcolor_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -1840,18 +1840,18 @@ Returns:
 
 def get_image_detail_options( image: Images ) -> list[ str ]:
 	"""Get image detail options.
-
-Purpose:
-    Returns the image detail options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    image (Images): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_image_detail_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the image detail options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            image (Images): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_image_detail_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( image, 'detail_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -1860,19 +1860,19 @@ Returns:
 def render_image_output( image_result: str | bytes | list[ str | bytes ] | None,
 		caption: str = 'Image output' ) -> bool:
 	"""Render image output.
-
-Purpose:
-    Renders the image output user-interface section or display element in Streamlit while
-    preserving the application state expected by the surrounding workflow.
-
-Args:
-    image_result (str | bytes | list[str | bytes] | None): Value supplied to the helper.
-    caption (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the render_image_output helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Renders the image output user-interface section or display element in Streamlit while
+            preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            image_result (str | bytes | list[str | bytes] | None): Value supplied to the helper.
+            caption (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the render_image_output helper according to its function annotation
+            and return statements.
+    """
 	if image_result is None:
 		return False
 	outputs: list[ str | bytes ] = image_result if isinstance( image_result, list ) else [
@@ -1902,11 +1902,11 @@ Returns:
 
 def ensure_embeddings_mode_state( ) -> None:
 	"""Ensure embeddings mode state.
-
-Purpose:
-    Ensures the required embeddings mode state session-state keys or runtime resources exist
-    before the related interface controls are rendered.
-"""
+    
+        Purpose:
+            Ensures the required embeddings mode state session-state keys or runtime resources exist
+            before the related interface controls are rendered.
+    """
 	if 'embedding_model' not in st.session_state:
 		st.session_state[ 'embedding_model' ] = ''
 	if 'embeddings_dimensions' not in st.session_state:
@@ -1934,18 +1934,18 @@ Purpose:
 
 def get_embedding_model_options( embedding: Embeddings ) -> list[ str ]:
 	"""Get embedding model options.
-
-Purpose:
-    Returns the embedding model options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    embedding (Embeddings): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_embedding_model_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the embedding model options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            embedding (Embeddings): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_embedding_model_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( embedding, 'model_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -1953,18 +1953,18 @@ Returns:
 
 def get_embedding_encoding_options( embedding: Embeddings ) -> list[ str ]:
 	"""Get embedding encoding options.
-
-Purpose:
-    Returns the embedding encoding options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    embedding (Embeddings): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_embedding_encoding_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the embedding encoding options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            embedding (Embeddings): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_embedding_encoding_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( embedding, 'encoding_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return options
@@ -1972,19 +1972,19 @@ Returns:
 
 def get_embedding_max_dimensions( model: str | None, embedding: Embeddings ) -> int:
 	"""Get embedding max dimensions.
-
-Purpose:
-    Returns the embedding max dimensions value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    model (str | None): Value supplied to the helper.
-    embedding (Embeddings): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_embedding_max_dimensions helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the embedding max dimensions value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            model (str | None): Value supplied to the helper.
+            embedding (Embeddings): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_embedding_max_dimensions helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( model, str ) or not model.strip( ):
 		return 1536
 	try:
@@ -2001,20 +2001,20 @@ Returns:
 
 def embedding_model_supports_dimensions( model: str | None, embedding: Embeddings ) -> bool:
 	"""Embedding model supports dimensions.
-
-Purpose:
-    Provides the embedding model supports dimensions helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-
-Args:
-    model (str | None): Value supplied to the helper.
-    embedding (Embeddings): Value supplied to the helper.
-
-Returns:
-    Value produced by the embedding_model_supports_dimensions helper according to its
-    function annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the embedding model supports dimensions helper used by the Gipity Streamlit
+            application. The function supports UI state management, provider coordination, data
+            normalization, or display behavior required by the surrounding workflow.
+    
+        Args:
+            model (str | None): Value supplied to the helper.
+            embedding (Embeddings): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the embedding_model_supports_dimensions helper according to its
+            function annotation and return statements.
+    """
 	if not isinstance( model, str ) or not model.strip( ):
 		return False
 	support = getattr( embedding, 'model_dimension_support', { } )
@@ -2025,20 +2025,20 @@ Returns:
 def normalize_embedding_dimensions( model: str | None, dimensions: int | None,
 		embedding: Embeddings ) -> int | None:
 	"""Normalize embedding dimensions.
-
-Purpose:
-    Normalizes the embedding dimensions input into the stable shape expected by downstream
-    Gipity helpers and display logic.
-
-Args:
-    model (str | None): Value supplied to the helper.
-    dimensions (int | None): Value supplied to the helper.
-    embedding (Embeddings): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize_embedding_dimensions helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Normalizes the embedding dimensions input into the stable shape expected by downstream
+            Gipity helpers and display logic.
+    
+        Args:
+            model (str | None): Value supplied to the helper.
+            dimensions (int | None): Value supplied to the helper.
+            embedding (Embeddings): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize_embedding_dimensions helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( model, str ) or not model.strip( ):
 		return None
 	if dimensions is None:
@@ -2064,19 +2064,19 @@ Returns:
 def normalize_embedding_chunk_settings( chunk_size: int | None, overlap_amount: int | None ) -> \
 tuple[ int, int ]:
 	"""Normalize embedding chunk settings.
-
-Purpose:
-    Normalizes the embedding chunk settings input into the stable shape expected by
-    downstream Gipity helpers and display logic.
-
-Args:
-    chunk_size (int | None): Value supplied to the helper.
-    overlap_amount (int | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize_embedding_chunk_settings helper according to its
-    function annotation and return statements.
-"""
+    
+        Purpose:
+            Normalizes the embedding chunk settings input into the stable shape expected by
+            downstream Gipity helpers and display logic.
+    
+        Args:
+            chunk_size (int | None): Value supplied to the helper.
+            overlap_amount (int | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize_embedding_chunk_settings helper according to its
+            function annotation and return statements.
+    """
 	try:
 		chunk_value = int( chunk_size )
 	except Exception as e:
@@ -2108,22 +2108,22 @@ Returns:
 def chunk_text_for_embeddings( text: str, chunk_size: int = 800, overlap_amount: int = 0,
 		encoding_name: str = 'cl100k_base' ) -> list[ str ]:
 	"""Chunk text for embeddings.
-
-Purpose:
-    Provides the chunk text for embeddings helper used by the Gipity Streamlit application.
-    The function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    text (str): Value supplied to the helper.
-    chunk_size (int): Value supplied to the helper.
-    overlap_amount (int): Value supplied to the helper.
-    encoding_name (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the chunk_text_for_embeddings helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the chunk text for embeddings helper used by the Gipity Streamlit application.
+            The function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            text (str): Value supplied to the helper.
+            chunk_size (int): Value supplied to the helper.
+            overlap_amount (int): Value supplied to the helper.
+            encoding_name (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the chunk_text_for_embeddings helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( text, str ) or not text.strip( ):
 		return [ ]
 	chunk_value, overlap_value = normalize_embedding_chunk_settings( chunk_size=chunk_size,
@@ -2148,18 +2148,18 @@ Returns:
 
 def normalize_embedding_vectors( vectors: Any ) -> list[ Any ]:
 	"""Normalize embedding vectors.
-
-Purpose:
-    Normalizes the embedding vectors input into the stable shape expected by downstream
-    Gipity helpers and display logic.
-
-Args:
-    vectors (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize_embedding_vectors helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Normalizes the embedding vectors input into the stable shape expected by downstream
+            Gipity helpers and display logic.
+    
+        Args:
+            vectors (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize_embedding_vectors helper according to its function
+            annotation and return statements.
+    """
 	if vectors is None:
 		return [ ]
 	if isinstance( vectors, str ):
@@ -2175,20 +2175,20 @@ Returns:
 def build_embeddings_dataframe( chunks: list[ str ], vectors: Any,
 		encoding_format: str = 'float' ) -> pd.DataFrame:
 	"""Build embeddings dataframe.
-
-Purpose:
-    Builds the embeddings dataframe value used by the Gipity interface or provider wrapper.
-    The function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    chunks (list[str]): Value supplied to the helper.
-    vectors (Any): Value supplied to the helper.
-    encoding_format (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_embeddings_dataframe helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the embeddings dataframe value used by the Gipity interface or provider wrapper.
+            The function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            chunks (list[str]): Value supplied to the helper.
+            vectors (Any): Value supplied to the helper.
+            encoding_format (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_embeddings_dataframe helper according to its function
+            annotation and return statements.
+    """
 	outputs = normalize_embedding_vectors( vectors )
 	if len( outputs ) == 0:
 		return pd.DataFrame( )
@@ -2213,18 +2213,18 @@ Returns:
 
 def get_embedding_vector_dimension( vectors: Any ) -> int:
 	"""Get embedding vector dimension.
-
-Purpose:
-    Returns the embedding vector dimension value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    vectors (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_embedding_vector_dimension helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the embedding vector dimension value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            vectors (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_embedding_vector_dimension helper according to its function
+            annotation and return statements.
+    """
 	outputs = normalize_embedding_vectors( vectors )
 	if len( outputs ) == 0:
 		return 0
@@ -2235,18 +2235,18 @@ Returns:
 
 def extract_embedding_usage( response: Any ) -> dict[ str, Any ]:
 	"""Extract embedding usage.
-
-Purpose:
-    Extracts the embedding usage value from the supplied object or payload while handling
-    missing or unsupported content safely.
-
-Args:
-    response (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_embedding_usage helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Extracts the embedding usage value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            response (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_embedding_usage helper according to its function
+            annotation and return statements.
+    """
 	if response is None:
 		return { }
 	try:
@@ -2277,22 +2277,22 @@ Returns:
 def build_embedding_metrics( source_text: str, normalized_text: str, chunks: list[ str ],
 		vectors: Any, usage: dict[ str, Any ] | None = None ) -> dict[ str, Any ]:
 	"""Build embedding metrics.
-
-Purpose:
-    Builds the embedding metrics value used by the Gipity interface or provider wrapper. The
-    function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    source_text (str): Value supplied to the helper.
-    normalized_text (str): Value supplied to the helper.
-    chunks (list[str]): Value supplied to the helper.
-    vectors (Any): Value supplied to the helper.
-    usage (dict[str, Any] | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_embedding_metrics helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the embedding metrics value used by the Gipity interface or provider wrapper. The
+            function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            source_text (str): Value supplied to the helper.
+            normalized_text (str): Value supplied to the helper.
+            chunks (list[str]): Value supplied to the helper.
+            vectors (Any): Value supplied to the helper.
+            usage (dict[str, Any] | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_embedding_metrics helper according to its function
+            annotation and return statements.
+    """
 	source_value = source_text if isinstance( source_text, str ) else ''
 	normalized_value = normalized_text if isinstance( normalized_text, str ) else ''
 	outputs = normalize_embedding_vectors( vectors )
@@ -2314,14 +2314,14 @@ Returns:
 
 def render_embedding_metrics( metrics: dict[ str, Any ] | None ) -> None:
 	"""Render embedding metrics.
-
-Purpose:
-    Renders the embedding metrics user-interface section or display element in Streamlit
-    while preserving the application state expected by the surrounding workflow.
-
-Args:
-    metrics (dict[str, Any] | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the embedding metrics user-interface section or display element in Streamlit
+            while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            metrics (dict[str, Any] | None): Value supplied to the helper.
+    """
 	if not isinstance( metrics, dict ) or len( metrics ) == 0:
 		return
 	metric_c1, metric_c2, metric_c3, metric_c4, metric_c5 = st.columns( [ 0.2, 0.2, 0.2, 0.2, 0.2 ],
@@ -2339,14 +2339,14 @@ Args:
 
 def render_embeddings_dataframe( df_embeddings: pd.DataFrame ) -> None:
 	"""Render embeddings dataframe.
-
-Purpose:
-    Renders the embeddings dataframe user-interface section or display element in Streamlit
-    while preserving the application state expected by the surrounding workflow.
-
-Args:
-    df_embeddings (pd.DataFrame): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the embeddings dataframe user-interface section or display element in Streamlit
+            while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            df_embeddings (pd.DataFrame): Value supplied to the helper.
+    """
 	if df_embeddings is None or df_embeddings.empty:
 		st.info( 'No embeddings available.' )
 		return
@@ -2354,11 +2354,11 @@ Args:
 
 def reset_embeddings_controls( ) -> None:
 	"""Reset embeddings controls.
-
-Purpose:
-    Resets the embeddings controls state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the embeddings controls state used by the application. The function clears
+            related Streamlit keys without performing provider calls.
+    """
 	for key in [ 'embedding_model', 'embeddings_dimensions', 'embeddings_chunk_size',
 	             'embeddings_overlap_amount', 'embeddings_encoding_format', 'embeddings_user' ]:
 		if key in st.session_state:
@@ -2366,11 +2366,11 @@ Purpose:
 
 def clear_embeddings_output( ) -> None:
 	"""Clear embeddings output.
-
-Purpose:
-    Clears the embeddings output state used by the current workflow so the user interface
-    can start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the embeddings output state used by the current workflow so the user interface
+            can start from a clean output state.
+    """
 	st.session_state[ 'embeddings' ] = [ ]
 	st.session_state[ 'embeddings_chunks' ] = [ ]
 	st.session_state[ 'embeddings_df' ] = pd.DataFrame( )
@@ -2379,11 +2379,11 @@ Purpose:
 
 def reset_embeddings_all( ) -> None:
 	"""Reset embeddings all.
-
-Purpose:
-    Resets the embeddings all state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the embeddings all state used by the application. The function clears related
+            Streamlit keys without performing provider calls.
+    """
 	reset_embeddings_controls( )
 	clear_embeddings_output( )
 	if 'embeddings_input_text' in st.session_state:
@@ -2391,19 +2391,19 @@ Purpose:
 
 def route_document_query( prompt: str ) -> str:
 	"""Route document query.
-
-Purpose:
-    Provides the route document query helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    prompt (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the route_document_query helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Provides the route document query helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            prompt (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the route_document_query helper according to its function annotation
+            and return statements.
+    """
 	prompt = str( prompt or '' ).strip( )
 	if not prompt:
 		return 'Please enter a question about the active document.'
@@ -2422,16 +2422,16 @@ Returns:
 
 def summarize_active_document( ) -> str:
 	"""Summarize active document.
-
-Purpose:
-    Provides the summarize active document helper used by the Gipity Streamlit application.
-    The function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Returns:
-    Value produced by the summarize_active_document helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the summarize active document helper used by the Gipity Streamlit application.
+            The function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Returns:
+            Value produced by the summarize_active_document helper according to its function
+            annotation and return statements.
+    """
 	system_instructions = st.session_state.get( 'system_instructions', '' )
 	summary_prompt = '\n\t\tProvide a clear, structured summary of this document.\n\t\tInclude:\n\t\t- Purpose\n\t\t- Key themes\n\t\t- Major conclusions\n\t\t- Important data points (if any)\n\t\t- Policy implications (if applicable)\n\t\t\n\t\tBe precise and concise.\n\t\t'
 	if system_instructions:
@@ -2440,20 +2440,20 @@ Returns:
 
 def compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ] ) -> str:
 	"""Compute fingerprint.
-
-Purpose:
-    Provides the compute fingerprint helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    active_docs (List[str]): Value supplied to the helper.
-    doc_bytes (Dict[str, bytes]): Value supplied to the helper.
-
-Returns:
-    Value produced by the compute_fingerprint helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Provides the compute fingerprint helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            active_docs (List[str]): Value supplied to the helper.
+            doc_bytes (Dict[str, bytes]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the compute_fingerprint helper according to its function annotation
+            and return statements.
+    """
 	h = hashlib.sha256( )
 	for name in sorted( active_docs ):
 		b = doc_bytes.get( name, b'' )
@@ -2464,18 +2464,18 @@ Returns:
 
 def extract_text_from_pdf( file_bytes: bytes ) -> str:
 	"""Extract text from pdf.
-
-Purpose:
-    Extracts the text from pdf value from the supplied object or payload while handling
-    missing or unsupported content safely.
-
-Args:
-    file_bytes (bytes): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_text_from_pdf helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Extracts the text from pdf value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_text_from_pdf helper according to its function annotation
+            and return statements.
+    """
 	if not file_bytes:
 		return ''
 	try:
@@ -2494,18 +2494,18 @@ Returns:
 
 def load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
 	"""Load sqlite vec.
-
-Purpose:
-    Loads the sqlite vec resource or state required by the Gipity workflow and returns the
-    prepared value for caller use.
-
-Args:
-    conn (sqlite3.Connection): Value supplied to the helper.
-
-Returns:
-    Value produced by the load_sqlite_vec helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Loads the sqlite vec resource or state required by the Gipity workflow and returns the
+            prepared value for caller use.
+    
+        Args:
+            conn (sqlite3.Connection): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the load_sqlite_vec helper according to its function annotation and
+            return statements.
+    """
 	try:
 		import sqlite_vec
 		
@@ -2521,18 +2521,18 @@ Returns:
 
 def ensure_vec_schema( dim: int ) -> bool:
 	"""Ensure vec schema.
-
-Purpose:
-    Ensures the required vec schema session-state keys or runtime resources exist before the
-    related interface controls are rendered.
-
-Args:
-    dim (int): Value supplied to the helper.
-
-Returns:
-    Value produced by the ensure_vec_schema helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Ensures the required vec schema session-state keys or runtime resources exist before the
+            related interface controls are rendered.
+    
+        Args:
+            dim (int): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the ensure_vec_schema helper according to its function annotation and
+            return statements.
+    """
 	conn = create_connection( )
 	try:
 		ok = load_sqlite_vec( conn )
@@ -2555,15 +2555,15 @@ Returns:
 
 def rebuild_index( embedder: SentenceTransformer ) -> None:
 	"""Rebuild index.
-
-Purpose:
-    Provides the rebuild index helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    embedder (SentenceTransformer): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Provides the rebuild index helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            embedder (SentenceTransformer): Value supplied to the helper.
+    """
 	active_docs: List[ str ] = st.session_state.get( 'docqna_active_docs', [ ] )
 	doc_bytes: Dict[ str, bytes ] = st.session_state.get( 'docqna_bytes', { } )
 	fp = compute_fingerprint( active_docs, doc_bytes )
@@ -2632,20 +2632,20 @@ Args:
 
 def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, float ] ]:
 	"""Retrieve top doc chunks.
-
-Purpose:
-    Provides the retrieve top doc chunks helper used by the Gipity Streamlit application.
-    The function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    query (str): Value supplied to the helper.
-    k (int): Value supplied to the helper.
-
-Returns:
-    Value produced by the retrieve_top_doc_chunks helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the retrieve top doc chunks helper used by the Gipity Streamlit application.
+            The function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            query (str): Value supplied to the helper.
+            k (int): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the retrieve_top_doc_chunks helper according to its function
+            annotation and return statements.
+    """
 	if not query or not query.strip( ):
 		return [ ]
 	embedder: SentenceTransformer = load_embedder( )
@@ -2687,19 +2687,19 @@ Returns:
 
 def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 	"""Build document user input.
-
-Purpose:
-    Builds the document user input value used by the Gipity interface or provider wrapper.
-    The function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    user_query (str): Value supplied to the helper.
-    k (int): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_document_user_input helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the document user input value used by the Gipity interface or provider wrapper.
+            The function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            user_query (str): Value supplied to the helper.
+            k (int): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_document_user_input helper according to its function
+            annotation and return statements.
+    """
 	system = str( st.session_state.get( 'system_instructions', '' ) or '' ).strip( )
 	hits = retrieve_top_doc_chunks( user_query, k=int( k ) )
 	context_blocks: List[ str ] = [ ]
@@ -2717,11 +2717,11 @@ Returns:
 
 def ensure_docqna_mode_state( ) -> None:
 	"""Ensure docqna mode state.
-
-Purpose:
-    Ensures the required docqna mode state session-state keys or runtime resources exist
-    before the related interface controls are rendered.
-"""
+    
+        Purpose:
+            Ensures the required docqna mode state session-state keys or runtime resources exist
+            before the related interface controls are rendered.
+    """
 	if 'docqna_model' not in st.session_state:
 		st.session_state[ 'docqna_model' ] = ''
 	if 'docqna_source' not in st.session_state:
@@ -2783,20 +2783,20 @@ Purpose:
 
 def clear_docqna_messages( ) -> None:
 	"""Clear docqna messages.
-
-Purpose:
-    Clears the docqna messages state used by the current workflow so the user interface can
-    start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the docqna messages state used by the current workflow so the user interface can
+            start from a clean output state.
+    """
 	st.session_state.docqna_messages = [ ]
 
 def clear_docqna_outputs( ) -> None:
 	"""Clear docqna outputs.
-
-Purpose:
-    Clears the docqna outputs state used by the current workflow so the user interface can
-    start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the docqna outputs state used by the current workflow so the user interface can
+            start from a clean output state.
+    """
 	st.session_state[ 'docqna_last_answer' ] = ''
 	st.session_state[ 'docqna_last_hits' ] = [ ]
 	st.session_state[ 'docqna_last_sources' ] = [ ]
@@ -2806,12 +2806,12 @@ Purpose:
 
 def unload_docqna_documents( ) -> None:
 	"""Unload docqna documents.
-
-Purpose:
-    Provides the unload docqna documents helper used by the Gipity Streamlit application.
-    The function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the unload docqna documents helper used by the Gipity Streamlit application.
+            The function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    """
 	st.session_state[ 'docqna_uploaded' ] = None
 	st.session_state[ 'docqna_files' ] = [ ]
 	st.session_state[ 'docqna_active_docs' ] = [ ]
@@ -2826,11 +2826,11 @@ Purpose:
 
 def reset_docqna_controls( ) -> None:
 	"""Reset docqna controls.
-
-Purpose:
-    Resets the docqna controls state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the docqna controls state used by the application. The function clears related
+            Streamlit keys without performing provider calls.
+    """
 	for key in [ 'docqna_model', 'docqna_source', 'docqna_file_id', 'docqna_vector_store_id',
 	             'docqna_multi_mode', 'docqna_top_k', 'docqna_chunk_size', 'docqna_chunk_overlap',
 	             'docqna_show_diagnostics' ]:
@@ -2839,32 +2839,32 @@ Purpose:
 
 def reset_docqna_all( ) -> None:
 	"""Reset docqna all.
-
-Purpose:
-    Resets the docqna all state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the docqna all state used by the application. The function clears related
+            Streamlit keys without performing provider calls.
+    """
 	reset_docqna_controls( )
 	unload_docqna_documents( )
 	clear_docqna_messages( )
 
 def clear_docqna_instructions( ) -> None:
 	"""Clear docqna instructions.
-
-Purpose:
-    Clears the docqna instructions state used by the current workflow so the user interface
-    can start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the docqna instructions state used by the current workflow so the user interface
+            can start from a clean output state.
+    """
 	st.session_state[ 'docqna_system_instructions' ] = ''
 	st.session_state[ 'instructions' ] = ''
 
 def load_docqna_instruction_template( ) -> None:
 	"""Load docqna instruction template.
-
-Purpose:
-    Loads the docqna instruction template resource or state required by the Gipity workflow
-    and returns the prepared value for caller use.
-"""
+    
+        Purpose:
+            Loads the docqna instruction template resource or state required by the Gipity workflow
+            and returns the prepared value for caller use.
+    """
 	name = st.session_state.get( 'instructions' )
 	if name and name != 'No Templates Found':
 		text = fetch_prompt_text( cfg.DB_PATH, name )
@@ -2873,12 +2873,12 @@ Purpose:
 
 def convert_docqna_system_instructions( ) -> None:
 	"""Convert docqna system instructions.
-
-Purpose:
-    Provides the convert docqna system instructions helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the convert docqna system instructions helper used by the Gipity Streamlit
+            application. The function supports UI state management, provider coordination, data
+            normalization, or display behavior required by the surrounding workflow.
+    """
 	text = st.session_state.get( 'docqna_system_instructions', '' )
 	if not isinstance( text, str ) or not text.strip( ):
 		return
@@ -2891,50 +2891,50 @@ Purpose:
 
 def get_docqna_source_options( ) -> list[ str ]:
 	"""Get docqna source options.
-
-Purpose:
-    Returns the docqna source options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Returns:
-    Value produced by the get_docqna_source_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the docqna source options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Returns:
+            Value produced by the get_docqna_source_options helper according to its function
+            annotation and return statements.
+    """
 	return [ 'Local Upload', 'OpenAI File ID', 'OpenAI Vector Store ID' ]
 
 def get_docqna_file_extension( filename: str | None ) -> str:
 	"""Get docqna file extension.
-
-Purpose:
-    Returns the docqna file extension value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    filename (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_docqna_file_extension helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the docqna file extension value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            filename (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_docqna_file_extension helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( filename, str ) or not filename.strip( ):
 		return ''
 	return Path( filename ).suffix.lower( )
 
 def compute_docqna_fingerprint( documents: list[ dict[ str, Any ] ] ) -> str:
 	"""Compute docqna fingerprint.
-
-Purpose:
-    Provides the compute docqna fingerprint helper used by the Gipity Streamlit application.
-    The function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    documents (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the compute_docqna_fingerprint helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the compute docqna fingerprint helper used by the Gipity Streamlit application.
+            The function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            documents (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the compute_docqna_fingerprint helper according to its function
+            annotation and return statements.
+    """
 	hasher = hashlib.sha256( )
 	if not isinstance( documents, list ):
 		return ''
@@ -2950,37 +2950,37 @@ Returns:
 
 def compute_fingerprint( file_bytes: bytes | None ) -> str:
 	"""Compute fingerprint.
-
-Purpose:
-    Provides the compute fingerprint helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    file_bytes (bytes | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the compute_fingerprint helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Provides the compute fingerprint helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            file_bytes (bytes | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the compute_fingerprint helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( file_bytes, bytes ):
 		return ''
 	return hashlib.sha256( file_bytes ).hexdigest( )
 
 def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
 	"""Extract docqna pdf text.
-
-Purpose:
-    Extracts the docqna pdf text value from the supplied object or payload while handling
-    missing or unsupported content safely.
-
-Args:
-    file_bytes (bytes): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_docqna_pdf_text helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Extracts the docqna pdf text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_pdf_text helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
 		return ''
 	try:
@@ -3009,18 +3009,18 @@ Returns:
 
 def extract_docqna_text_file( file_bytes: bytes ) -> str:
 	"""Extract docqna text file.
-
-Purpose:
-    Extracts the docqna text file value from the supplied object or payload while handling
-    missing or unsupported content safely.
-
-Args:
-    file_bytes (bytes): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_docqna_text_file helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Extracts the docqna text file value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_text_file helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
 		return ''
 	for encoding in [ 'utf-8', 'utf-8-sig', 'cp1252', 'latin-1' ]:
@@ -3037,18 +3037,18 @@ Returns:
 
 def extract_docqna_docx_text( file_bytes: bytes ) -> str:
 	"""Extract docqna docx text.
-
-Purpose:
-    Extracts the docqna docx text value from the supplied object or payload while handling
-    missing or unsupported content safely.
-
-Args:
-    file_bytes (bytes): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_docqna_docx_text helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Extracts the docqna docx text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_docx_text helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
 		return ''
 	try:
@@ -3076,19 +3076,19 @@ Returns:
 
 def extract_docqna_text( filename: str, file_bytes: bytes ) -> str:
 	"""Extract docqna text.
-
-Purpose:
-    Extracts the docqna text value from the supplied object or payload while handling
-    missing or unsupported content safely.
-
-Args:
-    filename (str): Value supplied to the helper.
-    file_bytes (bytes): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_docqna_text helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Extracts the docqna text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            filename (str): Value supplied to the helper.
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_text helper according to its function annotation
+            and return statements.
+    """
 	extension = get_docqna_file_extension( filename )
 	if extension == '.pdf':
 		return extract_docqna_pdf_text( file_bytes )
@@ -3101,18 +3101,18 @@ Returns:
 
 def load_docqna_uploaded_files( uploaded: Any ) -> list[ dict[ str, Any ] ]:
 	"""Load docqna uploaded files.
-
-Purpose:
-    Loads the docqna uploaded files resource or state required by the Gipity workflow and
-    returns the prepared value for caller use.
-
-Args:
-    uploaded (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the load_docqna_uploaded_files helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Loads the docqna uploaded files resource or state required by the Gipity workflow and
+            returns the prepared value for caller use.
+    
+        Args:
+            uploaded (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the load_docqna_uploaded_files helper according to its function
+            annotation and return statements.
+    """
 	if uploaded is None:
 		return [ ]
 	files = uploaded if isinstance( uploaded, list ) else [ uploaded ]
@@ -3157,15 +3157,15 @@ Returns:
 
 def get_docqna_active_document_names( ) -> list[ str ]:
 	"""Get docqna active document names.
-
-Purpose:
-    Returns the docqna active document names value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Returns:
-    Value produced by the get_docqna_active_document_names helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the docqna active document names value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Returns:
+            Value produced by the get_docqna_active_document_names helper according to its function
+            annotation and return statements.
+    """
 	docs = st.session_state.get( 'docqna_active_docs', [ ] )
 	if not isinstance( docs, list ):
 		return [ ]
@@ -3174,15 +3174,15 @@ Returns:
 
 def get_docqna_active_bytes( ) -> bytes | None:
 	"""Get docqna active bytes.
-
-Purpose:
-    Returns the docqna active bytes value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Returns:
-    Value produced by the get_docqna_active_bytes helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the docqna active bytes value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Returns:
+            Value produced by the get_docqna_active_bytes helper according to its function
+            annotation and return statements.
+    """
 	value = st.session_state.get( 'docqna_bytes', None )
 	if isinstance( value, bytes ):
 		return value
@@ -3194,11 +3194,11 @@ Returns:
 
 def render_docqna_document_preview( ) -> None:
 	"""Render docqna document preview.
-
-Purpose:
-    Renders the docqna document preview user-interface section or display element in
-    Streamlit while preserving the application state expected by the surrounding workflow.
-"""
+    
+        Purpose:
+            Renders the docqna document preview user-interface section or display element in
+            Streamlit while preserving the application state expected by the surrounding workflow.
+    """
 	docs = st.session_state.get( 'docqna_active_docs', [ ] )
 	if not isinstance( docs, list ) or len( docs ) == 0:
 		st.info( 'No active document loaded.' )
@@ -3235,18 +3235,18 @@ Purpose:
 
 def normalize_docqna_text( text: str ) -> str:
 	"""Normalize docqna text.
-
-Purpose:
-    Normalizes the docqna text input into the stable shape expected by downstream Gipity
-    helpers and display logic.
-
-Args:
-    text (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize_docqna_text helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Normalizes the docqna text input into the stable shape expected by downstream Gipity
+            helpers and display logic.
+    
+        Args:
+            text (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize_docqna_text helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( text, str ):
 		return ''
 	value = text.replace( '\x00', ' ' )
@@ -3256,21 +3256,21 @@ Returns:
 
 def chunk_docqna_text( text: str, chunk_size: int = 900, chunk_overlap: int = 150 ) -> list[ str ]:
 	"""Chunk docqna text.
-
-Purpose:
-    Provides the chunk docqna text helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    text (str): Value supplied to the helper.
-    chunk_size (int): Value supplied to the helper.
-    chunk_overlap (int): Value supplied to the helper.
-
-Returns:
-    Value produced by the chunk_docqna_text helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the chunk docqna text helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            text (str): Value supplied to the helper.
+            chunk_size (int): Value supplied to the helper.
+            chunk_overlap (int): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the chunk_docqna_text helper according to its function annotation and
+            return statements.
+    """
 	if not isinstance( text, str ) or not text.strip( ):
 		return [ ]
 	try:
@@ -3315,16 +3315,16 @@ Returns:
 
 def rebuild_docqna_index( ) -> list[ dict[ str, Any ] ]:
 	"""Rebuild docqna index.
-
-Purpose:
-    Provides the rebuild docqna index helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Returns:
-    Value produced by the rebuild_docqna_index helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Provides the rebuild docqna index helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Returns:
+            Value produced by the rebuild_docqna_index helper according to its function annotation
+            and return statements.
+    """
 	docs = st.session_state.get( 'docqna_active_docs', [ ] )
 	if not isinstance( docs, list ) or len( docs ) == 0:
 		st.session_state[ 'docqna_chunks' ] = [ ]
@@ -3352,39 +3352,39 @@ Returns:
 
 def tokenize_docqna_query( text: str ) -> list[ str ]:
 	"""Tokenize docqna query.
-
-Purpose:
-    Provides the tokenize docqna query helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    text (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the tokenize_docqna_query helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Provides the tokenize docqna query helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            text (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the tokenize_docqna_query helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( text, str ):
 		return [ ]
 	return re.findall( '[A-Za-z0-9_]+', text.lower( ) )
 
 def score_docqna_chunk( query_tokens: list[ str ], chunk_text: str ) -> float:
 	"""Score docqna chunk.
-
-Purpose:
-    Provides the score docqna chunk helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    query_tokens (list[str]): Value supplied to the helper.
-    chunk_text (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the score_docqna_chunk helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the score docqna chunk helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            query_tokens (list[str]): Value supplied to the helper.
+            chunk_text (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the score_docqna_chunk helper according to its function annotation and
+            return statements.
+    """
 	if not isinstance( query_tokens, list ) or len( query_tokens ) == 0:
 		return 0.0
 	chunk_tokens = tokenize_docqna_query( chunk_text )
@@ -3406,20 +3406,20 @@ Returns:
 
 def retrieve_docqna_chunks( query: str, top_k: int | None = None ) -> list[ dict[ str, Any ] ]:
 	"""Retrieve docqna chunks.
-
-Purpose:
-    Provides the retrieve docqna chunks helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    query (str): Value supplied to the helper.
-    top_k (int | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the retrieve_docqna_chunks helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Provides the retrieve docqna chunks helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            query (str): Value supplied to the helper.
+            top_k (int | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the retrieve_docqna_chunks helper according to its function annotation
+            and return statements.
+    """
 	if not st.session_state.get( 'docqna_vec_ready', False ):
 		rebuild_docqna_index( )
 	chunks = st.session_state.get( 'docqna_chunks', [ ] )
@@ -3457,19 +3457,19 @@ Returns:
 
 def build_docqna_local_prompt( query: str, hits: list[ dict[ str, Any ] ] ) -> str:
 	"""Build docqna local prompt.
-
-Purpose:
-    Builds the docqna local prompt value used by the Gipity interface or provider wrapper.
-    The function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    query (str): Value supplied to the helper.
-    hits (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_docqna_local_prompt helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the docqna local prompt value used by the Gipity interface or provider wrapper.
+            The function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            query (str): Value supplied to the helper.
+            hits (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_docqna_local_prompt helper according to its function
+            annotation and return statements.
+    """
 	context_blocks: list[ str ] = [ ]
 	for hit in hits:
 		if not isinstance( hit, dict ):
@@ -3484,19 +3484,19 @@ Returns:
 
 def docqna_call_openai_text_model( prompt: str ) -> str:
 	"""Docqna call openai text model.
-
-Purpose:
-    Provides the docqna call openai text model helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-
-Args:
-    prompt (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the docqna_call_openai_text_model helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the docqna call openai text model helper used by the Gipity Streamlit
+            application. The function supports UI state management, provider coordination, data
+            normalization, or display behavior required by the surrounding workflow.
+    
+        Args:
+            prompt (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the docqna_call_openai_text_model helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( prompt, str ) or not prompt.strip( ):
 		return ''
 	model = st.session_state.get( 'docqna_model' ) or 'gpt-4o-mini'
@@ -3548,18 +3548,18 @@ Returns:
 
 def run_docqna_local_query( query: str ) -> str:
 	"""Run docqna local query.
-
-Purpose:
-    Runs the docqna local query workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    query (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_docqna_local_query helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Runs the docqna local query workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            query (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_docqna_local_query helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( query, str ) or not query.strip( ):
 		return ''
 	if not st.session_state.get( 'docqna_vec_ready', False ):
@@ -3578,18 +3578,18 @@ Returns:
 
 def run_docqna_file_query( query: str ) -> str:
 	"""Run docqna file query.
-
-Purpose:
-    Runs the docqna file query workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    query (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_docqna_file_query helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Runs the docqna file query workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            query (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_docqna_file_query helper according to its function annotation
+            and return statements.
+    """
 	file_id = st.session_state.get( 'docqna_file_id', '' )
 	if not isinstance( file_id, str ) or not file_id.strip( ):
 		return 'No OpenAI file ID is selected.'
@@ -3613,19 +3613,19 @@ Returns:
 
 def run_docqna_vector_store_query( query: str ) -> str:
 	"""Run docqna vector store query.
-
-Purpose:
-    Runs the docqna vector store query workflow from the Streamlit interface by validating
-    current inputs, calling the appropriate wrapper or helper, and storing relevant output
-    state.
-
-Args:
-    query (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_docqna_vector_store_query helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the docqna vector store query workflow from the Streamlit interface by validating
+            current inputs, calling the appropriate wrapper or helper, and storing relevant output
+            state.
+    
+        Args:
+            query (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_docqna_vector_store_query helper according to its function
+            annotation and return statements.
+    """
 	store_id = st.session_state.get( 'docqna_vector_store_id', '' )
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		return 'No OpenAI vector store ID is selected.'
@@ -3651,19 +3651,19 @@ Returns:
 
 def route_document_query( prompt: str ) -> str:
 	"""Route document query.
-
-Purpose:
-    Provides the route document query helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    prompt (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the route_document_query helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Provides the route document query helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            prompt (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the route_document_query helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( prompt, str ) or not prompt.strip( ):
 		return ''
 	source = st.session_state.get( 'docqna_source', 'Local Upload' )
@@ -3675,26 +3675,26 @@ Returns:
 
 def summarize_active_document( ) -> str:
 	"""Summarize active document.
-
-Purpose:
-    Provides the summarize active document helper used by the Gipity Streamlit application.
-    The function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Returns:
-    Value produced by the summarize_active_document helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the summarize active document helper used by the Gipity Streamlit application.
+            The function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Returns:
+            Value produced by the summarize_active_document helper according to its function
+            annotation and return statements.
+    """
 	return route_document_query(
 		'Summarize the active document. Include the main topic, key sections, important findings, and any limitations visible in the source.' )
 
 def render_docqna_retrieval_hits( ) -> None:
 	"""Render docqna retrieval hits.
-
-Purpose:
-    Renders the docqna retrieval hits user-interface section or display element in Streamlit
-    while preserving the application state expected by the surrounding workflow.
-"""
+    
+        Purpose:
+            Renders the docqna retrieval hits user-interface section or display element in Streamlit
+            while preserving the application state expected by the surrounding workflow.
+    """
 	hits = st.session_state.get( 'docqna_last_hits', [ ] )
 	if not isinstance( hits, list ) or len( hits ) == 0:
 		st.info( 'No retrieval hits available.' )
@@ -3704,11 +3704,11 @@ Purpose:
 
 def render_docqna_status( ) -> None:
 	"""Render docqna status.
-
-Purpose:
-    Renders the docqna status user-interface section or display element in Streamlit while
-    preserving the application state expected by the surrounding workflow.
-"""
+    
+        Purpose:
+            Renders the docqna status user-interface section or display element in Streamlit while
+            preserving the application state expected by the surrounding workflow.
+    """
 	c1, c2, c3, c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ], border=True, gap='xxsmall' )
 	with c1:
 		st.metric( 'Documents', len( get_docqna_active_document_names( ) ) )
@@ -3721,11 +3721,11 @@ Purpose:
 
 def ensure_files_mode_state( ) -> None:
 	"""Ensure files mode state.
-
-Purpose:
-    Ensures the required files mode state session-state keys or runtime resources exist
-    before the related interface controls are rendered.
-"""
+    
+        Purpose:
+            Ensures the required files mode state session-state keys or runtime resources exist
+            before the related interface controls are rendered.
+    """
 	if 'files_model' not in st.session_state:
 		st.session_state[ 'files_model' ] = ''
 	if 'files_purpose' not in st.session_state:
@@ -3761,18 +3761,18 @@ Purpose:
 
 def get_files_upload_purpose_options( files: Files ) -> list[ str ]:
 	"""Get files upload purpose options.
-
-Purpose:
-    Returns the files upload purpose options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    files (Files): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_files_upload_purpose_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the files upload purpose options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_files_upload_purpose_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( files, 'upload_purpose_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return options
@@ -3783,18 +3783,18 @@ Returns:
 
 def get_files_filter_purpose_options( files: Files ) -> list[ str ]:
 	"""Get files filter purpose options.
-
-Purpose:
-    Returns the files filter purpose options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    files (Files): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_files_filter_purpose_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the files filter purpose options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_files_filter_purpose_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( files, 'file_purpose_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -3803,18 +3803,18 @@ Returns:
 
 def get_files_model_options( files: Files ) -> list[ str ]:
 	"""Get files model options.
-
-Purpose:
-    Returns the files model options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    files (Files): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_files_model_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the files model options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_files_model_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( files, 'model_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -3822,18 +3822,18 @@ Returns:
 
 def save_files_upload( uploaded_file: Any ) -> str | None:
 	"""Save files upload.
-
-Purpose:
-    Saves the files upload value for later workflow use while preserving the caller-facing
-    return contract.
-
-Args:
-    uploaded_file (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the save_files_upload helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Saves the files upload value for later workflow use while preserving the caller-facing
+            return contract.
+    
+        Args:
+            uploaded_file (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the save_files_upload helper according to its function annotation and
+            return statements.
+    """
 	if uploaded_file is None:
 		return None
 	try:
@@ -3859,18 +3859,18 @@ Returns:
 
 def normalize_files_table( rows: Any ) -> list[ dict[ str, Any ] ]:
 	"""Normalize files table.
-
-Purpose:
-    Normalizes the files table input into the stable shape expected by downstream Gipity
-    helpers and display logic.
-
-Args:
-    rows (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize_files_table helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Normalizes the files table input into the stable shape expected by downstream Gipity
+            helpers and display logic.
+    
+        Args:
+            rows (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize_files_table helper according to its function annotation
+            and return statements.
+    """
 	if rows is None:
 		return [ ]
 	if isinstance( rows, dict ) and isinstance( rows.get( 'data' ), list ):
@@ -3916,18 +3916,18 @@ Returns:
 
 def build_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
 	"""Build files dataframe.
-
-Purpose:
-    Builds the files dataframe value used by the Gipity interface or provider wrapper. The
-    function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_files_dataframe helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Builds the files dataframe value used by the Gipity interface or provider wrapper. The
+            function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_files_dataframe helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( rows, list ) or len( rows ) == 0:
 		return pd.DataFrame( )
 	df_files = pd.DataFrame( rows )
@@ -3939,18 +3939,18 @@ Returns:
 
 def build_file_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
 	"""Build file selection options.
-
-Purpose:
-    Builds the file selection options value used by the Gipity interface or provider
-    wrapper. The function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_file_selection_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the file selection options value used by the Gipity interface or provider
+            wrapper. The function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_file_selection_options helper according to its function
+            annotation and return statements.
+    """
 	options: dict[ str, str ] = { }
 	if not isinstance( rows, list ):
 		return options
@@ -3969,19 +3969,19 @@ Returns:
 def get_selected_file_id( selected_label: str | None,
 		options: dict[ str, str ] | None = None ) -> str | None:
 	"""Get selected file id.
-
-Purpose:
-    Returns the selected file id value used by the Gipity interface. The helper centralizes
-    option lookup and fallback behavior for callers.
-
-Args:
-    selected_label (str | None): Value supplied to the helper.
-    options (dict[str, str] | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_selected_file_id helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Returns the selected file id value used by the Gipity interface. The helper centralizes
+            option lookup and fallback behavior for callers.
+    
+        Args:
+            selected_label (str | None): Value supplied to the helper.
+            options (dict[str, str] | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_selected_file_id helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( selected_label, str ) or not selected_label.strip( ):
 		return None
 	value = selected_label.strip( )
@@ -3993,14 +3993,14 @@ Returns:
 
 def render_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
 	"""Render files table.
-
-Purpose:
-    Renders the files table user-interface section or display element in Streamlit while
-    preserving the application state expected by the surrounding workflow.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the files table user-interface section or display element in Streamlit while
+            preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    """
 	df_files = build_files_dataframe( rows )
 	st.session_state[ 'files_df' ] = df_files
 	if df_files.empty:
@@ -4010,14 +4010,14 @@ Args:
 
 def render_file_metadata( metadata: dict[ str, Any ] | None ) -> None:
 	"""Render file metadata.
-
-Purpose:
-    Renders the file metadata user-interface section or display element in Streamlit while
-    preserving the application state expected by the surrounding workflow.
-
-Args:
-    metadata (dict[str, Any] | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the file metadata user-interface section or display element in Streamlit while
+            preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            metadata (dict[str, Any] | None): Value supplied to the helper.
+    """
 	if not isinstance( metadata, dict ) or len( metadata ) == 0:
 		st.info( 'No file metadata available.' )
 		return
@@ -4034,14 +4034,14 @@ Args:
 
 def render_file_content( content: str | bytes | dict[ str, Any ] | None ) -> None:
 	"""Render file content.
-
-Purpose:
-    Renders the file content user-interface section or display element in Streamlit while
-    preserving the application state expected by the surrounding workflow.
-
-Args:
-    content (str | bytes | dict[str, Any] | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the file content user-interface section or display element in Streamlit while
+            preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            content (str | bytes | dict[str, Any] | None): Value supplied to the helper.
+    """
 	if content is None:
 		st.info( 'No file content available.' )
 		return
@@ -4063,14 +4063,14 @@ Args:
 
 def render_file_delete_result( result: dict[ str, Any ] | None ) -> None:
 	"""Render file delete result.
-
-Purpose:
-    Renders the file delete result user-interface section or display element in Streamlit
-    while preserving the application state expected by the surrounding workflow.
-
-Args:
-    result (dict[str, Any] | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the file delete result user-interface section or display element in Streamlit
+            while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            result (dict[str, Any] | None): Value supplied to the helper.
+    """
 	if not isinstance( result, dict ) or len( result ) == 0:
 		return
 	deleted = result.get( 'deleted' )
@@ -4082,20 +4082,20 @@ Args:
 
 def clear_files_messages( ) -> None:
 	"""Clear files messages.
-
-Purpose:
-    Clears the files messages state used by the current workflow so the user interface can
-    start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the files messages state used by the current workflow so the user interface can
+            start from a clean output state.
+    """
 	st.session_state.files_messages = [ ]
 
 def clear_files_outputs( ) -> None:
 	"""Clear files outputs.
-
-Purpose:
-    Clears the files outputs state used by the current workflow so the user interface can
-    start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the files outputs state used by the current workflow so the user interface can
+            start from a clean output state.
+    """
 	st.session_state[ 'files_metadata' ] = { }
 	st.session_state[ 'files_content' ] = ''
 	st.session_state[ 'files_content_bytes' ] = None
@@ -4104,11 +4104,11 @@ Purpose:
 
 def reset_files_controls( ) -> None:
 	"""Reset files controls.
-
-Purpose:
-    Resets the files controls state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the files controls state used by the application. The function clears related
+            Streamlit keys without performing provider calls.
+    """
 	for key in [ 'files_model', 'files_purpose', 'files_filter_purpose', 'files_type', 'files_id',
 	             'files_url' ]:
 		if key in st.session_state:
@@ -4116,11 +4116,11 @@ Purpose:
 
 def reset_files_all( ) -> None:
 	"""Reset files all.
-
-Purpose:
-    Resets the files all state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the files all state used by the application. The function clears related
+            Streamlit keys without performing provider calls.
+    """
 	reset_files_controls( )
 	clear_files_outputs( )
 	st.session_state[ 'files_table' ] = [ ]
@@ -4129,21 +4129,21 @@ Purpose:
 
 def clear_files_instructions( ) -> None:
 	"""Clear files instructions.
-
-Purpose:
-    Clears the files instructions state used by the current workflow so the user interface
-    can start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the files instructions state used by the current workflow so the user interface
+            can start from a clean output state.
+    """
 	st.session_state[ 'files_system_instructions' ] = ''
 	st.session_state[ 'instructions' ] = ''
 
 def load_files_instruction_template( ) -> None:
 	"""Load files instruction template.
-
-Purpose:
-    Loads the files instruction template resource or state required by the Gipity workflow
-    and returns the prepared value for caller use.
-"""
+    
+        Purpose:
+            Loads the files instruction template resource or state required by the Gipity workflow
+            and returns the prepared value for caller use.
+    """
 	name = st.session_state.get( 'instructions' )
 	if name and name != 'No Templates Found':
 		text = fetch_prompt_text( cfg.DB_PATH, name )
@@ -4152,12 +4152,12 @@ Purpose:
 
 def convert_files_system_instructions( ) -> None:
 	"""Convert files system instructions.
-
-Purpose:
-    Provides the convert files system instructions helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the convert files system instructions helper used by the Gipity Streamlit
+            application. The function supports UI state management, provider coordination, data
+            normalization, or display behavior required by the surrounding workflow.
+    """
 	text = st.session_state.get( 'files_system_instructions', '' )
 	if not isinstance( text, str ) or not text.strip( ):
 		return
@@ -4170,20 +4170,20 @@ Purpose:
 
 def run_files_upload( files: Files, uploaded_file: Any, purpose: str | None ) -> dict[ str, Any ]:
 	"""Run files upload.
-
-Purpose:
-    Runs the files upload workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    files (Files): Value supplied to the helper.
-    uploaded_file (Any): Value supplied to the helper.
-    purpose (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_files_upload helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Runs the files upload workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+            uploaded_file (Any): Value supplied to the helper.
+            purpose (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_files_upload helper according to its function annotation and
+            return statements.
+    """
 	if uploaded_file is None:
 		st.warning( 'Select a file before uploading.' )
 		return { }
@@ -4212,19 +4212,19 @@ Returns:
 
 def run_files_list( files: Files, purpose: str | None = None ) -> list[ dict[ str, Any ] ]:
 	"""Run files list.
-
-Purpose:
-    Runs the files list workflow from the Streamlit interface by validating current inputs,
-    calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    files (Files): Value supplied to the helper.
-    purpose (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_files_list helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Runs the files list workflow from the Streamlit interface by validating current inputs,
+            calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+            purpose (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_files_list helper according to its function annotation and
+            return statements.
+    """
 	rows = files.list(
 		purpose=purpose if isinstance( purpose, str ) and purpose.strip( ) else None )
 	rows = normalize_files_table( rows )
@@ -4234,19 +4234,19 @@ Returns:
 
 def run_files_retrieve( files: Files, file_id: str | None ) -> dict[ str, Any ]:
 	"""Run files retrieve.
-
-Purpose:
-    Runs the files retrieve workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    files (Files): Value supplied to the helper.
-    file_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_files_retrieve helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Runs the files retrieve workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+            file_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_files_retrieve helper according to its function annotation and
+            return statements.
+    """
 	if not isinstance( file_id, str ) or not file_id.strip( ):
 		st.warning( 'Select or enter a file ID before retrieving metadata.' )
 		return { }
@@ -4257,19 +4257,19 @@ Returns:
 
 def run_files_extract( files: Files, file_id: str | None ) -> str | bytes | dict[ str, Any ] | None:
 	"""Run files extract.
-
-Purpose:
-    Runs the files extract workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    files (Files): Value supplied to the helper.
-    file_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_files_extract helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Runs the files extract workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+            file_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_files_extract helper according to its function annotation and
+            return statements.
+    """
 	if not isinstance( file_id, str ) or not file_id.strip( ):
 		st.warning( 'Select or enter a file ID before retrieving content.' )
 		return None
@@ -4290,19 +4290,19 @@ Returns:
 
 def run_files_delete( files: Files, file_id: str | None ) -> dict[ str, Any ]:
 	"""Run files delete.
-
-Purpose:
-    Runs the files delete workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    files (Files): Value supplied to the helper.
-    file_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_files_delete helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Runs the files delete workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+            file_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_files_delete helper according to its function annotation and
+            return statements.
+    """
 	if not isinstance( file_id, str ) or not file_id.strip( ):
 		st.warning( 'Select or enter a file ID before deleting a file.' )
 		return { }
@@ -4316,21 +4316,21 @@ Returns:
 def run_files_analysis( files: Files, file_id: str | None, prompt: str | None,
 		model: str | None = None ) -> str | None:
 	"""Run files analysis.
-
-Purpose:
-    Runs the files analysis workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    files (Files): Value supplied to the helper.
-    file_id (str | None): Value supplied to the helper.
-    prompt (str | None): Value supplied to the helper.
-    model (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_files_analysis helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Runs the files analysis workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            files (Files): Value supplied to the helper.
+            file_id (str | None): Value supplied to the helper.
+            prompt (str | None): Value supplied to the helper.
+            model (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_files_analysis helper according to its function annotation and
+            return statements.
+    """
 	if not isinstance( file_id, str ) or not file_id.strip( ):
 		st.warning( 'Select or enter a file ID before analyzing a file.' )
 		return None
@@ -4346,11 +4346,11 @@ Returns:
 
 def ensure_vectorstores_mode_state( ) -> None:
 	"""Ensure vectorstores mode state.
-
-Purpose:
-    Ensures the required vectorstores mode state session-state keys or runtime resources
-    exist before the related interface controls are rendered.
-"""
+    
+        Purpose:
+            Ensures the required vectorstores mode state session-state keys or runtime resources
+            exist before the related interface controls are rendered.
+    """
 	if 'stores_model' not in st.session_state:
 		st.session_state[ 'stores_model' ] = ''
 	if 'stores_id' not in st.session_state:
@@ -4420,18 +4420,18 @@ Purpose:
 
 def get_vector_store_model_options( vector: VectorStores ) -> list[ str ]:
 	"""Get vector store model options.
-
-Purpose:
-    Returns the vector store model options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_vector_store_model_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the vector store model options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_vector_store_model_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( vector, 'model_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -4439,18 +4439,18 @@ Returns:
 
 def get_vector_store_ranker_options( vector: VectorStores ) -> list[ str ]:
 	"""Get vector store ranker options.
-
-Purpose:
-    Returns the vector store ranker options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_vector_store_ranker_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the vector store ranker options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_vector_store_ranker_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( vector, 'ranker_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return options
@@ -4458,18 +4458,18 @@ Returns:
 
 def get_vector_store_chunking_options( vector: VectorStores ) -> list[ str ]:
 	"""Get vector store chunking options.
-
-Purpose:
-    Returns the vector store chunking options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_vector_store_chunking_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the vector store chunking options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_vector_store_chunking_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( vector, 'chunking_strategy_options', None )
 	if isinstance( options, list ) and len( options ) > 0:
 		return options
@@ -4477,19 +4477,19 @@ Returns:
 
 def parse_vector_store_file_ids( value: str | list[ str ] | None ) -> list[ str ]:
 	"""Parse vector store file ids.
-
-Purpose:
-    Provides the parse vector store file ids helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-
-Args:
-    value (str | list[str] | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the parse_vector_store_file_ids helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the parse vector store file ids helper used by the Gipity Streamlit
+            application. The function supports UI state management, provider coordination, data
+            normalization, or display behavior required by the surrounding workflow.
+    
+        Args:
+            value (str | list[str] | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the parse_vector_store_file_ids helper according to its function
+            annotation and return statements.
+    """
 	if value is None:
 		return [ ]
 	if isinstance( value, list ):
@@ -4500,20 +4500,20 @@ Returns:
 
 def parse_vector_store_json( value: str | None, label: str = 'JSON' ) -> dict[ str, Any ]:
 	"""Parse vector store json.
-
-Purpose:
-    Provides the parse vector store json helper used by the Gipity Streamlit application.
-    The function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    value (str | None): Value supplied to the helper.
-    label (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the parse_vector_store_json helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Provides the parse vector store json helper used by the Gipity Streamlit application.
+            The function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            value (str | None): Value supplied to the helper.
+            label (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the parse_vector_store_json helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( value, str ) or not value.strip( ):
 		return { }
 	try:
@@ -4533,19 +4533,19 @@ Returns:
 
 def build_vector_store_expires_after_from_state( vector: VectorStores ) -> dict[ str, Any ] | None:
 	"""Build vector store expires after from state.
-
-Purpose:
-    Builds the vector store expires after from state value used by the Gipity interface or
-    provider wrapper. The function normalizes inputs and returns a stable object for
-    downstream use.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_vector_store_expires_after_from_state helper according to
-    its function annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the vector store expires after from state value used by the Gipity interface or
+            provider wrapper. The function normalizes inputs and returns a stable object for
+            downstream use.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_vector_store_expires_after_from_state helper according to
+            its function annotation and return statements.
+    """
 	days = st.session_state.get( 'stores_expires_days', 0 )
 	anchor = st.session_state.get( 'stores_expires_anchor', 'last_active_at' )
 	try:
@@ -4564,19 +4564,19 @@ Returns:
 def build_vector_store_chunking_strategy_from_state( vector: VectorStores ) -> Dict[
 	                                                                               str, Any ] | None:
 	"""Build vector store chunking strategy from state.
-
-Purpose:
-    Builds the vector store chunking strategy from state value used by the Gipity interface
-    or provider wrapper. The function normalizes inputs and returns a stable object for
-    downstream use.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_vector_store_chunking_strategy_from_state helper according
-    to its function annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the vector store chunking strategy from state value used by the Gipity interface
+            or provider wrapper. The function normalizes inputs and returns a stable object for
+            downstream use.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_vector_store_chunking_strategy_from_state helper according
+            to its function annotation and return statements.
+    """
 	strategy = st.session_state.get( 'stores_chunking_strategy', 'auto' )
 	if not isinstance( strategy, str ) or not strategy.strip( ):
 		return None
@@ -4588,16 +4588,16 @@ Returns:
 
 def build_vector_store_ranking_options_from_state( ) -> dict[ str, Any ]:
 	"""Build vector store ranking options from state.
-
-Purpose:
-    Builds the vector store ranking options from state value used by the Gipity interface or
-    provider wrapper. The function normalizes inputs and returns a stable object for
-    downstream use.
-
-Returns:
-    Value produced by the build_vector_store_ranking_options_from_state helper according to
-    its function annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the vector store ranking options from state value used by the Gipity interface or
+            provider wrapper. The function normalizes inputs and returns a stable object for
+            downstream use.
+    
+        Returns:
+            Value produced by the build_vector_store_ranking_options_from_state helper according to
+            its function annotation and return statements.
+    """
 	ranker = st.session_state.get( 'stores_ranker', 'auto' )
 	score_threshold = st.session_state.get( 'stores_score_threshold', 0.0 )
 	options: dict[ str, Any ] = { }
@@ -4618,18 +4618,18 @@ Returns:
 
 def normalize_vector_store_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
 	"""Normalize vector store rows.
-
-Purpose:
-    Normalizes the vector store rows input into the stable shape expected by downstream
-    Gipity helpers and display logic.
-
-Args:
-    rows (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize_vector_store_rows helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Normalizes the vector store rows input into the stable shape expected by downstream
+            Gipity helpers and display logic.
+    
+        Args:
+            rows (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize_vector_store_rows helper according to its function
+            annotation and return statements.
+    """
 	if rows is None:
 		return [ ]
 	if isinstance( rows, dict ) and isinstance( rows.get( 'data' ), list ):
@@ -4679,18 +4679,18 @@ Returns:
 
 def normalize_vector_store_file_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
 	"""Normalize vector store file rows.
-
-Purpose:
-    Normalizes the vector store file rows input into the stable shape expected by downstream
-    Gipity helpers and display logic.
-
-Args:
-    rows (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the normalize_vector_store_file_rows helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Normalizes the vector store file rows input into the stable shape expected by downstream
+            Gipity helpers and display logic.
+    
+        Args:
+            rows (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the normalize_vector_store_file_rows helper according to its function
+            annotation and return statements.
+    """
 	if rows is None:
 		return [ ]
 	if isinstance( rows, dict ) and isinstance( rows.get( 'data' ), list ):
@@ -4736,18 +4736,18 @@ Returns:
 
 def build_vector_stores_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
 	"""Build vector stores dataframe.
-
-Purpose:
-    Builds the vector stores dataframe value used by the Gipity interface or provider
-    wrapper. The function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_vector_stores_dataframe helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the vector stores dataframe value used by the Gipity interface or provider
+            wrapper. The function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_vector_stores_dataframe helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( rows, list ) or len( rows ) == 0:
 		return pd.DataFrame( )
 	df_stores = pd.DataFrame( rows )
@@ -4759,18 +4759,18 @@ Returns:
 
 def build_vector_store_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
 	"""Build vector store files dataframe.
-
-Purpose:
-    Builds the vector store files dataframe value used by the Gipity interface or provider
-    wrapper. The function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_vector_store_files_dataframe helper according to its
-    function annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the vector store files dataframe value used by the Gipity interface or provider
+            wrapper. The function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_vector_store_files_dataframe helper according to its
+            function annotation and return statements.
+    """
 	if not isinstance( rows, list ) or len( rows ) == 0:
 		return pd.DataFrame( )
 	df_files = pd.DataFrame( rows )
@@ -4782,18 +4782,18 @@ Returns:
 
 def build_vector_store_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
 	"""Build vector store selection options.
-
-Purpose:
-    Builds the vector store selection options value used by the Gipity interface or provider
-    wrapper. The function normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_vector_store_selection_options helper according to its
-    function annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the vector store selection options value used by the Gipity interface or provider
+            wrapper. The function normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_vector_store_selection_options helper according to its
+            function annotation and return statements.
+    """
 	options: dict[ str, str ] = { }
 	if not isinstance( rows, list ):
 		return options
@@ -4812,19 +4812,19 @@ Returns:
 def get_selected_vector_store_id( selected_label: str | None,
 		options: dict[ str, str ] | None = None ) -> str | None:
 	"""Get selected vector store id.
-
-Purpose:
-    Returns the selected vector store id value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    selected_label (str | None): Value supplied to the helper.
-    options (dict[str, str] | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_selected_vector_store_id helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the selected vector store id value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            selected_label (str | None): Value supplied to the helper.
+            options (dict[str, str] | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_selected_vector_store_id helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( selected_label, str ) or not selected_label.strip( ):
 		return None
 	value = selected_label.strip( )
@@ -4836,19 +4836,19 @@ Returns:
 
 def build_vector_store_file_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
 	"""Build vector store file selection options.
-
-Purpose:
-    Builds the vector store file selection options value used by the Gipity interface or
-    provider wrapper. The function normalizes inputs and returns a stable object for
-    downstream use.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_vector_store_file_selection_options helper according to its
-    function annotation and return statements.
-"""
+    
+        Purpose:
+            Builds the vector store file selection options value used by the Gipity interface or
+            provider wrapper. The function normalizes inputs and returns a stable object for
+            downstream use.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_vector_store_file_selection_options helper according to its
+            function annotation and return statements.
+    """
 	options: dict[ str, str ] = { }
 	if not isinstance( rows, list ):
 		return options
@@ -4866,19 +4866,19 @@ Returns:
 def get_selected_vector_store_file_id( selected_label: str | None,
 		options: dict[ str, str ] | None = None ) -> str | None:
 	"""Get selected vector store file id.
-
-Purpose:
-    Returns the selected vector store file id value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    selected_label (str | None): Value supplied to the helper.
-    options (dict[str, str] | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_selected_vector_store_file_id helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the selected vector store file id value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            selected_label (str | None): Value supplied to the helper.
+            options (dict[str, str] | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_selected_vector_store_file_id helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( selected_label, str ) or not selected_label.strip( ):
 		return None
 	value = selected_label.strip( )
@@ -4890,14 +4890,14 @@ Returns:
 
 def render_vector_stores_table( rows: list[ dict[ str, Any ] ] ) -> None:
 	"""Render vector stores table.
-
-Purpose:
-    Renders the vector stores table user-interface section or display element in Streamlit
-    while preserving the application state expected by the surrounding workflow.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the vector stores table user-interface section or display element in Streamlit
+            while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    """
 	df_stores = build_vector_stores_dataframe( rows )
 	st.session_state[ 'stores_df' ] = df_stores
 	if df_stores.empty:
@@ -4907,14 +4907,14 @@ Args:
 
 def render_vector_store_metadata( metadata: dict[ str, Any ] | None ) -> None:
 	"""Render vector store metadata.
-
-Purpose:
-    Renders the vector store metadata user-interface section or display element in Streamlit
-    while preserving the application state expected by the surrounding workflow.
-
-Args:
-    metadata (dict[str, Any] | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the vector store metadata user-interface section or display element in Streamlit
+            while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            metadata (dict[str, Any] | None): Value supplied to the helper.
+    """
 	if not isinstance( metadata, dict ) or len( metadata ) == 0:
 		st.info( 'No vector store metadata available.' )
 		return
@@ -4935,14 +4935,14 @@ Args:
 
 def render_vector_store_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
 	"""Render vector store files table.
-
-Purpose:
-    Renders the vector store files table user-interface section or display element in
-    Streamlit while preserving the application state expected by the surrounding workflow.
-
-Args:
-    rows (list[dict[str, Any]]): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the vector store files table user-interface section or display element in
+            Streamlit while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            rows (list[dict[str, Any]]): Value supplied to the helper.
+    """
 	df_files = build_vector_store_files_dataframe( rows )
 	st.session_state[ 'stores_files_df' ] = df_files
 	if df_files.empty:
@@ -4952,14 +4952,14 @@ Args:
 
 def render_vector_store_search_results( results: list[ dict[ str, Any ] ] ) -> None:
 	"""Render vector store search results.
-
-Purpose:
-    Renders the vector store search results user-interface section or display element in
-    Streamlit while preserving the application state expected by the surrounding workflow.
-
-Args:
-    results (list[dict[str, Any]]): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the vector store search results user-interface section or display element in
+            Streamlit while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            results (list[dict[str, Any]]): Value supplied to the helper.
+    """
 	if not isinstance( results, list ) or len( results ) == 0:
 		st.info( 'No search results available.' )
 		return
@@ -4968,14 +4968,14 @@ Args:
 
 def render_vector_store_batch_result( result: dict[ str, Any ] | None ) -> None:
 	"""Render vector store batch result.
-
-Purpose:
-    Renders the vector store batch result user-interface section or display element in
-    Streamlit while preserving the application state expected by the surrounding workflow.
-
-Args:
-    result (dict[str, Any] | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the vector store batch result user-interface section or display element in
+            Streamlit while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            result (dict[str, Any] | None): Value supplied to the helper.
+    """
 	if not isinstance( result, dict ) or len( result ) == 0:
 		st.info( 'No batch result available.' )
 		return
@@ -4983,11 +4983,11 @@ Args:
 
 def clear_vector_store_outputs( ) -> None:
 	"""Clear vector store outputs.
-
-Purpose:
-    Clears the vector store outputs state used by the current workflow so the user interface
-    can start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the vector store outputs state used by the current workflow so the user interface
+            can start from a clean output state.
+    """
 	st.session_state[ 'stores_store_metadata' ] = { }
 	st.session_state[ 'stores_files_table' ] = [ ]
 	st.session_state[ 'stores_files_df' ] = pd.DataFrame( )
@@ -4997,20 +4997,20 @@ Purpose:
 
 def clear_vector_store_messages( ) -> None:
 	"""Clear vector store messages.
-
-Purpose:
-    Clears the vector store messages state used by the current workflow so the user
-    interface can start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the vector store messages state used by the current workflow so the user
+            interface can start from a clean output state.
+    """
 	st.session_state.stores_messages = [ ]
 
 def reset_vector_store_controls( ) -> None:
 	"""Reset vector store controls.
-
-Purpose:
-    Resets the vector store controls state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the vector store controls state used by the application. The function clears
+            related Streamlit keys without performing provider calls.
+    """
 	for key in [ 'stores_model', 'stores_id', 'stores_manual_id', 'stores_selected_label',
 	             'stores_name', 'stores_description', 'stores_metadata', 'stores_expires_days',
 	             'stores_expires_anchor', 'stores_file_ids', 'stores_chunking_strategy',
@@ -5023,11 +5023,11 @@ Purpose:
 
 def reset_vector_store_all( ) -> None:
 	"""Reset vector store all.
-
-Purpose:
-    Resets the vector store all state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the vector store all state used by the application. The function clears related
+            Streamlit keys without performing provider calls.
+    """
 	reset_vector_store_controls( )
 	clear_vector_store_outputs( )
 	st.session_state[ 'stores_table' ] = [ ]
@@ -5036,21 +5036,21 @@ Purpose:
 
 def clear_vector_store_instructions( ) -> None:
 	"""Clear vector store instructions.
-
-Purpose:
-    Clears the vector store instructions state used by the current workflow so the user
-    interface can start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the vector store instructions state used by the current workflow so the user
+            interface can start from a clean output state.
+    """
 	st.session_state[ 'stores_system_instructions' ] = ''
 	st.session_state[ 'instructions' ] = ''
 
 def load_vector_store_instruction_template( ) -> None:
 	"""Load vector store instruction template.
-
-Purpose:
-    Loads the vector store instruction template resource or state required by the Gipity
-    workflow and returns the prepared value for caller use.
-"""
+    
+        Purpose:
+            Loads the vector store instruction template resource or state required by the Gipity
+            workflow and returns the prepared value for caller use.
+    """
 	name = st.session_state.get( 'instructions' )
 	if name and name != 'No Templates Found':
 		text = fetch_prompt_text( cfg.DB_PATH, name )
@@ -5059,12 +5059,12 @@ Purpose:
 
 def convert_vector_store_system_instructions( ) -> None:
 	"""Convert vector store system instructions.
-
-Purpose:
-    Provides the convert vector store system instructions helper used by the Gipity
-    Streamlit application. The function supports UI state management, provider coordination,
-    data normalization, or display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the convert vector store system instructions helper used by the Gipity
+            Streamlit application. The function supports UI state management, provider coordination,
+            data normalization, or display behavior required by the surrounding workflow.
+    """
 	text = st.session_state.get( 'stores_system_instructions', '' )
 	if not isinstance( text, str ) or not text.strip( ):
 		return
@@ -5077,18 +5077,18 @@ Purpose:
 
 def run_vector_store_create( vector: VectorStores ) -> dict[ str, Any ]:
 	"""Run vector store create.
-
-Purpose:
-    Runs the vector store create workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_create helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store create workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_create helper according to its function
+            annotation and return statements.
+    """
 	name = st.session_state.get( 'stores_name', '' )
 	if not isinstance( name, str ) or not name.strip( ):
 		st.warning( 'Enter a vector store name before creating a store.' )
@@ -5108,18 +5108,18 @@ Returns:
 
 def run_vector_store_list( vector: VectorStores ) -> list[ dict[ str, Any ] ]:
 	"""Run vector store list.
-
-Purpose:
-    Runs the vector store list workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_list helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store list workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_list helper according to its function annotation
+            and return statements.
+    """
 	rows = vector.list_stores( limit=100, order='desc' )
 	rows = normalize_vector_store_rows( rows )
 	st.session_state[ 'stores_table' ] = rows
@@ -5128,20 +5128,20 @@ Returns:
 
 def run_vector_store_retrieve( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
 	"""Run vector store retrieve.
-
-Purpose:
-    Runs the vector store retrieve workflow from the Streamlit interface by validating
-    current inputs, calling the appropriate wrapper or helper, and storing relevant output
-    state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_retrieve helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store retrieve workflow from the Streamlit interface by validating
+            current inputs, calling the appropriate wrapper or helper, and storing relevant output
+            state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_retrieve helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before retrieving metadata.' )
 		return { }
@@ -5153,19 +5153,19 @@ Returns:
 
 def run_vector_store_update( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
 	"""Run vector store update.
-
-Purpose:
-    Runs the vector store update workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_update helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store update workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_update helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before updating.' )
 		return { }
@@ -5181,19 +5181,19 @@ Returns:
 
 def run_vector_store_delete( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
 	"""Run vector store delete.
-
-Purpose:
-    Runs the vector store delete workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_delete helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store delete workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_delete helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before deleting.' )
 		return { }
@@ -5206,20 +5206,20 @@ Returns:
 
 def run_vector_store_attach_file( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
 	"""Run vector store attach file.
-
-Purpose:
-    Runs the vector store attach file workflow from the Streamlit interface by validating
-    current inputs, calling the appropriate wrapper or helper, and storing relevant output
-    state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_attach_file helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store attach file workflow from the Streamlit interface by validating
+            current inputs, calling the appropriate wrapper or helper, and storing relevant output
+            state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_attach_file helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before attaching a file.' )
 		return { }
@@ -5237,20 +5237,20 @@ Returns:
 def run_vector_store_list_files( vector: VectorStores, store_id: str | None ) -> list[
 	dict[ str, Any ] ]:
 	"""Run vector store list files.
-
-Purpose:
-    Runs the vector store list files workflow from the Streamlit interface by validating
-    current inputs, calling the appropriate wrapper or helper, and storing relevant output
-    state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_list_files helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store list files workflow from the Streamlit interface by validating
+            current inputs, calling the appropriate wrapper or helper, and storing relevant output
+            state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_list_files helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before listing files.' )
 		return [ ]
@@ -5263,21 +5263,21 @@ Returns:
 def run_vector_store_delete_file( vector: VectorStores, store_id: str | None,
 		file_id: str | None ) -> dict[ str, Any ]:
 	"""Run vector store delete file.
-
-Purpose:
-    Runs the vector store delete file workflow from the Streamlit interface by validating
-    current inputs, calling the appropriate wrapper or helper, and storing relevant output
-    state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-    file_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_delete_file helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store delete file workflow from the Streamlit interface by validating
+            current inputs, calling the appropriate wrapper or helper, and storing relevant output
+            state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+            file_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_delete_file helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before deleting a file.' )
 		return { }
@@ -5289,20 +5289,20 @@ Returns:
 
 def run_vector_store_create_batch( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
 	"""Run vector store create batch.
-
-Purpose:
-    Runs the vector store create batch workflow from the Streamlit interface by validating
-    current inputs, calling the appropriate wrapper or helper, and storing relevant output
-    state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_create_batch helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store create batch workflow from the Streamlit interface by validating
+            current inputs, calling the appropriate wrapper or helper, and storing relevant output
+            state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_create_batch helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before creating a batch.' )
 		return { }
@@ -5324,20 +5324,20 @@ Returns:
 def run_vector_store_retrieve_batch( vector: VectorStores, store_id: str | None ) -> dict[
 	str, Any ]:
 	"""Run vector store retrieve batch.
-
-Purpose:
-    Runs the vector store retrieve batch workflow from the Streamlit interface by validating
-    current inputs, calling the appropriate wrapper or helper, and storing relevant output
-    state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_retrieve_batch helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store retrieve batch workflow from the Streamlit interface by validating
+            current inputs, calling the appropriate wrapper or helper, and storing relevant output
+            state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_retrieve_batch helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before retrieving a batch.' )
 		return { }
@@ -5352,20 +5352,20 @@ Returns:
 
 def run_vector_store_cancel_batch( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
 	"""Run vector store cancel batch.
-
-Purpose:
-    Runs the vector store cancel batch workflow from the Streamlit interface by validating
-    current inputs, calling the appropriate wrapper or helper, and storing relevant output
-    state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_cancel_batch helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store cancel batch workflow from the Streamlit interface by validating
+            current inputs, calling the appropriate wrapper or helper, and storing relevant output
+            state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_cancel_batch helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before cancelling a batch.' )
 		return { }
@@ -5381,19 +5381,19 @@ Returns:
 def run_vector_store_search( vector: VectorStores, store_id: str | None ) -> list[
 	dict[ str, Any ] ]:
 	"""Run vector store search.
-
-Purpose:
-    Runs the vector store search workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_search helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store search workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_search helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before searching.' )
 		return [ ]
@@ -5412,20 +5412,20 @@ Returns:
 def run_vector_store_answer( vector: VectorStores, store_id: str | None,
 		prompt: str | None ) -> str | None:
 	"""Run vector store answer.
-
-Purpose:
-    Runs the vector store answer workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    vector (VectorStores): Value supplied to the helper.
-    store_id (str | None): Value supplied to the helper.
-    prompt (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_vector_store_answer helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Runs the vector store answer workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            vector (VectorStores): Value supplied to the helper.
+            store_id (str | None): Value supplied to the helper.
+            prompt (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_vector_store_answer helper according to its function
+            annotation and return statements.
+    """
 	if not isinstance( store_id, str ) or not store_id.strip( ):
 		st.warning( 'Select or enter a vector store ID before asking a question.' )
 		return None
@@ -5446,12 +5446,12 @@ Returns:
 
 def initialize_database( ) -> None:
 	"""Initialize database.
-
-Purpose:
-    Provides the initialize database helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the initialize database helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    """
 	Path( 'stores/sqlite' ).mkdir( parents=True, exist_ok=True )
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
@@ -5468,29 +5468,29 @@ Purpose:
 
 def create_connection( ) -> sqlite3.Connection:
 	"""Create connection.
-
-Purpose:
-    Creates the connection resource used by the application and returns the resulting
-    metadata or connection object when applicable.
-
-Returns:
-    Value produced by the create_connection helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Creates the connection resource used by the application and returns the resulting
+            metadata or connection object when applicable.
+    
+        Returns:
+            Value produced by the create_connection helper according to its function annotation and
+            return statements.
+    """
 	return sqlite3.connect( cfg.DB_PATH )
 
 def list_tables( ) -> List[ str ]:
 	"""List tables.
-
-Purpose:
-    Provides the list tables helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Returns:
-    Value produced by the list_tables helper according to its function annotation and return
-    statements.
-"""
+    
+        Purpose:
+            Provides the list tables helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Returns:
+            Value produced by the list_tables helper according to its function annotation and return
+            statements.
+    """
 	with create_connection( ) as conn:
 		_query = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
 		rows = conn.execute( _query ).fetchall( )
@@ -5498,38 +5498,38 @@ Returns:
 
 def create_schema( table: str ) -> List[ Tuple ]:
 	"""Create schema.
-
-Purpose:
-    Creates the schema resource used by the application and returns the resulting metadata
-    or connection object when applicable.
-
-Args:
-    table (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the create_schema helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Creates the schema resource used by the application and returns the resulting metadata
+            or connection object when applicable.
+    
+        Args:
+            table (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the create_schema helper according to its function annotation and
+            return statements.
+    """
 	with create_connection( ) as conn:
 		return conn.execute( f'PRAGMA table_info("{table}");' ).fetchall( )
 
 def read_table( table: str, limit: int = None, offset: int = 0 ) -> pd.DataFrame:
 	"""Read table.
-
-Purpose:
-    Provides the read table helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    table (str): Value supplied to the helper.
-    limit (int): Value supplied to the helper.
-    offset (int): Value supplied to the helper.
-
-Returns:
-    Value produced by the read_table helper according to its function annotation and return
-    statements.
-"""
+    
+        Purpose:
+            Provides the read table helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            table (str): Value supplied to the helper.
+            limit (int): Value supplied to the helper.
+            offset (int): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the read_table helper according to its function annotation and return
+            statements.
+    """
 	if not table:
 		return pd.DataFrame( )
 	query = f'SELECT * FROM "{table}"'
@@ -5553,19 +5553,19 @@ Returns:
 	
 	def _scalarize( value: Any ) -> Any:
 		"""Scalarize.
-
-Purpose:
-    Provides the scalarize helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    value (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the _scalarize helper according to its function annotation and return
-    statements.
-"""
+        
+            Purpose:
+                Provides the scalarize helper used by the Gipity Streamlit application. The function
+                supports UI state management, provider coordination, data normalization, or display
+                behavior required by the surrounding workflow.
+        
+            Args:
+                value (Any): Value supplied to the helper.
+        
+            Returns:
+                Value produced by the _scalarize helper according to its function annotation and return
+                statements.
+        """
 		if value is None or isinstance( value, (str, int, float, bool) ):
 			return value
 		if isinstance( value, bytes ):
@@ -5610,14 +5610,14 @@ Returns:
 
 def render_table( df: pd.DataFrame ) -> None:
 	"""Render table.
-
-Purpose:
-    Renders the table user-interface section or display element in Streamlit while
-    preserving the application state expected by the surrounding workflow.
-
-Args:
-    df (pd.DataFrame): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the table user-interface section or display element in Streamlit while
+            preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            df (pd.DataFrame): Value supplied to the helper.
+    """
 	if df is None:
 		st.info( 'No data available.' )
 		return
@@ -5640,19 +5640,19 @@ Args:
 
 def make_display_safe( df: pd.DataFrame ) -> pd.DataFrame:
 	"""Make display safe.
-
-Purpose:
-    Provides the make display safe helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    df (pd.DataFrame): Value supplied to the helper.
-
-Returns:
-    Value produced by the make_display_safe helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the make display safe helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            df (pd.DataFrame): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the make_display_safe helper according to its function annotation and
+            return statements.
+    """
 	display_df = df.copy( )
 	for col in display_df.columns:
 		display_df[ col ] = display_df[ col ].map( lambda x: '' if x is None else str( x ) )
@@ -5660,14 +5660,14 @@ Returns:
 
 def drop_table( table: str ) -> None:
 	"""Drop table.
-
-Purpose:
-    Deletes or removes the table resource requested by the caller while preserving safe
-    guard checks.
-
-Args:
-    table (str): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Deletes or removes the table resource requested by the caller while preserving safe
+            guard checks.
+    
+        Args:
+            table (str): Value supplied to the helper.
+    """
 	if not table:
 		return
 	with create_connection( ) as conn:
@@ -5676,18 +5676,18 @@ Args:
 
 def create_index( table: str, column: str ) -> None:
 	"""Create index.
-
-Purpose:
-    Creates the index resource used by the application and returns the resulting metadata or
-    connection object when applicable.
-
-Args:
-    table (str): Value supplied to the helper.
-    column (str): Value supplied to the helper.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Creates the index resource used by the application and returns the resulting metadata or
+            connection object when applicable.
+    
+        Args:
+            table (str): Value supplied to the helper.
+            column (str): Value supplied to the helper.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	if not table or not column:
 		return
 	tables = list_tables( )
@@ -5705,19 +5705,19 @@ Raises:
 
 def apply_filters( df: pd.DataFrame ) -> pd.DataFrame:
 	"""Apply filters.
-
-Purpose:
-    Provides the apply filters helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    df (pd.DataFrame): Value supplied to the helper.
-
-Returns:
-    Value produced by the apply_filters helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the apply filters helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            df (pd.DataFrame): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the apply_filters helper according to its function annotation and
+            return statements.
+    """
 	st.subheader( 'Advanced Filters' )
 	conditions = [ ]
 	col1, col2, col3 = st.columns( 3 )
@@ -5743,14 +5743,14 @@ Returns:
 
 def create_aggregation( df: pd.DataFrame ):
 	"""Create aggregation.
-
-Purpose:
-    Creates the aggregation resource used by the application and returns the resulting
-    metadata or connection object when applicable.
-
-Args:
-    df (pd.DataFrame): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Creates the aggregation resource used by the application and returns the resulting
+            metadata or connection object when applicable.
+    
+        Args:
+            df (pd.DataFrame): Value supplied to the helper.
+    """
 	st.subheader( 'Aggregation Engine' )
 	numeric_cols = df.select_dtypes( include=[ 'number' ] ).columns.tolist( )
 	if not numeric_cols:
@@ -5774,14 +5774,14 @@ Args:
 
 def create_visualization( df: pd.DataFrame ) -> None:
 	"""Create visualization.
-
-Purpose:
-    Creates the visualization resource used by the application and returns the resulting
-    metadata or connection object when applicable.
-
-Args:
-    df (pd.DataFrame): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Creates the visualization resource used by the application and returns the resulting
+            metadata or connection object when applicable.
+    
+        Args:
+            df (pd.DataFrame): Value supplied to the helper.
+    """
 	st.subheader( 'Visualization Engine' )
 	if df is None or df.empty:
 		st.info( 'No data available.' )
@@ -5875,16 +5875,16 @@ Args:
 
 def convert_dataframe( table_name: str, df: pd.DataFrame ):
 	"""Convert dataframe.
-
-Purpose:
-    Provides the convert dataframe helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    table_name (str): Value supplied to the helper.
-    df (pd.DataFrame): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Provides the convert dataframe helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            table_name (str): Value supplied to the helper.
+            df (pd.DataFrame): Value supplied to the helper.
+    """
 	columns = [ ]
 	for col in df.columns:
 		sql_type = get_sqlite_type( df[ col ].dtype )
@@ -5897,16 +5897,16 @@ Args:
 
 def insert_data( table_name: str, df: pd.DataFrame ):
 	"""Insert data.
-
-Purpose:
-    Provides the insert data helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    table_name (str): Value supplied to the helper.
-    df (pd.DataFrame): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Provides the insert data helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            table_name (str): Value supplied to the helper.
+            df (pd.DataFrame): Value supplied to the helper.
+    """
 	df = df.copy( )
 	df.columns = [ c.replace( ' ', '_' ) for c in df.columns ]
 	placeholders = ', '.join( [ '?' ] * len( df.columns ) )
@@ -5917,18 +5917,18 @@ Args:
 
 def get_sqlite_type( dtype ) -> str:
 	"""Get sqlite type.
-
-Purpose:
-    Returns the sqlite type value used by the Gipity interface. The helper centralizes
-    option lookup and fallback behavior for callers.
-
-Args:
-    dtype (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_sqlite_type helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Returns the sqlite type value used by the Gipity interface. The helper centralizes
+            option lookup and fallback behavior for callers.
+    
+        Args:
+            dtype (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_sqlite_type helper according to its function annotation and
+            return statements.
+    """
 	dtype_str = str( dtype ).lower( )
 	if 'int' in dtype_str:
 		return 'INTEGER'
@@ -5944,18 +5944,18 @@ Returns:
 
 def create_custom_table( table_name: str, columns: list ) -> None:
 	"""Create custom table.
-
-Purpose:
-    Creates the custom table resource used by the application and returns the resulting
-    metadata or connection object when applicable.
-
-Args:
-    table_name (str): Value supplied to the helper.
-    columns (list): Value supplied to the helper.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Creates the custom table resource used by the application and returns the resulting
+            metadata or connection object when applicable.
+    
+        Args:
+            table_name (str): Value supplied to the helper.
+            columns (list): Value supplied to the helper.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	if not table_name:
 		raise ValueError( 'Table name required.' )
 	if not re.match( '^[A-Za-z_][A-Za-z0-9_]*$', table_name ):
@@ -5981,19 +5981,19 @@ Raises:
 
 def is_safe_query( query: str ) -> bool:
 	"""Is safe query.
-
-Purpose:
-    Provides the is safe query helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    query (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the is_safe_query helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the is safe query helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            query (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the is_safe_query helper according to its function annotation and
+            return statements.
+    """
 	if not query or not isinstance( query, str ):
 		return False
 	q = query.strip( ).lower( )
@@ -6014,21 +6014,21 @@ Returns:
 
 def create_identifier( name: str ) -> str:
 	"""Create identifier.
-
-Purpose:
-    Creates the identifier resource used by the application and returns the resulting
-    metadata or connection object when applicable.
-
-Args:
-    name (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the create_identifier helper according to its function annotation and
-    return statements.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Creates the identifier resource used by the application and returns the resulting
+            metadata or connection object when applicable.
+    
+        Args:
+            name (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the create_identifier helper according to its function annotation and
+            return statements.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	if not name or not isinstance( name, str ):
 		raise ValueError( 'Invalid Identifier.' )
 	safe = re.sub( '[^0-9a-zA-Z_]', '_', name.strip( ) )
@@ -6040,35 +6040,35 @@ Raises:
 
 def get_indexes( table: str ):
 	"""Get indexes.
-
-Purpose:
-    Returns the indexes value used by the Gipity interface. The helper centralizes option
-    lookup and fallback behavior for callers.
-
-Args:
-    table (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_indexes helper according to its function annotation and return
-    statements.
-"""
+    
+        Purpose:
+            Returns the indexes value used by the Gipity interface. The helper centralizes option
+            lookup and fallback behavior for callers.
+    
+        Args:
+            table (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_indexes helper according to its function annotation and return
+            statements.
+    """
 	with create_connection( ) as conn:
 		rows = conn.execute( f'PRAGMA index_list("{table}");' ).fetchall( )
 		return rows
 
 def add_column( table: str, column: str, col_type: str ):
 	"""Add column.
-
-Purpose:
-    Provides the add column helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    table (str): Value supplied to the helper.
-    column (str): Value supplied to the helper.
-    col_type (str): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Provides the add column helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            table (str): Value supplied to the helper.
+            column (str): Value supplied to the helper.
+            col_type (str): Value supplied to the helper.
+    """
 	column = create_identifier( column )
 	col_type = col_type.upper( )
 	with create_connection( ) as conn:
@@ -6077,20 +6077,20 @@ Args:
 
 def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
 	"""Rename column.
-
-Purpose:
-    Provides the rename column helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    table_name (str): Value supplied to the helper.
-    old_name (str): Value supplied to the helper.
-    new_name (str): Value supplied to the helper.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Provides the rename column helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            table_name (str): Value supplied to the helper.
+            old_name (str): Value supplied to the helper.
+            new_name (str): Value supplied to the helper.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	if not table_name or not old_name or (not new_name):
 		return
 	with create_connection( ) as conn:
@@ -6157,18 +6157,18 @@ Raises:
 
 def create_profile_table( table: str ):
 	"""Create profile table.
-
-Purpose:
-    Creates the profile table resource used by the application and returns the resulting
-    metadata or connection object when applicable.
-
-Args:
-    table (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the create_profile_table helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Creates the profile table resource used by the application and returns the resulting
+            metadata or connection object when applicable.
+    
+        Args:
+            table (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the create_profile_table helper according to its function annotation
+            and return statements.
+    """
 	df = read_table( table )
 	profile_rows = [ ]
 	total_rows = len( df )
@@ -6192,18 +6192,18 @@ Returns:
 
 def drop_column( table: str, column: str ):
 	"""Drop column.
-
-Purpose:
-    Deletes or removes the column resource requested by the caller while preserving safe
-    guard checks.
-
-Args:
-    table (str): Value supplied to the helper.
-    column (str): Value supplied to the helper.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Deletes or removes the column resource requested by the caller while preserving safe
+            guard checks.
+    
+        Args:
+            table (str): Value supplied to the helper.
+            column (str): Value supplied to the helper.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	if not table or not column:
 		raise ValueError( 'Table and column required.' )
 	with create_connection( ) as conn:
@@ -6246,19 +6246,19 @@ Raises:
 
 def rename_table( old_name: str, new_name: str ) -> None:
 	"""Rename table.
-
-Purpose:
-    Provides the rename table helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    old_name (str): Value supplied to the helper.
-    new_name (str): Value supplied to the helper.
-
-Raises:
-    Error: Re-raised after the exception is wrapped and written to the application logger.
-"""
+    
+        Purpose:
+            Provides the rename table helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            old_name (str): Value supplied to the helper.
+            new_name (str): Value supplied to the helper.
+    
+        Raises:
+            Error: Re-raised after the exception is wrapped and written to the application logger.
+    """
 	if not old_name or not new_name:
 		return
 	with create_connection( ) as conn:
@@ -6303,19 +6303,19 @@ Raises:
 
 def fetch_prompt_names( db_path: str ) -> list[ str ]:
 	"""Fetch prompt names.
-
-Purpose:
-    Provides the fetch prompt names helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    db_path (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the fetch_prompt_names helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the fetch prompt names helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            db_path (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the fetch_prompt_names helper according to its function annotation and
+            return statements.
+    """
 	try:
 		conn = sqlite3.connect( db_path )
 		cur = conn.cursor( )
@@ -6333,20 +6333,20 @@ Returns:
 
 def fetch_prompt_text( db_path: str, name: str ) -> str | None:
 	"""Fetch prompt text.
-
-Purpose:
-    Provides the fetch prompt text helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    db_path (str): Value supplied to the helper.
-    name (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the fetch_prompt_text helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the fetch prompt text helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            db_path (str): Value supplied to the helper.
+            name (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the fetch_prompt_text helper according to its function annotation and
+            return statements.
+    """
 	try:
 		conn = sqlite3.connect( db_path )
 		cur = conn.cursor( )
@@ -6364,16 +6364,16 @@ Returns:
 
 def fetch_prompts_df( ) -> pd.DataFrame:
 	"""Fetch prompts df.
-
-Purpose:
-    Provides the fetch prompts df helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Returns:
-    Value produced by the fetch_prompts_df helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the fetch prompts df helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Returns:
+            Value produced by the fetch_prompts_df helper according to its function annotation and
+            return statements.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		df = pd.read_sql_query(
 			'SELECT PromptsId, Caption,  Name, Version, ID FROM Prompts ORDER BY PromptsId DESC',
@@ -6383,19 +6383,19 @@ Returns:
 
 def fetch_prompt_by_id( pid: int ) -> Dict[ str, Any ] | None:
 	"""Fetch prompt by id.
-
-Purpose:
-    Provides the fetch prompt by id helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    pid (int): Value supplied to the helper.
-
-Returns:
-    Value produced by the fetch_prompt_by_id helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Provides the fetch prompt by id helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            pid (int): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the fetch_prompt_by_id helper according to its function annotation and
+            return statements.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		cur = conn.execute(
 			'SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE PromptsId=?',
@@ -6405,19 +6405,19 @@ Returns:
 
 def fetch_prompt_by_name( name: str ) -> Dict[ str, Any ] | None:
 	"""Fetch prompt by name.
-
-Purpose:
-    Provides the fetch prompt by name helper used by the Gipity Streamlit application. The
-    function supports UI state management, provider coordination, data normalization, or
-    display behavior required by the surrounding workflow.
-
-Args:
-    name (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the fetch_prompt_by_name helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Provides the fetch prompt by name helper used by the Gipity Streamlit application. The
+            function supports UI state management, provider coordination, data normalization, or
+            display behavior required by the surrounding workflow.
+    
+        Args:
+            name (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the fetch_prompt_by_name helper according to its function annotation
+            and return statements.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		cur = conn.execute(
 			'SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE Caption=?',
@@ -6427,15 +6427,15 @@ Returns:
 
 def insert_prompt( data: Dict[ str, Any ] ) -> None:
 	"""Insert prompt.
-
-Purpose:
-    Provides the insert prompt helper used by the Gipity Streamlit application. The function
-    supports UI state management, provider coordination, data normalization, or display
-    behavior required by the surrounding workflow.
-
-Args:
-    data (Dict[str, Any]): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Provides the insert prompt helper used by the Gipity Streamlit application. The function
+            supports UI state management, provider coordination, data normalization, or display
+            behavior required by the surrounding workflow.
+    
+        Args:
+            data (Dict[str, Any]): Value supplied to the helper.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
 			'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?, ?)',
@@ -6443,14 +6443,14 @@ Args:
 
 def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
 	"""Update prompt.
-
-Purpose:
-    Updates the prompt state or persisted value used by the Gipity workflow.
-
-Args:
-    pid (int): Value supplied to the helper.
-    data (Dict[str, Any]): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Updates the prompt state or persisted value used by the Gipity workflow.
+    
+        Args:
+            pid (int): Value supplied to the helper.
+            data (Dict[str, Any]): Value supplied to the helper.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute(
 			'UPDATE Prompts SET Caption=?, Name=?, Text=?, Version=?, ID=? WHERE PromptsId=?',
@@ -6459,31 +6459,31 @@ Args:
 
 def delete_prompt( pid: int ) -> None:
 	"""Delete prompt.
-
-Purpose:
-    Deletes or removes the prompt resource requested by the caller while preserving safe
-    guard checks.
-
-Args:
-    pid (int): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Deletes or removes the prompt resource requested by the caller while preserving safe
+            guard checks.
+    
+        Args:
+            pid (int): Value supplied to the helper.
+    """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( 'DELETE FROM Prompts WHERE PromptsId=?', (pid,) )
 
 def build_prompt( user_input: str ) -> str:
 	"""Build prompt.
-
-Purpose:
-    Builds the prompt value used by the Gipity interface or provider wrapper. The function
-    normalizes inputs and returns a stable object for downstream use.
-
-Args:
-    user_input (str): Value supplied to the helper.
-
-Returns:
-    Value produced by the build_prompt helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Builds the prompt value used by the Gipity interface or provider wrapper. The function
+            normalizes inputs and returns a stable object for downstream use.
+    
+        Args:
+            user_input (str): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the build_prompt helper according to its function annotation and
+            return statements.
+    """
 	system_instructions = st.session_state.get( 'docqna_system_instructions', '' )
 	use_semantic = bool( st.session_state.get( 'use_semantic', False ) )
 	basic_docs = st.session_state.get( 'basic_docs', [ ] )
@@ -6520,11 +6520,11 @@ Returns:
 
 def reset_audio_model_controls( ) -> None:
 	"""Reset audio model controls.
-
-Purpose:
-    Resets the audio model controls state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the audio model controls state used by the application. The function clears
+            related Streamlit keys without performing provider calls.
+    """
 	st.session_state[ 'audio_task' ] = None
 	st.session_state[ 'audio_model' ] = None
 	st.session_state[ 'audio_language' ] = None
@@ -6535,11 +6535,11 @@ Purpose:
 
 def reset_audio_inference_controls( ) -> None:
 	"""Reset audio inference controls.
-
-Purpose:
-    Resets the audio inference controls state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the audio inference controls state used by the application. The function clears
+            related Streamlit keys without performing provider calls.
+    """
 	st.session_state[ 'audio_top_percent' ] = 0.0
 	st.session_state[ 'audio_temperature' ] = 0.0
 	st.session_state[ 'audio_presence_penalty' ] = 0.0
@@ -6549,11 +6549,11 @@ Purpose:
 
 def reset_audio_sound_controls( ) -> None:
 	"""Reset audio sound controls.
-
-Purpose:
-    Resets the audio sound controls state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the audio sound controls state used by the application. The function clears
+            related Streamlit keys without performing provider calls.
+    """
 	st.session_state[ 'audio_language' ] = None
 	st.session_state[ 'audio_voice' ] = None
 	st.session_state[ 'audio_loop' ] = False
@@ -6563,11 +6563,11 @@ Purpose:
 
 def ensure_audio_mode_state( ) -> None:
 	"""Ensure audio mode state.
-
-Purpose:
-    Ensures the required audio mode state session-state keys or runtime resources exist
-    before the related interface controls are rendered.
-"""
+    
+        Purpose:
+            Ensures the required audio mode state session-state keys or runtime resources exist
+            before the related interface controls are rendered.
+    """
 	if 'audio_task' not in st.session_state:
 		st.session_state[ 'audio_task' ] = ''
 	if 'audio_model' not in st.session_state:
@@ -6601,35 +6601,35 @@ Purpose:
 
 def get_audio_task_options( ) -> list[ str ]:
 	"""Get audio task options.
-
-Purpose:
-    Returns the audio task options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Returns:
-    Value produced by the get_audio_task_options helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Returns the audio task options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Returns:
+            Value produced by the get_audio_task_options helper according to its function annotation
+            and return statements.
+    """
 	return [ '', 'Transcribe', 'Translate', 'Text-to-Speech' ]
 
 def get_audio_model_options( task: str | None, transcriber: Transcription, translator: Translation,
 		tts: TTS ) -> list[ str ]:
 	"""Get audio model options.
-
-Purpose:
-    Returns the audio model options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    task (str | None): Value supplied to the helper.
-    transcriber (Transcription): Value supplied to the helper.
-    translator (Translation): Value supplied to the helper.
-    tts (TTS): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_audio_model_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the audio model options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            task (str | None): Value supplied to the helper.
+            transcriber (Transcription): Value supplied to the helper.
+            translator (Translation): Value supplied to the helper.
+            tts (TTS): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_audio_model_options helper according to its function
+            annotation and return statements.
+    """
 	if task == 'Transcribe':
 		options = getattr( transcriber, 'model_options', [ ] )
 	elif task == 'Translate':
@@ -6644,18 +6644,18 @@ Returns:
 
 def get_audio_language_options( transcriber: Transcription ) -> list[ str ]:
 	"""Get audio language options.
-
-Purpose:
-    Returns the audio language options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    transcriber (Transcription): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_audio_language_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the audio language options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            transcriber (Transcription): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_audio_language_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( transcriber, 'language_options', [ ] )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -6663,18 +6663,18 @@ Returns:
 
 def get_audio_voice_options( tts: TTS ) -> list[ str ]:
 	"""Get audio voice options.
-
-Purpose:
-    Returns the audio voice options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    tts (TTS): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_audio_voice_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the audio voice options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            tts (TTS): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_audio_voice_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( tts, 'voice_options', [ ] )
 	if isinstance( options, list ) and len( options ) > 0:
 		return [ '' ] + options
@@ -6682,18 +6682,18 @@ Returns:
 
 def get_audio_speed_options( tts: TTS ) -> list[ float ]:
 	"""Get audio speed options.
-
-Purpose:
-    Returns the audio speed options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    tts (TTS): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_audio_speed_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the audio speed options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            tts (TTS): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_audio_speed_options helper according to its function
+            annotation and return statements.
+    """
 	options = getattr( tts, 'speed_options', [ ] )
 	if isinstance( options, list ) and len( options ) > 0:
 		return options
@@ -6702,22 +6702,22 @@ Returns:
 def get_audio_response_format_options( task: str | None, model: str | None,
 		transcriber: Transcription, translator: Translation, tts: TTS ) -> list[ str ]:
 	"""Get audio response format options.
-
-Purpose:
-    Returns the audio response format options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    task (str | None): Value supplied to the helper.
-    model (str | None): Value supplied to the helper.
-    transcriber (Transcription): Value supplied to the helper.
-    translator (Translation): Value supplied to the helper.
-    tts (TTS): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_audio_response_format_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the audio response format options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            task (str | None): Value supplied to the helper.
+            model (str | None): Value supplied to the helper.
+            transcriber (Transcription): Value supplied to the helper.
+            translator (Translation): Value supplied to the helper.
+            tts (TTS): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_audio_response_format_options helper according to its function
+            annotation and return statements.
+    """
 	if task == 'Transcribe':
 		format_map = getattr( transcriber, 'response_format_options', { } )
 		if isinstance( format_map, dict ):
@@ -6739,20 +6739,20 @@ Returns:
 def get_audio_include_options( task: str | None, model: str | None, transcriber: Transcription ) -> \
 list[ str ]:
 	"""Get audio include options.
-
-Purpose:
-    Returns the audio include options value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    task (str | None): Value supplied to the helper.
-    model (str | None): Value supplied to the helper.
-    transcriber (Transcription): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_audio_include_options helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the audio include options value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            task (str | None): Value supplied to the helper.
+            model (str | None): Value supplied to the helper.
+            transcriber (Transcription): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_audio_include_options helper according to its function
+            annotation and return statements.
+    """
 	if task != 'Transcribe':
 		return [ ]
 	if model not in [ 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe',
@@ -6766,20 +6766,20 @@ Returns:
 def get_audio_response_format_value( task: str | None, selected_format: str | None,
 		selected_mime_type: str | None = None ) -> str | None:
 	"""Get audio response format value.
-
-Purpose:
-    Returns the audio response format value value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    task (str | None): Value supplied to the helper.
-    selected_format (str | None): Value supplied to the helper.
-    selected_mime_type (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_audio_response_format_value helper according to its function
-    annotation and return statements.
-"""
+    
+        Purpose:
+            Returns the audio response format value value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            task (str | None): Value supplied to the helper.
+            selected_format (str | None): Value supplied to the helper.
+            selected_mime_type (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_audio_response_format_value helper according to its function
+            annotation and return statements.
+    """
 	if task == 'Text-to-Speech':
 		if isinstance( selected_format, str ) and selected_format.strip( ):
 			return selected_format.strip( )
@@ -6792,19 +6792,19 @@ Returns:
 
 def get_audio_prompt_value( task: str | None, prompt: str | None ) -> str | None:
 	"""Get audio prompt value.
-
-Purpose:
-    Returns the audio prompt value value used by the Gipity interface. The helper
-    centralizes option lookup and fallback behavior for callers.
-
-Args:
-    task (str | None): Value supplied to the helper.
-    prompt (str | None): Value supplied to the helper.
-
-Returns:
-    Value produced by the get_audio_prompt_value helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Returns the audio prompt value value used by the Gipity interface. The helper
+            centralizes option lookup and fallback behavior for callers.
+    
+        Args:
+            task (str | None): Value supplied to the helper.
+            prompt (str | None): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the get_audio_prompt_value helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( prompt, str ) or not prompt.strip( ):
 		return None
 	if task in [ 'Transcribe', 'Translate', 'Text-to-Speech' ]:
@@ -6813,18 +6813,18 @@ Returns:
 
 def save_audio_upload( upload: Any ) -> str | None:
 	"""Save audio upload.
-
-Purpose:
-    Saves the audio upload value for later workflow use while preserving the caller-facing
-    return contract.
-
-Args:
-    upload (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the save_audio_upload helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Saves the audio upload value for later workflow use while preserving the caller-facing
+            return contract.
+    
+        Args:
+            upload (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the save_audio_upload helper according to its function annotation and
+            return statements.
+    """
 	if upload is None:
 		return None
 	try:
@@ -6850,14 +6850,14 @@ Returns:
 
 def render_audio_segments( result: dict[ str, Any ] | None ) -> None:
 	"""Render audio segments.
-
-Purpose:
-    Renders the audio segments user-interface section or display element in Streamlit while
-    preserving the application state expected by the surrounding workflow.
-
-Args:
-    result (dict[str, Any] | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the audio segments user-interface section or display element in Streamlit while
+            preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            result (dict[str, Any] | None): Value supplied to the helper.
+    """
 	if not isinstance( result, dict ):
 		return
 	segments = result.get( 'segments' )
@@ -6881,16 +6881,16 @@ Args:
 def render_audio_text_result( title: str, result_text: str | None,
 		result: dict[ str, Any ] | None = None ) -> None:
 	"""Render audio text result.
-
-Purpose:
-    Renders the audio text result user-interface section or display element in Streamlit
-    while preserving the application state expected by the surrounding workflow.
-
-Args:
-    title (str): Value supplied to the helper.
-    result_text (str | None): Value supplied to the helper.
-    result (dict[str, Any] | None): Value supplied to the helper.
-"""
+    
+        Purpose:
+            Renders the audio text result user-interface section or display element in Streamlit
+            while preserving the application state expected by the surrounding workflow.
+    
+        Args:
+            title (str): Value supplied to the helper.
+            result_text (str | None): Value supplied to the helper.
+            result (dict[str, Any] | None): Value supplied to the helper.
+    """
 	text_value = result_text if isinstance( result_text, str ) else ''
 	st.text_area( title, value=text_value, height=250, width='stretch' )
 	if isinstance( result, dict ):
@@ -6906,18 +6906,18 @@ Args:
 
 def extract_audio_usage( response: Any ) -> dict[ str, Any ]:
 	"""Extract audio usage.
-
-Purpose:
-    Extracts the audio usage value from the supplied object or payload while handling
-    missing or unsupported content safely.
-
-Args:
-    response (Any): Value supplied to the helper.
-
-Returns:
-    Value produced by the extract_audio_usage helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Extracts the audio usage value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            response (Any): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_audio_usage helper according to its function annotation
+            and return statements.
+    """
 	usage: dict[ str, Any ] = { }
 	if response is None:
 		return usage
@@ -6949,21 +6949,21 @@ Returns:
 def run_audio_file_task( task: str | None, file_path: str | None, transcriber: Transcription,
 		translator: Translation ) -> str | None:
 	"""Run audio file task.
-
-Purpose:
-    Runs the audio file task workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    task (str | None): Value supplied to the helper.
-    file_path (str | None): Value supplied to the helper.
-    transcriber (Transcription): Value supplied to the helper.
-    translator (Translation): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_audio_file_task helper according to its function annotation
-    and return statements.
-"""
+    
+        Purpose:
+            Runs the audio file task workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            task (str | None): Value supplied to the helper.
+            file_path (str | None): Value supplied to the helper.
+            transcriber (Transcription): Value supplied to the helper.
+            translator (Translation): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_audio_file_task helper according to its function annotation
+            and return statements.
+    """
 	if not isinstance( task, str ) or not task.strip( ):
 		st.warning( 'Select an audio task before processing audio.' )
 		return None
@@ -7005,19 +7005,19 @@ Returns:
 
 def run_audio_tts_task( text: str | None, tts: TTS ) -> bytes | None:
 	"""Run audio tts task.
-
-Purpose:
-    Runs the audio tts task workflow from the Streamlit interface by validating current
-    inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-
-Args:
-    text (str | None): Value supplied to the helper.
-    tts (TTS): Value supplied to the helper.
-
-Returns:
-    Value produced by the run_audio_tts_task helper according to its function annotation and
-    return statements.
-"""
+    
+        Purpose:
+            Runs the audio tts task workflow from the Streamlit interface by validating current
+            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
+    
+        Args:
+            text (str | None): Value supplied to the helper.
+            tts (TTS): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the run_audio_tts_task helper according to its function annotation and
+            return statements.
+    """
 	if not isinstance( text, str ) or not text.strip( ):
 		st.warning( 'Enter text before generating speech.' )
 		return None
@@ -7041,11 +7041,11 @@ Returns:
 
 def clear_audio_outputs( ) -> None:
 	"""Clear audio outputs.
-
-Purpose:
-    Clears the audio outputs state used by the current workflow so the user interface can
-    start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the audio outputs state used by the current workflow so the user interface can
+            start from a clean output state.
+    """
 	st.session_state[ 'audio_output' ] = ''
 	st.session_state[ 'audio_output_bytes' ] = None
 	st.session_state[ 'audio_last_result' ] = { }
@@ -7053,31 +7053,31 @@ Purpose:
 
 def clear_audio_messages( ) -> None:
 	"""Clear audio messages.
-
-Purpose:
-    Clears the audio messages state used by the current workflow so the user interface can
-    start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the audio messages state used by the current workflow so the user interface can
+            start from a clean output state.
+    """
 	st.session_state.audio_messages = [ ]
 	clear_audio_outputs( )
 
 def clear_audio_instructions( ) -> None:
 	"""Clear audio instructions.
-
-Purpose:
-    Clears the audio instructions state used by the current workflow so the user interface
-    can start from a clean output state.
-"""
+    
+        Purpose:
+            Clears the audio instructions state used by the current workflow so the user interface
+            can start from a clean output state.
+    """
 	st.session_state[ 'audio_system_instructions' ] = ''
 	st.session_state[ 'instructions' ] = ''
 
 def load_audio_instruction_template( ) -> None:
 	"""Load audio instruction template.
-
-Purpose:
-    Loads the audio instruction template resource or state required by the Gipity workflow
-    and returns the prepared value for caller use.
-"""
+    
+        Purpose:
+            Loads the audio instruction template resource or state required by the Gipity workflow
+            and returns the prepared value for caller use.
+    """
 	name = st.session_state.get( 'instructions' )
 	if name and name != 'No Templates Found':
 		text = fetch_prompt_text( cfg.DB_PATH, name )
@@ -7086,12 +7086,12 @@ Purpose:
 
 def convert_audio_system_instructions( ) -> None:
 	"""Convert audio system instructions.
-
-Purpose:
-    Provides the convert audio system instructions helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-"""
+    
+        Purpose:
+            Provides the convert audio system instructions helper used by the Gipity Streamlit
+            application. The function supports UI state management, provider coordination, data
+            normalization, or display behavior required by the surrounding workflow.
+    """
 	text = st.session_state.get( 'audio_system_instructions', '' )
 	if not isinstance( text, str ) or not text.strip( ):
 		return
@@ -7104,11 +7104,11 @@ Purpose:
 
 def reset_audio_task_controls( ) -> None:
 	"""Reset audio task controls.
-
-Purpose:
-    Resets the audio task controls state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the audio task controls state used by the application. The function clears
+            related Streamlit keys without performing provider calls.
+    """
 	for key in [ 'audio_task', 'audio_model', 'audio_language', 'audio_response_format',
 	             'audio_include' ]:
 		if key in st.session_state:
@@ -7116,11 +7116,11 @@ Purpose:
 
 def reset_audio_tts_controls( ) -> None:
 	"""Reset audio tts controls.
-
-Purpose:
-    Resets the audio tts controls state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+    
+        Purpose:
+            Resets the audio tts controls state used by the application. The function clears related
+            Streamlit keys without performing provider calls.
+    """
 	for key in [ 'audio_voice', 'audio_speed', 'audio_mime_type' ]:
 		if key in st.session_state:
 			del st.session_state[ key ]
@@ -7149,31 +7149,31 @@ with st.sidebar:
 	with st.expander( label='Keys', icon='🔑', expanded=False ):
 		openai_key = st.text_input( 'Open API Key', type='password',
 			value=st.session_state.openai_api_key or '',
-			help='Overrides OPENAI_API_KEY from config.py for this session only.' )
+			help='Overrides OPENAI_API_KEY from config.md for this session only.' )
 		if openai_key:
 			st.session_state.openai_api_key = openai_key
 			os.environ[ 'OPENAI_API_KEY' ] = openai_key
 		google_key = st.text_input( 'Google API Key', type='password',
 			value=st.session_state.google_api_key or '',
-			help='Overrides GOOGLE_API_KEY from config.py for this session only.' )
+			help='Overrides GOOGLE_API_KEY from config.md for this session only.' )
 		if google_key:
 			st.session_state.google_api_key = google_key
 			os.environ[ 'GOOGLE_API_KEY' ] = google_key
 		googlemaps_key = st.text_input( 'Google Maps API Key', type='password',
 			value=st.session_state.googlemaps_api_key or '',
-			help='Overrides GOOGLEMAPS_API_KEY from config.py for this session only.' )
+			help='Overrides GOOGLEMAPS_API_KEY from config.md for this session only.' )
 		if googlemaps_key:
 			st.session_state.googlemaps_api_key = googlemaps_key
 			os.environ[ 'GOOGLEMAPS_API_KEY' ] = googlemaps_key
 		geocoding_key = st.text_input( 'Geocoding API Key', type='password',
 			value=st.session_state.geocoding_api_key or '',
-			help='Overrides GEOCODING_API_KEY from config.py for this session only.' )
+			help='Overrides GEOCODING_API_KEY from config.md for this session only.' )
 		if geocoding_key:
 			st.session_state.geocoding_api_key = geocoding_key
 			os.environ[ 'GEOCODING_API_KEY' ] = geocoding_key
 		google_cse_id = st.text_input( 'Google Custom Search ID', type='password',
 			value=st.session_state.google_cse_id or '',
-			help='Overrides GOOGLE_CSE_ID from config.py for this session only.' )
+			help='Overrides GOOGLE_CSE_ID from config.md for this session only.' )
 		if google_cse_id:
 			st.session_state.google_cse_id = google_cse_id
 			os.environ[ 'GOOGLE_CSE_ID' ] = google_cse_id
@@ -7209,11 +7209,11 @@ if mode == 'Text':
 	
 	def reset_text_llm_controls( ) -> None:
 		"""Reset text llm controls.
-
-Purpose:
-    Resets the text llm controls state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+        
+            Purpose:
+                Resets the text llm controls state used by the application. The function clears related
+                Streamlit keys without performing provider calls.
+        """
 		for key in [ 'text_model', 'text_temperature', 'text_presence_penalty', 'text_reasoning',
 		             'text_top_percent', 'text_frequency_penalty' ]:
 			if key in st.session_state:
@@ -7221,11 +7221,11 @@ Purpose:
 	
 	def reset_text_tool_controls( ) -> None:
 		"""Reset text tool controls.
-
-Purpose:
-    Resets the text tool controls state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+        
+            Purpose:
+                Resets the text tool controls state used by the application. The function clears related
+                Streamlit keys without performing provider calls.
+        """
 		for key in [ 'text_max_calls', 'text_tool_choice', 'text_include', 'text_tools',
 		             'text_domains_input', 'text_domains', 'text_parallel_calls',
 		             'text_vector_store_ids' ]:
@@ -7234,11 +7234,11 @@ Purpose:
 	
 	def reset_text_response_controls( ) -> None:
 		"""Reset text response controls.
-
-Purpose:
-    Resets the text response controls state used by the application. The function clears
-    related Streamlit keys without performing provider calls.
-"""
+        
+            Purpose:
+                Resets the text response controls state used by the application. The function clears
+                related Streamlit keys without performing provider calls.
+        """
 		for key in [ 'text_stream', 'text_store', 'text_max_tokens', 'text_background',
 		             'text_response_format', 'text_input', 'text_previous_response_id',
 		             'text_conversation_id' ]:
@@ -7247,22 +7247,22 @@ Purpose:
 	
 	def clear_text_instructions( ) -> None:
 		"""Clear text instructions.
-
-Purpose:
-    Clears the text instructions state used by the current workflow so the user interface
-    can start from a clean output state.
-"""
+        
+            Purpose:
+                Clears the text instructions state used by the current workflow so the user interface
+                can start from a clean output state.
+        """
 		st.session_state[ 'text_system_instructions' ] = ''
 		st.session_state[ 'instructions' ] = ''
 	
 	def convert_text_system_instructions( ) -> None:
 		"""Convert text system instructions.
-
-Purpose:
-    Provides the convert text system instructions helper used by the Gipity Streamlit
-    application. The function supports UI state management, provider coordination, data
-    normalization, or display behavior required by the surrounding workflow.
-"""
+        
+            Purpose:
+                Provides the convert text system instructions helper used by the Gipity Streamlit
+                application. The function supports UI state management, provider coordination, data
+                normalization, or display behavior required by the surrounding workflow.
+        """
 		text_value = st.session_state.get( 'text_system_instructions', '' )
 		if not isinstance( text_value, str ) or not text_value.strip( ):
 			return
@@ -7275,11 +7275,11 @@ Purpose:
 	
 	def load_text_instruction_template( ) -> None:
 		"""Load text instruction template.
-
-Purpose:
-    Loads the text instruction template resource or state required by the Gipity workflow
-    and returns the prepared value for caller use.
-"""
+        
+            Purpose:
+                Loads the text instruction template resource or state required by the Gipity workflow
+                and returns the prepared value for caller use.
+        """
 		name = st.session_state.get( 'instructions' )
 		if name and name != 'No Templates Found':
 			prompt_text = fetch_prompt_text( cfg.DB_PATH, name )
@@ -9769,24 +9769,24 @@ elif mode == 'Prompt Engineering':
 		
 		def get_conn( ):
 			"""Get conn.
-
-Purpose:
-    Returns the conn value used by the Gipity interface. The helper centralizes option
-    lookup and fallback behavior for callers.
-
-Returns:
-    Value produced by the get_conn helper according to its function annotation and return
-    statements.
-"""
+            
+                Purpose:
+                    Returns the conn value used by the Gipity interface. The helper centralizes option
+                    lookup and fallback behavior for callers.
+            
+                Returns:
+                    Value produced by the get_conn helper according to its function annotation and return
+                    statements.
+            """
 			return sqlite3.connect( cfg.DB_PATH )
 		
 		def reset_selection( ):
 			"""Reset selection.
-
-Purpose:
-    Resets the selection state used by the application. The function clears related
-    Streamlit keys without performing provider calls.
-"""
+            
+                Purpose:
+                    Resets the selection state used by the application. The function clears related
+                    Streamlit keys without performing provider calls.
+            """
 			st.session_state.pe_selected_id = None
 			st.session_state.pe_caption = ''
 			st.session_state.pe_name = ''
@@ -9796,14 +9796,14 @@ Purpose:
 		
 		def load_prompt( pid: int ) -> None:
 			"""Load prompt.
-
-Purpose:
-    Loads the prompt resource or state required by the Gipity workflow and returns the
-    prepared value for caller use.
-
-Args:
-    pid (int): Value supplied to the helper.
-"""
+            
+                Purpose:
+                    Loads the prompt resource or state required by the Gipity workflow and returns the
+                    prepared value for caller use.
+            
+                Args:
+                    pid (int): Value supplied to the helper.
+            """
 			with get_conn( ) as conn:
 				_select = f'SELECT Caption, Name, Text, Version, ID FROM {TABLE} WHERE PromptsId=?'
 				cur = conn.execute( _select, (pid,) )

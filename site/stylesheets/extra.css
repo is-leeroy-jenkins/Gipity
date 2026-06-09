@@ -1,0 +1,347 @@
+:root
+{
+	--gipity-primary: #0078FC;
+	--gipity-background: #141414;
+	--gipity-surface: #414141;
+	--gipity-surface-dark: #242424;
+	--gipity-text: #FFFFFF;
+	--gipity-border: #565557;
+	--gipity-data-border: #00254C;
+	--gipity-data-header: #023770;
+	--gipity-radius: 12px;
+	--gipity-font-size: 16px;
+}
+
+.md-grid
+{
+	max-width: 100rem;
+}
+
+.md-main__inner
+{
+	max-width: 100rem;
+}
+
+.md-content
+{
+	max-width: none;
+}
+
+.md-typeset
+{
+	max-width: 80rem;
+}
+
+.md-typeset table:not([class])
+{
+	width: 100%;
+}
+
+.md-sidebar--secondary
+{
+	width: 14rem;
+}
+
+.md-sidebar--primary
+{
+	width: 13rem;
+}
+
+/* Material dark scheme mapped to Gipity UI colors. */
+[data-md-color-scheme='slate']
+{
+	--md-primary-fg-color: var(--gipity-primary);
+	--md-primary-fg-color--light: #4CA3FF;
+	--md-primary-fg-color--dark: #0057B8;
+	--md-accent-fg-color: var(--gipity-primary);
+	--md-default-bg-color: var(--gipity-background);
+	--md-default-fg-color: var(--gipity-text);
+	--md-default-fg-color--light: rgba(255, 255, 255, 0.78);
+	--md-default-fg-color--lighter: rgba(255, 255, 255, 0.58);
+	--md-default-fg-color--lightest: rgba(255, 255, 255, 0.32);
+	--md-code-bg-color: #1E1E1E;
+	--md-code-fg-color: #FFFFFF;
+	--md-typeset-a-color: var(--gipity-primary);
+	--md-footer-bg-color: #141414;
+	--md-footer-bg-color--dark: #101010;
+}
+
+
+/* Base typography. */
+html
+{
+	font-size: var(--gipity-font-size);
+}
+
+body
+{
+	background-color: var(--gipity-background);
+	font-size: 1rem;
+}
+
+.md-typeset
+{
+	color: var(--gipity-text);
+	font-size: 0.95rem;
+	line-height: 1.65;
+}
+
+.md-typeset p,
+.md-typeset li,
+.md-typeset td,
+.md-typeset th
+{
+	font-size: 0.95rem;
+}
+
+.md-nav
+{
+	font-size: 0.88rem;
+}
+
+.md-tabs
+{
+	font-size: 0.86rem;
+}
+
+.md-header__title
+{
+	font-size: 0.95rem;
+	font-weight: 700;
+}
+/* Header and tabs. */
+.md-header
+{
+	background-color: var(--gipity-background);
+	border-bottom: 1px solid var(--gipity-border);
+	box-shadow: none;
+}
+
+.md-tabs
+{
+	background-color: #1C1C1C;
+	border-bottom: 1px solid var(--gipity-border);
+}
+
+.md-tabs__link
+{
+	color: rgba(255, 255, 255, 0.82);
+}
+
+.md-tabs__link--active,
+.md-tabs__link:hover
+{
+	color: var(--gipity-primary);
+}
+
+/* Sidebar surfaces. */
+.md-sidebar
+{
+	background-color: var(--gipity-background);
+}
+
+
+.md-nav__title
+{
+	background-color: var(--gipity-background);
+	color: var(--gipity-text);
+}
+
+.md-nav__link
+{
+	color: rgba(255, 255, 255, 0.78);
+}
+
+.md-nav__link--active,
+.md-nav__link:hover
+{
+	color: var(--gipity-primary);
+}
+
+/* Main content surface. */
+.md-main
+{
+	background-color: var(--gipity-background);
+}
+
+.md-content
+{
+	background-color: var(--gipity-background);
+}
+
+.md-typeset
+{
+	color: var(--gipity-text);
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4
+{
+	color: var(--gipity-text);
+	font-weight: 700;
+}
+
+.md-typeset h1
+{
+	border-bottom: 2px solid var(--gipity-primary);
+	padding-bottom: 0.35rem;
+}
+
+/* Links. */
+.md-typeset a
+{
+	color: var(--gipity-primary);
+}
+
+.md-typeset a:hover
+{
+	color: #4CA3FF;
+}
+
+/* Cards and content blocks. */
+.md-typeset .admonition,
+.md-typeset details
+{
+	background-color: var(--gipity-surface-dark);
+	border: 1px solid var(--gipity-border);
+	border-radius: var(--gipity-radius);
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary
+{
+	background-color: var(--gipity-surface);
+	border-bottom: 1px solid var(--gipity-border);
+}
+
+/* Tables aligned with Streamlit dataframe colors. */
+.md-typeset table:not([class])
+{
+	background-color: var(--gipity-background);
+	border: 1px solid var(--gipity-data-border);
+	border-radius: var(--gipity-radius);
+	overflow: hidden;
+}
+
+.md-typeset table:not([class]) th
+{
+	background-color: var(--gipity-data-header);
+	color: var(--gipity-text);
+	border-color: var(--gipity-data-border);
+	font-weight: 700;
+}
+
+.md-typeset table:not([class]) td
+{
+	background-color: #1B1B1B;
+	color: var(--gipity-text);
+	border-color: var(--gipity-border);
+}
+
+.md-typeset table:not([class]) tr:nth-child(even) td
+{
+	background-color: #242424;
+}
+
+/* Code blocks. */
+.md-typeset code
+{
+	background-color: #1E1E1E;
+	color: #FFFFFF;
+	border: 1px solid #333333;
+	border-radius: 6px;
+}
+
+.md-typeset pre
+{
+	background-color: #1E1E1E;
+	border: 1px solid var(--gipity-border);
+	border-radius: var(--gipity-radius);
+}
+
+.md-typeset pre code
+{
+	border: none;
+}
+
+/* Search. */
+.md-search__form
+{
+	background-color: var(--gipity-surface);
+	border: 1px solid var(--gipity-border);
+	border-radius: var(--gipity-radius);
+}
+
+.md-search__input
+{
+	color: var(--gipity-text);
+}
+
+/* Buttons. */
+.md-button
+{
+	border-radius: var(--gipity-radius);
+	border-color: var(--gipity-primary);
+	color: var(--gipity-primary);
+}
+
+.md-button--primary,
+.md-button:hover
+{
+	background-color: var(--gipity-primary);
+	border-color: var(--gipity-primary);
+	color: #FFFFFF;
+}
+
+/* Footer. */
+.md-footer
+{
+	background-color: var(--gipity-background);
+	border-top: 1px solid var(--gipity-border);
+}
+
+.md-footer-meta
+{
+	background-color: #101010;
+}
+
+/* API documentation blocks from mkdocstrings. */
+.doc
+{
+	background-color: var(--gipity-background);
+}
+
+.doc-object
+{
+	border-left: 3px solid var(--gipity-primary);
+	padding-left: 0.85rem;
+}
+
+.doc-heading
+{
+	color: var(--gipity-text);
+}
+
+.doc-label
+{
+	background-color: var(--gipity-data-header);
+	color: var(--gipity-text);
+	border-radius: 6px;
+}
+
+/* Keep images and media visually contained. */
+.md-typeset img
+{
+	border-radius: var(--gipity-radius);
+}
+
+/* Focus visibility for accessibility. */
+a:focus,
+button:focus,
+.md-search__input:focus
+{
+	outline: 2px solid var(--gipity-primary);
+	outline-offset: 2px;
+}
