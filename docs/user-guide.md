@@ -1,9 +1,5 @@
 # User Guide
-## Class Map
-![](./images/gipity-gpt.png)
-___
-![](./images/gipity-gpt-2.png)
-## Launch Gipity
+
 
 Run the application from the repository root:
 

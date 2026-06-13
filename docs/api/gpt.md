@@ -1,6 +1,8 @@
 # GPT
 
-## Purpose
+![](../images/gipity-gpt.png)
+___
+![](../images/gipity-gpt-2.png)
 
 This page documents the OpenAI provider wrapper module used by Gipity.
 
