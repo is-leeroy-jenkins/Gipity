@@ -946,7 +946,7 @@ def reset_state( ) -> None:
 	st.session_state.last_answer = ''
 	st.session_state.last_sources = [ ]
 
-def normalize( obj ):
+def normalize( obj ) -> Any:
 	"""Normalize.
     
         Purpose:
@@ -1034,8 +1034,7 @@ def extract_sources( response: Any ) -> List[ Dict[ str, Any ] ]:
 				s = normalize( r )
 				if not isinstance( s, dict ):
 					continue
-				sources.append(
-					{ 'title': s.get( 'file_name' ) or s.get( 'title' ), 'snippet': s.get( 'text' ),
+				sources.append( { 'title': s.get( 'file_name' ) or s.get( 'title' ), 'snippet': s.get( 'text' ),
 					  'url': None, 'files_id': s.get( 'files_id' ) } )
 	return sources
 
@@ -1097,7 +1096,7 @@ def display_value( val: Any ) -> str:
 		Logger( ).write( exception )
 		return '—'
 
-def format_results( results ):
+def format_results( results ) -> str:
 	"""Format results.
     
         Purpose:
@@ -6038,7 +6037,7 @@ def create_identifier( name: str ) -> str:
 		raise ValueError( 'Invalid identifier after sanitization.' )
 	return safe
 
-def get_indexes( table: str ):
+def get_indexes( table: str ) -> List[ Any ]:
 	"""Get indexes.
     
         Purpose:
@@ -6155,7 +6154,7 @@ def rename_column( table_name: str, old_name: str, new_name: str ) -> None:
 				conn.execute( idx_sql )
 		conn.commit( )
 
-def create_profile_table( table: str ):
+def create_profile_table( table: str ) -> str:
 	"""Create profile table.
     
         Purpose:
@@ -9767,7 +9766,7 @@ elif mode == 'Prompt Engineering':
 		st.session_state.setdefault( 'pe_version', '' )
 		st.session_state.setdefault( 'pe_id', 0 )
 		
-		def get_conn( ):
+		def get_conn( ) -> str:
 			"""Get conn.
             
                 Purpose:
