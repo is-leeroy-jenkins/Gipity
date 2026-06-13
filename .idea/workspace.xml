@@ -5,22 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8e57c923-6b4e-425a-893b-39775ed7a32c" name="Changes" comment="updates">
-      <change afterPath="$PROJECT_DIR$/docs/api/app.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/api/config.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/api/gpt.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/architecture.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/configuration.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/getting-started.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/javascripts/extra.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/stylesheets/extra.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/user-guide.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mkdocs.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/requirements-docs.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/images/gipity_project.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gpt.py" beforeDir="false" afterPath="$PROJECT_DIR$/gpt.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/architecture.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/architecture.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/404.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/404.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/api/app/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/api/app/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/api/config/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/api/config/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/api/gpt/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/api/gpt/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/architecture/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/architecture/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/configuration/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/configuration/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/getting-started/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/getting-started/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/sitemap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/site/sitemap.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/sitemap.xml.gz" beforeDir="false" afterPath="$PROJECT_DIR$/site/sitemap.xml.gz" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/site/user-guide/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/site/user-guide/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,32 +64,33 @@
     <option name="showLibraryContents" value="true" />
     <option name="showMembers" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/terry/source/repos/Gipity&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "last_opened_file_path": "C:/Users/terry/source/repos/Gipity/docs/images",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\terry\source\repos\Gipity\docs\images" />
       <recent name="C:\Users\terry\source\repos\Gipity" />
     </key>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-PY-252.28539.27" />
-        <option value="bundled-python-sdk-07523f343e4f-968fe969f28a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.28539.27" />
+        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-PY-252.28539.58" />
+        <option value="bundled-python-sdk-3d8931ec2368-968fe969f28a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.28539.58" />
       </set>
     </attachedChunks>
   </component>
@@ -115,7 +115,8 @@
       <workItem from="1779969286684" duration="17576000" />
       <workItem from="1780268540472" duration="3698000" />
       <workItem from="1781014628569" duration="4768000" />
-      <workItem from="1781036635163" duration="7149000" />
+      <workItem from="1781036635163" duration="7807000" />
+      <workItem from="1781389250309" duration="794000" />
     </task>
     <task id="LOCAL-00001" summary="updates">
       <option name="closed" value="true" />
@@ -285,7 +286,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781030552361</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="updates">
+      <option name="closed" value="true" />
+      <created>1781048617566</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1781048617566</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

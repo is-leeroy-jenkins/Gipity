@@ -1,5 +1,5 @@
 # Architecture
-
+![](./images/gipity-architecture.png)
 ## Overview
 
 Gipity is organized around a Streamlit application shell, a configuration layer, provider wrappers,
