@@ -76,7 +76,7 @@ html
 body
 {
 	background-color: var(--gipity-background);
-	font-size: 1rem;
+	font-size: 0.95rem;
 }
 
 .md-typeset
@@ -96,12 +96,12 @@ body
 
 .md-nav
 {
-	font-size: 0.88rem;
+	font-size: 0.95rem;
 }
 
 .md-tabs
 {
-	font-size: 0.86rem;
+	font-size: 0.95rem;
 }
 
 .md-header__title
