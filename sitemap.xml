@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://is-leeroy-jenkins.github.io/Gipity/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://is-leeroy-jenkins.github.io/Gipity/architecture/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://is-leeroy-jenkins.github.io/Gipity/configuration/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://is-leeroy-jenkins.github.io/Gipity/getting-started/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://is-leeroy-jenkins.github.io/Gipity/user-guide/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://is-leeroy-jenkins.github.io/Gipity/api/app/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://is-leeroy-jenkins.github.io/Gipity/api/config/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://is-leeroy-jenkins.github.io/Gipity/api/gpt/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+</urlset>
