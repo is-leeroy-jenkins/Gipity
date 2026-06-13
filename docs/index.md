@@ -1,4 +1,5 @@
 ![](./images/gipity_project.png)
+___
 Gipity is a Streamlit application for multimodal AI workflows centered on OpenAI GPT models, OpenAI
 platform services, local document retrieval, vector search, prompt engineering, and SQLite-backed
 data management.

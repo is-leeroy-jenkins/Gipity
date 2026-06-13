@@ -18,6 +18,7 @@
 
 ___
 
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-0078FC?style=for-the-badge&logo=github)](https://is-leeroy-jenkins.github.io/Gipity/)
 
 Gipity is a Streamlit application for multimodal AI workflows centered on OpenAI GPT models,
 OpenAI platform services, local document retrieval, vector search, prompt engineering, and local
