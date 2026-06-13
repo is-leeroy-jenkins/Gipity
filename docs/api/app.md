@@ -49,3 +49,7 @@ The safe initial API documentation targets are:
 
 - `config.py`
 - `gpt.py`
+
+## API Reference
+
+::: app
