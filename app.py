@@ -81,537 +81,893 @@ except Exception as e:
 	fitz = None
 from gpt import Chat, Images, Embeddings, Transcription, Translation, TTS, Files, VectorStores
 
+# ======================================================================================
+# SESSION STATE INITIALIZATION
+# ======================================================================================
+
 if 'openai_api_key' not in st.session_state:
 	st.session_state[ 'openai_api_key' ] = ''
+	
 if 'google_api_key' not in st.session_state:
 	st.session_state[ 'google_api_key' ] = ''
+	
 if 'google_cse_id' not in st.session_state:
 	st.session_state[ 'google_cse_id' ] = ''
+	
 if 'googlemaps_api_key' not in st.session_state:
 	st.session_state[ 'googlemaps_api_key' ] = ''
+	
 if 'geocoding_api_key' not in st.session_state:
 	st.session_state[ 'geocoding_api_key' ] = ''
+	
 if st.session_state.openai_api_key == '':
 	default = cfg.OPENAI_API_KEY
 	if default:
 		st.session_state.openai_api_key = default
 		os.environ[ 'OPENAI_API_KEY' ] = default
+		
 if st.session_state.google_api_key == '':
 	default = cfg.GOOGLE_API_KEY
 	if default:
 		st.session_state.google_api_key = default
 		os.environ[ 'GOOGLE_API_KEY' ] = default
+		
 if st.session_state.google_cse_id == '':
 	default = cfg.GOOGLE_CSE_ID
 	if default:
 		st.session_state.google_cse_id = default
 		os.environ[ 'GOOGLE_CSE_ID' ] = default
+		
 if st.session_state.googlemaps_api_key == '':
 	default = cfg.GOOGLEMAPS_API_KEY
 	if default:
 		st.session_state.googlemaps_api_key = default
 		os.environ[ 'GOOGLEMAPS_API_KEY' ] = default
+		
 if st.session_state.geocoding_api_key == '':
 	default = cfg.GEOCODING_API_KEY
 	if default:
 		st.session_state.geocoding_api_key = default
 		os.environ[ 'GEOCODING_API_KEY' ] = default
+		
 if 'max_tools' not in st.session_state:
 	st.session_state[ 'max_tools' ] = 0
+	
 if 'max_tokens' not in st.session_state:
 	st.session_state[ 'max_tokens' ] = 0
+	
 if 'temperature' not in st.session_state:
 	st.session_state[ 'temperature' ] = 0.0
+	
 if 'top_percent' not in st.session_state:
 	st.session_state[ 'top_percent' ] = 0.0
+	
 if 'frequency_penalty' not in st.session_state:
 	st.session_state[ 'frequency_penalty' ] = 0.0
+	
 if 'presense_penalty' not in st.session_state:
 	st.session_state[ 'presense_penalty' ] = 0.0
+	
 if 'background' not in st.session_state:
 	st.session_state[ 'background' ] = False
+	
 if 'parallel_tools' not in st.session_state:
 	st.session_state[ 'parallel_tools' ] = False
+	
 if 'store' not in st.session_state:
 	st.session_state[ 'store' ] = False
+	
 if 'stream' not in st.session_state:
 	st.session_state[ 'stream' ] = False
+	
 if 'execution_mode' not in st.session_state:
 	st.session_state[ 'execution_mode' ] = ''
+	
 if 'response_format' not in st.session_state:
 	st.session_state[ 'response_format' ] = ''
+	
 if 'tool_choice' not in st.session_state:
 	st.session_state[ 'tool_choice' ] = ''
+	
 if 'reasoning' not in st.session_state:
 	st.session_state[ 'reasoning' ] = ''
+	
 if 'stops' not in st.session_state:
 	st.session_state[ 'stops' ] = [ ]
+	
 if 'include' not in st.session_state:
 	st.session_state[ 'include' ] = [ ]
+	
 if 'input' not in st.session_state:
 	st.session_state[ 'input' ] = [ ]
+	
 if 'tools' not in st.session_state:
 	st.session_state[ 'tools' ] = [ ]
+	
 if 'messages' not in st.session_state:
 	st.session_state[ 'messages' ] = [ ]
+	
 if 'last_sources' not in st.session_state:
 	st.session_state[ 'last_sources' ] = [ ]
+	
 if 'provider' not in st.session_state or st.session_state[ 'provider' ] is None:
 	st.session_state[ 'provider' ] = 'GPT'
+	
 if 'mode' not in st.session_state or st.session_state[ 'mode' ] is None:
 	st.session_state[ 'mode' ] = 'Chat'
+	
 if 'messages' not in st.session_state:
 	st.session_state.messages = [ ]
+	
 if 'chat_history' not in st.session_state:
 	st.session_state[ 'chat_history' ] = [ ]
+	
 if 'last_call_usage' not in st.session_state:
 	st.session_state.last_call_usage = { 'prompt_tokens': 0, 'completion_tokens': 0,
-	                                     'total_tokens': 0 }
+		'total_tokens': 0 }
+	
 if 'token_usage' not in st.session_state:
-	st.session_state.token_usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0 }
+	st.session_state.token_usage = { 'prompt_tokens': 0, 'completion_tokens': 0,
+		'total_tokens': 0 }
+
 if 'files' not in st.session_state:
 	st.session_state.files = [ ]
+	
 if 'use_semantic' not in st.session_state:
 	st.session_state[ 'use_semantic' ] = False
+	
 if 'is_grounded' not in st.session_state:
 	st.session_state[ 'is_grounded' ] = False
+	
 if 'selected_prompt_id' not in st.session_state:
 	st.session_state[ 'selected_prompt_id' ] = ''
+	
 if 'pending_system_prompt_name' not in st.session_state:
 	st.session_state[ 'pending_system_prompt_name' ] = ''
+	
 if 'instructions' not in st.session_state:
 	st.session_state[ 'instructions' ] = ''
+	
 if 'text_system_instructions' not in st.session_state:
 	st.session_state[ 'text_system_instructions' ] = ''
+	
 if 'image_system_instructions' not in st.session_state:
 	st.session_state[ 'image_system_instructions' ] = ''
+	
 if 'audio_system_instructions' not in st.session_state:
 	st.session_state[ 'audio_system_instructions' ] = ''
+	
 if 'docqna_system_instructions' not in st.session_state:
 	st.session_state[ 'docqna_systems_instructions' ] = ''
+	
 if 'docqna_system_instructions' not in st.session_state:
 	st.session_state[ 'docqna_system_instructions' ] = ''
+	
 if 'stores_system_instructions' not in st.session_state:
 	st.session_state[ 'stores_system_instructions' ] = ''
+	
 if 'chat_model' not in st.session_state:
 	st.session_state[ 'chat_model' ] = ''
+	
 if 'text_model' not in st.session_state:
 	st.session_state[ 'text_model' ] = ''
+	
 if 'image_model' not in st.session_state:
 	st.session_state[ 'image_model' ] = ''
+	
 if 'audio_model' not in st.session_state:
 	st.session_state[ 'audio_model' ] = ''
+	
 if 'embedding_model' not in st.session_state:
 	st.session_state[ 'embedding_model' ] = ''
+	
 if 'docqna_model' not in st.session_state:
 	st.session_state[ 'docqna_model' ] = ''
+	
 if 'files_model' not in st.session_state:
 	st.session_state[ 'files_model' ] = ''
+	
 if 'stores_model' not in st.session_state:
 	st.session_state[ 'stores_model' ] = ''
+	
 if 'tts_model' not in st.session_state:
 	st.session_state[ 'tts_model' ] = ''
+	
 if 'transcription_model' not in st.session_state:
 	st.session_state[ 'transcription_model' ] = ''
+	
 if 'translation_model' not in st.session_state:
 	st.session_state[ 'translation_model' ] = ''
+	
 if 'max_tools' not in st.session_state:
 	st.session_state[ 'max_tools' ] = 0
+	
 if 'max_tokens' not in st.session_state:
 	st.session_state[ 'max_tokens' ] = 0
+	
 if 'temperature' not in st.session_state:
 	st.session_state[ 'temperature' ] = 0.0
+	
 if 'top_percent' not in st.session_state:
 	st.session_state[ 'top_percent' ] = 0.0
+	
 if 'frequency_penalty' not in st.session_state:
 	st.session_state[ 'frequency_penalty' ] = 0.0
+	
 if 'presense_penalty' not in st.session_state:
 	st.session_state[ 'presense_penalty' ] = 0.0
+	
 if 'background' not in st.session_state:
 	st.session_state[ 'background' ] = False
+	
 if 'parallel_tools' not in st.session_state:
 	st.session_state[ 'parallel_tools' ] = False
+	
 if 'store' not in st.session_state:
 	st.session_state[ 'store' ] = False
+	
 if 'stream' not in st.session_state:
 	st.session_state[ 'stream' ] = False
+	
 if 'execution_mode' not in st.session_state:
 	st.session_state[ 'execution_mode' ] = ''
+	
 if 'response_format' not in st.session_state:
 	st.session_state[ 'response_format' ] = ''
+	
 if 'tool_choice' not in st.session_state:
 	st.session_state[ 'tool_choice' ] = ''
+	
 if 'reasoning' not in st.session_state:
 	st.session_state[ 'reasoning' ] = ''
+	
 if 'stops' not in st.session_state:
 	st.session_state[ 'stops' ] = [ ]
+	
 if 'include' not in st.session_state:
 	st.session_state[ 'include' ] = [ ]
+	
 if 'input' not in st.session_state:
 	st.session_state[ 'input' ] = [ ]
+	
 if 'tools' not in st.session_state:
 	st.session_state[ 'tools' ] = [ ]
+	
 if 'messages' not in st.session_state:
 	st.session_state[ 'messages' ] = [ ]
+	
 if 'last_sources' not in st.session_state:
 	st.session_state[ 'last_sources' ] = [ ]
+	
 if 'text_max_calls' not in st.session_state:
 	st.session_state[ 'text_max_calls' ] = 0
+	
 if 'text_max_tokens' not in st.session_state:
 	st.session_state[ 'text_max_tokens' ] = 0
+	
 if 'text_temperature' not in st.session_state:
 	st.session_state[ 'text_temperature' ] = 0.0
+	
 if 'text_top_percent' not in st.session_state:
 	st.session_state[ 'text_top_percent' ] = 0.0
+	
 if 'text_frequency_penalty' not in st.session_state:
 	st.session_state[ 'text_frequency_penalty' ] = 0.0
+	
 if 'text_presence_penalty' not in st.session_state:
 	st.session_state[ 'text_presence_penalty' ] = 0.0
+	
 if 'text_parallel_calls' not in st.session_state:
 	st.session_state[ 'text_parallel_calls' ] = False
+	
 if 'text_background' not in st.session_state:
 	st.session_state[ 'text_background' ] = False
+	
 if 'text_store' not in st.session_state:
 	st.session_state[ 'text_store' ] = False
+	
 if 'text_stream' not in st.session_state:
 	st.session_state[ 'text_stream' ] = False
+	
 if 'text_response_format' not in st.session_state:
 	st.session_state[ 'text_response_format' ] = ''
+	
 if 'text_tool_choice' not in st.session_state:
 	st.session_state[ 'text_tool_choice' ] = ''
+	
 if 'text_reasoning' not in st.session_state:
 	st.session_state[ 'text_reasoning' ] = ''
+	
 if 'text_input' not in st.session_state:
 	st.session_state[ 'text_input' ] = ''
+	
 if 'text_previous_response_id' not in st.session_state:
 	st.session_state[ 'text_previous_response_id' ] = ''
+	
 if 'text_include' not in st.session_state:
 	st.session_state[ 'text_include' ] = [ ]
+	
 if 'text_domains' not in st.session_state:
 	st.session_state[ 'text_domains' ] = [ ]
+	
 if 'text_tools' not in st.session_state:
 	st.session_state[ 'text_tools' ] = [ ]
+	
 if 'text_context' not in st.session_state:
 	st.session_state[ 'text_context' ] = [ ]
+	
 if 'text_content' not in st.session_state:
 	st.session_state[ 'text_content' ] = [ ]
+	
 if 'text_messages' not in st.session_state:
 	st.session_state.text_messages = [ ]
+	
 if 'image_analysis_model' not in st.session_state:
 	st.session_state[ 'image_analysis_model' ] = ''
+	
 if 'image_analysis_detail' not in st.session_state:
 	st.session_state[ 'image_analysis_detail' ] = 'auto'
+	
 if 'image_max_tokens' not in st.session_state:
 	st.session_state[ 'image_max_tokens' ] = 0
+	
 if 'image_max_calls' not in st.session_state:
 	st.session_state[ 'image_max_calls' ] = 0
+	
 if 'image_max_searches' not in st.session_state:
 	st.session_state[ 'image_max_searches' ] = 0
+	
 if 'image_number' not in st.session_state:
 	st.session_state[ 'image_number' ] = 0
+	
 if 'image_compression' not in st.session_state:
 	st.session_state[ 'image_compression' ] = 0.0
+	
 if 'image_temperature' not in st.session_state:
 	st.session_state[ 'image_temperature' ] = 0.0
+	
 if 'image_top_percent' not in st.session_state:
 	st.session_state[ 'image_top_percent' ] = 0.0
+	
 if 'image_frequency_penalty' not in st.session_state:
 	st.session_state[ 'image_frequency_penalty' ] = 0.0
+	
 if 'image_presence_penalty' not in st.session_state:
 	st.session_state[ 'image_presence_penalty' ] = 0.0
+	
 if 'image_parallel_calls' not in st.session_state:
 	st.session_state[ 'image_parallel_calls' ] = False
+	
 if 'image_background' not in st.session_state:
 	st.session_state[ 'image_background' ] = False
+	
 if 'image_store' not in st.session_state:
 	st.session_state[ 'image_store' ] = False
+	
 if 'image_stream' not in st.session_state:
 	st.session_state[ 'image_stream' ] = False
+	
 if 'image_tool_choice' not in st.session_state:
 	st.session_state[ 'image_tool_choice' ] = ''
+	
 if 'image_reasoning' not in st.session_state:
 	st.session_state[ 'image_reasoning' ] = ''
+	
 if 'image_mime_type' not in st.session_state:
 	st.session_state[ 'image_mime_type' ] = ''
+	
 if 'image_response_format' not in st.session_state:
 	st.session_state[ 'image_response_format' ] = ''
+	
 if 'image_previous_response_id' not in st.session_state:
 	st.session_state[ 'image_previous_response_id' ] = ''
+	
 if 'image_input' not in st.session_state:
 	st.session_state[ 'image_input' ] = [ ]
+	
 if 'image_include' not in st.session_state:
 	st.session_state[ 'image_include' ] = [ ]
+	
 if 'image_tools' not in st.session_state:
 	st.session_state[ 'image_tools' ]: List[ Dict[ str, Any ] ] = [ ]
+	
 if 'image_modalities' not in st.session_state:
 	st.session_state[ 'image_modalities' ] = [ ]
+	
 if 'image_messages' not in st.session_state:
 	st.session_state[ 'image_messages' ] = [ ]
+	
 if 'image_context' not in st.session_state:
 	st.session_state[ 'image_context' ]: List[ Dict[ str, Any ] ] = [ ]
+	
 if 'image_domains' not in st.session_state:
 	st.session_state[ 'image_domains' ] = [ ]
+	
 if 'image_content' not in st.session_state:
 	st.session_state[ 'image_content' ] = [ ]
+	
 if 'image_analysis_model' not in st.session_state:
 	st.session_state[ 'image_analysis_model' ] = ''
+	
 if 'image_output_bytes' not in st.session_state:
 	st.session_state[ 'image_output_bytes' ] = None
+	
 if 'image_messages' not in st.session_state:
 	st.session_state[ 'image_messages' ] = [ ]
+	
 if 'image_input' not in st.session_state:
 	st.session_state[ 'image_input' ] = [ ]
+	
 if 'audio_max_tokens' not in st.session_state:
 	st.session_state[ 'audio_max_tokens' ] = 0
+	
 if 'audio_temperature' not in st.session_state:
 	st.session_state[ 'audio_temperature' ] = 0.0
+	
 if 'audio_top_percent' not in st.session_state:
 	st.session_state[ 'audio_top_percent' ] = 0.0
+	
 if 'audio_frequency_penalty' not in st.session_state:
 	st.session_state[ 'audio_frequency_penalty' ] = 0.0
+	
 if 'audio_presence_penalty' not in st.session_state:
 	st.session_state[ 'audio_presence_penalty' ] = 0.0
+	
 if 'audio_background' not in st.session_state:
 	st.session_state[ 'audio_background' ] = False
+	
 if 'audio_store' not in st.session_state:
 	st.session_state[ 'audio_store' ] = False
+	
 if 'audio_stream' not in st.session_state:
 	st.session_state[ 'audio_stream' ] = False
+	
 if 'audio_tool_choice' not in st.session_state:
 	st.session_state[ 'audio_tool_choice' ] = ''
+	
 if 'audio_reasoning' not in st.session_state:
 	st.session_state[ 'audio_reasoning' ] = ''
+	
 if 'audio_response_format' not in st.session_state:
 	st.session_state[ 'audio_response_format' ] = ''
+	
 if 'audio_input' not in st.session_state:
 	st.session_state[ 'audio_input' ] = ''
+	
 if 'audio_mime_type' not in st.session_state:
 	st.session_state[ 'audio_mime_type' ] = ''
+	
 if 'audio_stops' not in st.session_state:
 	st.session_state[ 'audio_stops' ] = [ ]
+	
 if 'audio_includes' not in st.session_state:
 	st.session_state[ 'audio_includes' ] = [ ]
+	
 if 'audio_tools' not in st.session_state:
 	st.session_state.audio_tools: List[ Dict[ str, Any ] ] = [ ]
+	
 if 'audio_context' not in st.session_state:
 	st.session_state.audio_context: List[ Dict[ str, Any ] ] = [ ]
+	
 if 'audio_modalities' not in st.session_state:
 	st.session_state[ 'audio_modalities' ] = [ ]
+	
 if 'audio_messages' not in st.session_state:
 	st.session_state.audio_messages = [ ]
+	
 if 'audio_task' not in st.session_state:
 	st.session_state[ 'audio_task' ] = ''
+	
 if 'audio_file' not in st.session_state:
 	st.session_state[ 'audio_file' ] = ''
+	
 if 'audio_rate' not in st.session_state:
 	st.session_state[ 'audio_rate' ] = int( cfg.SAMPLE_RATES[ 0 ] ) if cfg.SAMPLE_RATES else 44100
+	
 if 'audio_language' not in st.session_state:
 	st.session_state[ 'audio_language' ] = ''
+	
 if 'audio_voice' not in st.session_state:
 	st.session_state[ 'audio_voice' ] = ''
+	
 if 'audio_start_time' not in st.session_state:
 	st.session_state[ 'audio_start_time' ] = 0.0
+	
 if 'audio_end_time' not in st.session_state:
 	st.session_state[ 'audio_end_time' ] = 0.0
+	
 if 'audio_loop' not in st.session_state:
 	st.session_state[ 'audio_loop' ] = False
+	
 if 'audio_autoplay' not in st.session_state:
 	st.session_state[ 'audio_autoplay' ] = False
+	
 if 'audio_output' not in st.session_state:
 	st.session_state[ 'audio_output' ] = ''
+	
 if 'docqna_max_tools' not in st.session_state:
 	st.session_state[ 'docqna_max_tools' ] = 0
+	
 if 'docqna_max_tokens' not in st.session_state:
 	st.session_state[ 'docqna_max_tokens' ] = 0
+	
 if 'docqna_max_calls' not in st.session_state:
 	st.session_state[ 'docqna_max_calls' ] = 0
+	
 if 'docqna_temperature' not in st.session_state:
 	st.session_state[ 'docqna_temperature' ] = 0.0
+	
 if 'docqna_top_percent' not in st.session_state:
 	st.session_state[ 'docqna_top_percent' ] = 0.0
+	
 if 'docqna_frequency_penalty' not in st.session_state:
 	st.session_state[ 'docqna_frequency_penalty' ] = 0.0
+	
 if 'docqna_presence_penalty' not in st.session_state:
 	st.session_state[ 'docqna_presence_penalty' ] = 0.0
+	
 if 'docqna_number' not in st.session_state:
 	st.session_state[ 'docqna_number' ] = 0
+	
 if 'docqna_top_k' not in st.session_state:
 	st.session_state[ 'docqna_top_k' ] = 0
+	
 if 'docqna_max_searches' not in st.session_state:
 	st.session_state[ 'docqna_max_searches' ] = 0
+	
 if 'docqna_parallel_tools' not in st.session_state:
 	st.session_state[ 'docqna_parallel_tools' ] = False
+	
 if 'docqna_background' not in st.session_state:
 	st.session_state[ 'docqna_background' ] = False
+	
 if 'docqna_store' not in st.session_state:
 	st.session_state[ 'docqna_store' ] = False
+	
 if 'docqna_stream' not in st.session_state:
 	st.session_state[ 'docqna_stream' ] = False
+	
 if 'docqna_response_format' not in st.session_state:
 	st.session_state[ 'docqna_response_format' ] = ''
+	
 if 'docqna_tool_choice' not in st.session_state:
 	st.session_state[ 'docqna_tool_choice' ] = ''
+	
 if 'docqna_resolution' not in st.session_state:
 	st.session_state[ 'docqna_resolution' ] = ''
+	
 if 'docqna_media_resolution' not in st.session_state:
 	st.session_state[ 'docqna_media_resolution' ] = ''
+	
 if 'docqna_reasoning' not in st.session_state:
 	st.session_state[ 'docqna_reasoning' ] = ''
+	
 if 'docqna_input' not in st.session_state:
 	st.session_state[ 'docqna_input' ] = ''
+	
 if 'docqna_stops' not in st.session_state:
 	st.session_state[ 'docqna_stops' ] = [ ]
+	
 if 'docqna_modalities' not in st.session_state:
 	st.session_state[ 'docqna_modalities' ] = [ ]
+	
 if 'docqna_include' not in st.session_state:
 	st.session_state[ 'docqna_include' ] = [ ]
+	
 if 'docqna_domains' not in st.session_state:
 	st.session_state[ 'docqna_domains' ] = [ ]
+	
 if 'docqna_tools' not in st.session_state:
 	st.session_state[ 'docqna_tools' ] = [ ]
+	
 if 'docqna_context' not in st.session_state:
 	st.session_state[ 'docqna_context' ] = [ ]
 if 'docqna_content' not in st.session_state:
 	st.session_state[ 'docqna_content' ] = [ ]
+	
 if 'docqna_files' not in st.session_state:
 	st.session_state[ 'docqna_files' ] = [ ]
+	
 if 'docqna_uploaded' not in st.session_state:
 	st.session_state[ 'docqna_uploaded' ] = ''
+	
 if 'docqna_messages' not in st.session_state:
 	st.session_state.docqna_messages = [ ]
+	
 if 'docqna_active_docs' not in st.session_state:
 	st.session_state.docqna_active_docs = [ ]
+	
 if 'docqna_source' not in st.session_state:
 	st.session_state.docqna_source = ''
+	
 if 'docqna_multi_mode' not in st.session_state:
 	st.session_state.docqna_multi_mode = False
+	
 if 'uploaded' not in st.session_state:
 	st.session_state[ 'uploaded' ] = [ ]
+	
 if 'docqna_bytes' not in st.session_state:
 	st.session_state[ 'docqna_bytes' ] = { }
+	
 if 'docqna_source' not in st.session_state:
 	st.session_state[ 'docqna_source' ] = 'uploadlocal'
+	
 if 'docqna_vec_ready' not in st.session_state:
 	st.session_state[ 'docqna_vec_ready' ] = False
+	
 if 'docqna_fingerprint' not in st.session_state:
 	st.session_state[ 'docqna_fingerprint' ] = ''
+	
 if 'docqna_chunk_count' not in st.session_state:
 	st.session_state[ 'docqna_chunk_count' ] = 0
+	
 if 'docqna_fallback_rows' not in st.session_state:
 	st.session_state[ 'docqna_fallback_rows' ] = [ ]
+	
 if 'embedding_model' not in st.session_state:
 	st.session_state[ 'embedding_model' ] = ''
+	
 if 'embeddings_dimensions' not in st.session_state:
 	st.session_state[ 'embeddings_dimensions' ] = 0
+	
 if 'embeddings_chunk_size' not in st.session_state:
 	st.session_state[ 'embeddings_chunk_size' ] = 0
+	
 if 'embeddings_overlap_amount' not in st.session_state:
 	st.session_state[ 'embeddings_overlap_amount' ] = 0
+	
 if 'embeddings_input_text' not in st.session_state:
 	st.session_state[ 'embeddings_input_text' ] = ''
+	
 if 'embeddings_encoding_format' not in st.session_state:
 	st.session_state[ 'embeddings_encoding_format' ] = ''
+	
 if 'embeddings_method' not in st.session_state:
 	st.session_state[ 'embeddings_method' ] = ''
+	
 if 'files_max_tokens' not in st.session_state:
 	st.session_state[ 'files_max_tokens' ] = 0
+	
 if 'files_temperature' not in st.session_state:
 	st.session_state[ 'files_temperature' ] = 0.0
+	
 if 'files_top_percent' not in st.session_state:
 	st.session_state[ 'files_top_percent' ] = 0.0
+	
 if 'files_frequency_penalty' not in st.session_state:
 	st.session_state[ 'files_frequency_penalty' ] = 0.0
+	
 if 'files_presence_penalty' not in st.session_state:
 	st.session_state[ 'files_presence_penalty' ] = 0.0
+	
 if 'files_background' not in st.session_state:
 	st.session_state[ 'files_background' ] = False
+	
 if 'files_store' not in st.session_state:
 	st.session_state[ 'files_store' ] = False
+	
 if 'files_stream' not in st.session_state:
 	st.session_state[ 'files_stream' ] = False
+	
 if 'files_tool_choice' not in st.session_state:
 	st.session_state[ 'files_tool_choice' ] = ''
+	
 if 'files_reasoning' not in st.session_state:
 	st.session_state[ 'files_reasoning' ] = ''
+	
 if 'files_response_format' not in st.session_state:
 	st.session_state[ 'files_response_format' ] = ''
+	
 if 'files_input' not in st.session_state:
 	st.session_state[ 'files_input' ] = ''
+	
 if 'files_media_resolution' not in st.session_state:
 	st.session_state[ 'files_media_resolution' ] = ''
+	
 if 'files_stops' not in st.session_state:
 	st.session_state[ 'files_stops' ] = [ ]
+	
 if 'files_includes' not in st.session_state:
 	st.session_state[ 'files_includes' ] = [ ]
+	
 if 'files_tools' not in st.session_state:
 	st.session_state.files_tools: List[ Dict[ str, Any ] ] = [ ]
+	
 if 'files_context' not in st.session_state:
 	st.session_state.files_context: List[ Dict[ str, Any ] ] = [ ]
+	
 if 'files_purpose' not in st.session_state:
 	st.session_state[ 'files_purpose' ] = ''
+	
 if 'files_type' not in st.session_state:
 	st.session_state[ 'files_type' ] = ''
+	
 if 'files_id' not in st.session_state:
 	st.session_state[ 'files_id' ] = ''
+	
 if 'files_url' not in st.session_state:
 	st.session_state[ 'files_url' ] = ''
+	
 if 'files_table' not in st.session_state:
 	st.session_state[ 'files_table' ] = ''
+	
 if 'files_messages' not in st.session_state:
 	st.session_state.files_messages: List[ Dict[ str, Any ] ] = [ ]
+	
 if 'stores_temperature' not in st.session_state:
 	st.session_state[ 'stores_temperature' ] = 0.0
+	
 if 'stores_top_percent' not in st.session_state:
 	st.session_state[ 'stores_top_percent' ] = 0.0
+	
 if 'stores_max_tokens' not in st.session_state:
 	st.session_state[ 'stores_max_tokens' ] = 0
+	
 if 'stores_frequency_penalty' not in st.session_state:
 	st.session_state[ 'stores_frequency_penalty' ] = 0.0
+	
 if 'stores_presence_penalty' not in st.session_state:
 	st.session_state[ 'stores_presence_penalty' ] = 0.0
+	
 if 'stores_max_calls' not in st.session_state:
 	st.session_state[ 'stores_max_calls' ] = 0
+	
 if 'stores_tool_choice' not in st.session_state:
 	st.session_state[ 'stores_tool_choice' ] = ''
+	
 if 'stores_response_format' not in st.session_state:
 	st.session_state[ 'stores_response_format' ] = ''
+	
 if 'stores_reasoning' not in st.session_state:
 	st.session_state[ 'stores_reasoning' ] = ''
+	
 if 'stores_resolution' not in st.session_state:
 	st.session_state[ 'stores_resolution' ] = ''
+	
 if 'stores_media_resolution' not in st.session_state:
 	st.session_state[ 'stores_media_resolution' ] = ''
+	
 if 'stores_parallel_tools' not in st.session_state:
 	st.session_state[ 'stores_parallel_tools' ] = False
+	
 if 'stores_background' not in st.session_state:
 	st.session_state[ 'stores_background' ] = False
+	
 if 'stores_store' not in st.session_state:
 	st.session_state[ 'stores_store' ] = False
+	
 if 'stores_stream' not in st.session_state:
 	st.session_state[ 'stores_stream' ] = False
+	
 if 'stores_input' not in st.session_state:
 	st.session_state[ 'stores_input' ] = [ ]
+	
 if 'stores_tools' not in st.session_state:
 	st.session_state[ 'stores_tools' ] = [ ]
+	
 if 'stores_messages' not in st.session_state:
 	st.session_state[ 'stores_messages' ] = [ ]
+	
 if 'stores_stops' not in st.session_state:
 	st.session_state[ 'stores_stops' ] = [ ]
+	
 if 'stores_include' not in st.session_state:
 	st.session_state[ 'stores_include' ] = [ ]
+	
 if 'stores_id' not in st.session_state:
 	st.session_state[ 'stores_id' ] = ''
+	
 if 'last_answer' not in st.session_state:
 	st.session_state.last_answer = ''
+	
 if 'last_sources' not in st.session_state:
 	st.session_state.last_sources = [ ]
+	
 if 'last_analysis' not in st.session_state:
 	st.session_state.last_analysis = { 'tables': [ ], 'docqna_files': [ ], 'text': [ ] }
+	
 if 'last_call_usage' not in st.session_state:
 	st.session_state.last_call_usage = { 'prompt_tokens': 0, 'completion_tokens': 0,
-	                                     'total_tokens': 0 }
+		'total_tokens': 0 }
+	
 if 'token_usage' not in st.session_state:
-	st.session_state.token_usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0 }
+	st.session_state.token_usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens':
+		0 }
+if 'selected_prompt_id' not in st.session_state:
+	st.session_state[ 'selected_prompt_id' ] = ''
+
+if 'pending_system_prompt_name' not in st.session_state:
+	st.session_state[ 'pending_system_prompt_name' ] = ''
+
+if 'instructions' not in st.session_state:
+	st.session_state[ 'instructions' ] = ''
+
+# -----Text Mode Prompt State ------
+if 'text_prompt_category' not in st.session_state:
+	st.session_state[ 'text_prompt_category' ] = ''
+
+if 'text_prompt_id' not in st.session_state:
+	st.session_state[ 'text_prompt_id' ] = None
+
+if 'text_system_instructions' not in st.session_state:
+	st.session_state[ 'text_system_instructions' ] = ''
+
+# ----- Images Mode Prompt State -----
+if 'image_prompt_category' not in st.session_state:
+	st.session_state[ 'image_prompt_category' ] = ''
+
+if 'image_prompt_id' not in st.session_state:
+	st.session_state[ 'image_prompt_id' ] = None
+
+if 'image_system_instructions' not in st.session_state:
+	st.session_state[ 'image_system_instructions' ] = ''
+
+# ----- Audio Mode Prompt State ------
+if 'audio_prompt_category' not in st.session_state:
+	st.session_state[ 'audio_prompt_category' ] = ''
+
+if 'audio_prompt_id' not in st.session_state:
+	st.session_state[ 'audio_prompt_id' ] = None
+
+if 'audio_system_instructions' not in st.session_state:
+	st.session_state[ 'audio_system_instructions' ] = ''
+
+# ----- Document Q&A Mode Prompt State -----
+if 'docqna_prompt_category' not in st.session_state:
+	st.session_state[ 'docqna_prompt_category' ] = ''
+
+if 'docqna_prompt_id' not in st.session_state:
+	st.session_state[ 'docqna_prompt_id' ] = None
+
+if 'docqna_system_instructions' not in st.session_state:
+	st.session_state[ 'docqna_system_instructions' ] = ''
+
+# ----- Files Mode Prompt State -----
+if 'files_prompt_category' not in st.session_state:
+	st.session_state[ 'files_prompt_category' ] = ''
+
+if 'files_prompt_id' not in st.session_state:
+	st.session_state[ 'files_prompt_id' ] = None
+
+if 'files_system_instructions' not in st.session_state:
+	st.session_state[ 'files_system_instructions' ] = ''
+
+# ----- Vector Stores Mode Prompt State -----
+if 'stores_prompt_category' not in st.session_state:
+	st.session_state[ 'stores_prompt_category' ] = ''
+
+if 'stores_prompt_id' not in st.session_state:
+	st.session_state[ 'stores_prompt_id' ] = None
+
+if 'stores_system_instructions' not in st.session_state:
+	st.session_state[ 'stores_system_instructions' ] = ''
+	
+# ======================================================================================
+# SYSTEM PROMPT CATEGORY POLICIES
+# ======================================================================================
+
+TEXT_PROMPT_CATEGORIES: Tuple[ str, ... ] = ('Research / Academic', 'Prompt Engineering',
+	'Writing / Administrative', 'Compliance / Legal / Budget', 'Business / Finance / Marketing',
+	'Software Engineering', 'Data Analytics & Governance', 'Instruction/ Training / Planning',
+	'Image Analysis',)
+
+IMAGE_PROMPT_CATEGORIES: Tuple[ str, ... ] = ('Image Generation', 'Image Analysis',
+	'Image Editing',)
+
+AUDIO_PROMPT_CATEGORIES: Tuple[ str, ... ] = ('Translation API', 'Transcription API', 'Speech API',)
+
+DOCQNA_PROMPT_CATEGORIES: Tuple[ str, ... ] = TEXT_PROMPT_CATEGORIES
+
+FILES_PROMPT_CATEGORIES: Tuple[ str, ... ] = ('Research / Academic', 'Prompt Engineering',
+	'Writing / Administrative', 'Compliance / Legal / Budget', 'Business / Finance / Marketing',
+	'Software Engineering', 'Data Analytics & Governance', 'Instruction/ Training / Planning',
+	'Image Analysis', 'Image Editing',)
+
+VECTORSTORE_PROMPT_CATEGORIES: Tuple[ str, ... ] = FILES_PROMPT_CATEGORIES
+
+# ======================================================================================
+# Utilities
+# ======================================================================================
 
 @st.cache_resource
 def load_embedder( ) -> SentenceTransformer:
@@ -2461,36 +2817,6 @@ def compute_fingerprint( active_docs: List[ str ], doc_bytes: Dict[ str, bytes ]
 		h.update( hashlib.sha256( b ).digest( ) )
 	return h.hexdigest( )
 
-def extract_text_from_pdf( file_bytes: bytes ) -> str:
-	"""Extract text from pdf.
-    
-        Purpose:
-            Extracts the text from pdf value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_text_from_pdf helper according to its function annotation
-            and return statements.
-    """
-	if not file_bytes:
-		return ''
-	try:
-		doc = fitz.open( stream=file_bytes, filetype='pdf' )
-		parts: List[ str ] = [ ]
-		for page in doc:
-			parts.append( page.get_text( 'text' ) or '' )
-		return '\n'.join( parts ).strip( )
-	except Exception as e:
-		exception = Error( e )
-		exception.module = 'app'
-		exception.cause = 'extract_text_from_pdf'
-		exception.method = 'extract_text_from_pdf( ... )'
-		Logger( ).write( exception )
-		return ''
-
 def load_sqlite_vec( conn: sqlite3.Connection ) -> bool:
 	"""Load sqlite vec.
     
@@ -2966,6 +3292,34 @@ def compute_fingerprint( file_bytes: bytes | None ) -> str:
 		return ''
 	return hashlib.sha256( file_bytes ).hexdigest( )
 
+def extract_text_from_bytes( file_bytes: bytes ) -> str:
+	"""Extract text from bytes.
+	
+	Purpose:
+	    Extracts structured information from a provider response, uploaded file, or application
+	    data object. The function normalizes provider-specific shapes into values that can be rendered,
+	    stored, or passed to later processing steps.
+	
+	Args:
+	    file_bytes (bytes): File bytes value used by the operation.
+	
+	Returns:
+	    str: Return value produced by the operation."""
+	try:
+		import fitz  # PyMuPDF
+		
+		doc = fitz.open( stream=file_bytes, filetype="pdf" )
+		text = ""
+		for page in doc:
+			text += page.get_text( )
+		return text.strip( )
+	
+	except Exception:
+		try:
+			return file_bytes.decode( errors="ignore" )
+		except Exception:
+			return ""
+
 def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
 	"""Extract docqna pdf text.
     
@@ -2984,7 +3338,6 @@ def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
 		return ''
 	try:
 		import fitz
-		
 		pages: list[ str ] = [ ]
 		with fitz.open( stream=file_bytes, filetype='pdf' ) as doc:
 			for page in doc:
@@ -4560,8 +4913,7 @@ def build_vector_store_expires_after_from_state( vector: VectorStores ) -> dict[
 		return None
 	return vector.build_expires_after( anchor=anchor, days=day_value )
 
-def build_vector_store_chunking_strategy_from_state( vector: VectorStores ) -> Dict[
-	                                                                               str, Any ] | None:
+def build_vector_store_chunking_strategy_from_state( vector: VectorStores ) -> Dict[ str, Any ] | None:
 	"""Build vector store chunking strategy from state.
     
         Purpose:
@@ -5444,26 +5796,230 @@ def run_vector_store_answer( vector: VectorStores, store_id: str | None,
 	return answer
 
 def initialize_database( ) -> None:
-	"""Initialize database.
-    
-        Purpose:
-            Provides the initialize database helper used by the Gipity Streamlit application. The
-            function supports UI state management, provider coordination, data normalization, or
-            display behavior required by the surrounding workflow.
-    """
-	Path( 'stores/sqlite' ).mkdir( parents=True, exist_ok=True )
-	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		conn.execute(
-			'\n            CREATE TABLE IF NOT EXISTS chat_history\n            (\n                id\n                INTEGER\n                PRIMARY\n                KEY\n                AUTOINCREMENT,\n                role\n                TEXT,\n                content\n                TEXT\n            )\n\t\t\t' )
-		conn.execute(
-			'\n            CREATE TABLE IF NOT EXISTS embeddings\n            (\n                id\n                INTEGER\n                PRIMARY\n                KEY\n                AUTOINCREMENT,\n                chunk\n                TEXT,\n                vector\n                BLOB\n            )\n\t\t\t' )
-		conn.execute(
-			'\n            CREATE TABLE IF NOT EXISTS Prompts\n            (\n                PromptsId\n                INTEGER\n                NOT\n                NULL\n                PRIMARY\n                KEY\n                AUTOINCREMENT,\n                Caption\n                TEXT,\n                Name\n                TEXT\n            (\n                80\n            ),\n                Text TEXT,\n                Version TEXT\n            (\n                80\n            ),\n                ID TEXT\n            (\n                80\n            )\n                )\n\t\t\t' )
-		prompt_columns = [ row[ 1 ] for row in
-		                   conn.execute( 'PRAGMA table_info("Prompts");' ).fetchall( ) ]
-		if 'Caption' not in prompt_columns:
-			conn.execute( 'ALTER TABLE "Prompts" ADD COLUMN "Caption" TEXT;' )
-		conn.commit( )
+	"""Initialize the application database.
+
+	Purpose:
+	    Creates the Gipity application tables and ensures that the Prompts table uses the
+	    authoritative ID, Title, Name, Category, and Text schema. Existing compatible prompt
+	    records are preserved when a legacy Prompts schema must be migrated.
+
+	Returns:
+	    None: The function creates or updates persistent SQLite database structures.
+
+	Raises:
+	    Error: Raised when database initialization or Prompts-table migration fails.
+	"""
+	try:
+		database_path = Path( cfg.DB_PATH )
+		database_path.parent.mkdir( parents=True, exist_ok=True )
+		with sqlite3.connect( str( database_path ) ) as conn:
+			# ------------------------------------------------------------------
+			# Transaction Configuration
+			# ------------------------------------------------------------------
+			conn.execute( 'PRAGMA foreign_keys = ON;' )
+			
+			# ------------------------------------------------------------------
+			# Chat History
+			# ------------------------------------------------------------------
+			conn.execute( '''
+                          CREATE TABLE IF NOT EXISTS "chat_history"
+                          (
+                              "id"
+                              INTEGER
+                              PRIMARY
+                              KEY
+                              AUTOINCREMENT,
+                              "role"
+                              TEXT,
+                              "content"
+                              TEXT
+                          );
+			              ''' )
+			
+			# ------------------------------------------------------------------
+			# Embeddings
+			# ------------------------------------------------------------------
+			conn.execute( '''
+                          CREATE TABLE IF NOT EXISTS "embeddings"
+                          (
+                              "id"
+                              INTEGER
+                              PRIMARY
+                              KEY
+                              AUTOINCREMENT,
+                              "chunk"
+                              TEXT,
+                              "vector"
+                              BLOB
+                          );
+			              ''' )
+			
+			# ------------------------------------------------------------------
+			# Prompts Table Detection
+			# ------------------------------------------------------------------
+			prompt_table_exists = conn.execute( '''
+                                                SELECT 1
+                                                FROM "sqlite_master"
+                                                WHERE "type" = 'table'
+                                                  AND "name" = 'Prompts';
+			                                    ''' ).fetchone( ) is not None
+			
+			required_columns: List[ str ] = [ 'ID', 'Title', 'Name', 'Category', 'Text', ]
+			
+			# ------------------------------------------------------------------
+			# Create New Prompts Table
+			# ------------------------------------------------------------------
+			if not prompt_table_exists:
+				conn.execute( '''
+                              CREATE TABLE "Prompts"
+                              (
+                                  "ID"       INTEGER NOT NULL UNIQUE,
+                                  "Title"    TEXT(80),
+                                  "Name"     TEXT(80),
+                                  "Category" TEXT(80),
+                                  "Text"     TEXT(2040),
+                                  PRIMARY KEY ("ID" AUTOINCREMENT)
+                              );
+				              ''' )
+			
+			else:
+				# --------------------------------------------------------------
+				# Inspect Existing Prompts Schema
+				# --------------------------------------------------------------
+				existing_schema = conn.execute( 'PRAGMA table_info("Prompts");' ).fetchall( )
+				
+				existing_columns = [ str( row[ 1 ] ) for row in existing_schema ]
+				
+				schema_requires_migration = (existing_columns != required_columns)
+				
+				if schema_requires_migration:
+					# ----------------------------------------------------------
+					# Read Existing Prompt Records
+					# ----------------------------------------------------------
+					cursor = conn.execute( 'SELECT * FROM "Prompts";' )
+					
+					legacy_column_names = [ str( description[ 0 ] ) for description in
+						cursor.description or [ ] ]
+					
+					legacy_rows = cursor.fetchall( )
+					
+					legacy_records: List[ Dict[ str, Any ] ] = [
+						dict( zip( legacy_column_names, row ) ) for row in legacy_rows ]
+					
+					# ----------------------------------------------------------
+					# Create Migration Table
+					# ----------------------------------------------------------
+					conn.execute( 'DROP TABLE IF EXISTS "Prompts__Migration";' )
+					
+					conn.execute( '''
+                                  CREATE TABLE "Prompts__Migration"
+                                  (
+                                      "ID"       INTEGER NOT NULL UNIQUE,
+                                      "Title"    TEXT(80),
+                                      "Name"     TEXT(80),
+                                      "Category" TEXT(80),
+                                      "Text"     TEXT(2040),
+                                      PRIMARY KEY ("ID" AUTOINCREMENT)
+                                  );
+					              ''' )
+					
+					# ----------------------------------------------------------
+					# Migrate Existing Prompt Records
+					# ----------------------------------------------------------
+					for record in legacy_records:
+						raw_id = record.get( 'ID' )
+						raw_legacy_id = record.get( 'PromptsId' )
+						
+						prompt_id: Optional[ int ] = None
+						
+						for candidate in (raw_id, raw_legacy_id):
+							if candidate is None:
+								continue
+							
+							candidate_text = str( candidate ).strip( )
+							
+							if not candidate_text:
+								continue
+							
+							try:
+								candidate_id = int( candidate_text )
+							except (TypeError, ValueError):
+								continue
+							
+							if candidate_id > 0:
+								prompt_id = candidate_id
+								break
+						
+						title = str( record.get( 'Title',
+							record.get( 'Caption', record.get( 'Name', '' ) ) ) or '' ).strip( )[
+							:80 ]
+						
+						name = str( record.get( 'Name', '' ) or '' ).strip( )[ :80 ]
+						
+						category = str( record.get( 'Category', '' ) or '' ).strip( )[ :80 ]
+						
+						text = str( record.get( 'Text', '' ) or '' ).strip( )[ :2040 ]
+						
+						if prompt_id is None:
+							conn.execute( '''
+                                          INSERT INTO "Prompts__Migration"
+                                          ("Title",
+                                           "Name",
+                                           "Category",
+                                           "Text")
+                                          VALUES (?, ?, ?, ?);
+							              ''', (title, name, category, text,) )
+						
+						else:
+							conn.execute( '''
+								INSERT OR REPLACE INTO "Prompts__Migration"
+								(
+									"ID",
+									"Title",
+									"Name",
+									"Category",
+									"Text"
+								)
+								VALUES (?, ?, ?, ?, ?);
+								''', (prompt_id, title, name, category, text,) )
+					
+					# ----------------------------------------------------------
+					# Replace Legacy Prompts Table
+					# ----------------------------------------------------------
+					conn.execute( 'DROP TABLE "Prompts";' )
+					
+					conn.execute( '''
+                                  ALTER TABLE "Prompts__Migration"
+                                      RENAME TO "Prompts";
+					              ''' )
+			
+			# ------------------------------------------------------------------
+			# Prompt Indexes
+			# ------------------------------------------------------------------
+			conn.execute( '''
+                          CREATE INDEX IF NOT EXISTS "IX_Prompts_Category"
+                              ON "Prompts" ("Category");
+			              ''' )
+			
+			conn.execute( '''
+                          CREATE INDEX IF NOT EXISTS "IX_Prompts_Title"
+                              ON "Prompts" ("Title");
+			              ''' )
+			
+			conn.execute( '''
+                          CREATE INDEX IF NOT EXISTS "IX_Prompts_Name"
+                              ON "Prompts" ("Name");
+			              ''' )
+			
+			conn.commit( )
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'initialize_database'
+		exception.method = 'initialize_database( ) -> None'
+		Logger( ).write( exception )
+		raise exception
 
 def create_connection( ) -> sqlite3.Connection:
 	"""Create connection.
@@ -6300,174 +6856,708 @@ def rename_table( old_name: str, new_name: str ) -> None:
 				conn.execute( idx_sql )
 		conn.commit( )
 
-def fetch_prompt_names( db_path: str ) -> list[ str ]:
-	"""Fetch prompt names.
-    
-        Purpose:
-            Provides the fetch prompt names helper used by the Gipity Streamlit application. The
-            function supports UI state management, provider coordination, data normalization, or
-            display behavior required by the surrounding workflow.
-    
-        Args:
-            db_path (str): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the fetch_prompt_names helper according to its function annotation and
-            return statements.
-    """
+# ======================================================================================
+# PROMPT REPOSITORY
+# ======================================================================================
+
+def fetch_prompt_records( db_path: str,
+		categories: Optional[ List[ str ] ] = None ) -> List[ Dict[ str, Any ] ]:
+	"""Retrieve prompt records.
+
+	Purpose:
+	    Reads prompt records from the authoritative Prompts table. Optional category filtering
+	    restricts the returned records while preserving stable integer prompt identifiers.
+
+	Args:
+	    db_path (str): Path to the application SQLite database.
+	    categories (Optional[List[str]]): Categories used to restrict the returned records.
+
+	Returns:
+	    List[Dict[str, Any]]: Prompt records containing ID, Title, Name, Category, and Text.
+
+	Raises:
+	    Error: Raised when prompt records cannot be retrieved.
+	"""
 	try:
-		conn = sqlite3.connect( db_path )
-		cur = conn.cursor( )
-		cur.execute( 'SELECT Caption FROM Prompts ORDER BY PromptsId;' )
-		rows = cur.fetchall( )
-		conn.close( )
-		return [ r[ 0 ] for r in rows if r and r[ 0 ] is not None ]
+		throw_if( 'db_path', db_path )
+
+		query = '''
+			SELECT
+				"ID",
+				"Title",
+				"Name",
+				"Category",
+				"Text"
+			FROM "Prompts"
+		'''
+
+		parameters: List[ Any ] = [ ]
+
+		if categories:
+			normalized_categories = [
+				str( category ).strip( )
+				for category in categories
+				if str( category ).strip( )
+			]
+
+			if normalized_categories:
+				placeholders = ', '.join(
+					[ '?' for _ in normalized_categories ]
+				)
+
+				query += f'''
+					WHERE TRIM(COALESCE("Category", '')) COLLATE NOCASE
+					      IN ({placeholders})
+				'''
+
+				parameters.extend( normalized_categories )
+
+		query += '''
+			ORDER BY
+				COALESCE("Category", '') COLLATE NOCASE,
+				COALESCE(NULLIF(TRIM("Title"), ''), "Name") COLLATE NOCASE,
+				"ID";
+		'''
+
+		with sqlite3.connect( db_path ) as conn:
+			conn.row_factory = sqlite3.Row
+			rows = conn.execute( query, parameters ).fetchall( )
+
+		return [
+			{
+				'ID': int( row[ 'ID' ] ),
+				'Title': str( row[ 'Title' ] or '' ).strip( ),
+				'Name': str( row[ 'Name' ] or '' ).strip( ),
+				'Category': str( row[ 'Category' ] or '' ).strip( ),
+				'Text': str( row[ 'Text' ] or '' ),
+			}
+			for row in rows
+		]
+
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'fetch_prompt_records'
+		exception.method = (
+			'fetch_prompt_records( db_path: str, '
+			'categories: Optional[ List[ str ] ] = None ) '
+			'-> List[ Dict[ str, Any ] ]'
+		)
+		Logger( ).write( exception )
+		raise exception
+
+
+def fetch_prompt_categories( db_path: str ) -> List[ str ]:
+	"""Retrieve prompt categories.
+
+	Purpose:
+	    Returns the distinct nonempty prompt categories stored in the authoritative Prompts
+	    table for use by category selectors and Prompt Engineering filters.
+
+	Args:
+	    db_path (str): Path to the application SQLite database.
+
+	Returns:
+	    List[str]: Distinct prompt categories ordered without regard to case.
+
+	Raises:
+	    Error: Raised when prompt categories cannot be retrieved.
+	"""
+	try:
+		throw_if( 'db_path', db_path )
+
+		with sqlite3.connect( db_path ) as conn:
+			rows = conn.execute(
+				'''
+				SELECT DISTINCT TRIM("Category")
+				FROM "Prompts"
+				WHERE TRIM(COALESCE("Category", '')) <> ''
+				ORDER BY TRIM("Category") COLLATE NOCASE;
+				'''
+			).fetchall( )
+
+		return [
+			str( row[ 0 ] ).strip( )
+			for row in rows
+			if row and str( row[ 0 ] or '' ).strip( )
+		]
+
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'fetch_prompt_categories'
+		exception.method = (
+			'fetch_prompt_categories( db_path: str ) -> List[ str ]'
+		)
+		Logger( ).write( exception )
+		raise exception
+
+
+def fetch_prompts_by_category( db_path: str,
+		category: str ) -> List[ Dict[ str, Any ] ]:
+	"""Retrieve prompts for one category.
+
+	Purpose:
+	    Returns prompt records assigned to the selected category. Category comparison is
+	    case-insensitive and ignores surrounding whitespace.
+
+	Args:
+	    db_path (str): Path to the application SQLite database.
+	    category (str): Prompt category used to restrict the returned records.
+
+	Returns:
+	    List[Dict[str, Any]]: Matching prompt records ordered by Title, Name, and ID.
+
+	Raises:
+	    Error: Raised when prompts cannot be retrieved for the selected category.
+	"""
+	try:
+		throw_if( 'db_path', db_path )
+
+		selected_category = str( category or '' ).strip( )
+
+		if not selected_category:
+			return [ ]
+
+		with sqlite3.connect( db_path ) as conn:
+			conn.row_factory = sqlite3.Row
+
+			rows = conn.execute(
+				'''
+				SELECT
+					"ID",
+					"Title",
+					"Name",
+					"Category",
+					"Text"
+				FROM "Prompts"
+				WHERE TRIM(COALESCE("Category", '')) = ?
+				      COLLATE NOCASE
+				ORDER BY
+					COALESCE(NULLIF(TRIM("Title"), ''), "Name")
+						COLLATE NOCASE,
+					"ID";
+				''',
+				(selected_category,)
+			).fetchall( )
+
+		return [
+			{
+				'ID': int( row[ 'ID' ] ),
+				'Title': str( row[ 'Title' ] or '' ).strip( ),
+				'Name': str( row[ 'Name' ] or '' ).strip( ),
+				'Category': str( row[ 'Category' ] or '' ).strip( ),
+				'Text': str( row[ 'Text' ] or '' ),
+			}
+			for row in rows
+		]
+
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'fetch_prompts_by_category'
+		exception.method = (
+			'fetch_prompts_by_category( db_path: str, category: str ) '
+			'-> List[ Dict[ str, Any ] ]'
+		)
+		Logger( ).write( exception )
+		raise exception
+
+
+def fetch_prompt_titles( db_path: str,
+		categories: Optional[ List[ str ] ] = None ) -> List[ Tuple[ int, str ] ]:
+	"""Retrieve prompt identifiers and display titles.
+
+	Purpose:
+	    Returns stable integer prompt identifiers paired with user-facing labels. Title is used
+	    first, followed by Name and then a generated ID label.
+
+	Args:
+	    db_path (str): Path to the application SQLite database.
+	    categories (Optional[List[str]]): Categories used to restrict the returned prompts.
+
+	Returns:
+	    List[Tuple[int, str]]: Prompt identifiers paired with display labels.
+
+	Raises:
+	    Error: Raised when prompt identifiers and titles cannot be retrieved.
+	"""
+	try:
+		records = fetch_prompt_records(
+			db_path=db_path,
+			categories=categories
+		)
+
+		return [
+			(
+				int( record[ 'ID' ] ),
+				str(
+					record[ 'Title' ]
+					or record[ 'Name' ]
+					or f"Prompt {record[ 'ID' ]}"
+				).strip( )
+			)
+			for record in records
+		]
+
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'fetch_prompt_titles'
+		exception.method = (
+			'fetch_prompt_titles( db_path: str, '
+			'categories: Optional[ List[ str ] ] = None ) '
+			'-> List[ Tuple[ int, str ] ]'
+		)
+		Logger( ).write( exception )
+		raise exception
+
+def fetch_prompt_names( db_path: str, categories: Optional[ List[ str ] ] = None ) -> List[ str ]:
+	"""Retrieve user-facing prompt titles.
+
+	Purpose:
+	    Preserves compatibility with the current legacy System Instructions selectors while
+	    reading Title values from the authoritative Prompts schema.
+
+	Args:
+	    db_path (str): Path to the application SQLite database.
+	    categories (Optional[List[str]]): Categories used to restrict the returned prompts.
+
+	Returns:
+	    List[str]: Nonempty user-facing prompt titles.
+
+	Raises:
+	    Error: Raised when prompt titles cannot be retrieved.
+	"""
+	try:
+		records = fetch_prompt_records( db_path=db_path, categories=categories )
+		
+		return [ str( record.get( 'Title' ) or record.get(
+			'Name' ) or f"Prompt {record.get( 'ID' )}" ).strip( ) for record in records if str(
+			record.get( 'Title' ) or record.get(
+				'Name' ) or f"Prompt {record.get( 'ID' )}" ).strip( ) ]
+	
 	except Exception as e:
 		exception = Error( e )
 		exception.module = 'app'
 		exception.cause = 'fetch_prompt_names'
-		exception.method = 'fetch_prompt_names( ... )'
+		exception.method = ('fetch_prompt_names( db_path: str, '
+		                    'categories: Optional[ List[ str ] ] = None ) '
+		                    '-> List[ str ]')
 		Logger( ).write( exception )
-		return [ ]
+		raise exception
 
-def fetch_prompt_text( db_path: str, name: str ) -> str | None:
-	"""Fetch prompt text.
-    
-        Purpose:
-            Provides the fetch prompt text helper used by the Gipity Streamlit application. The
-            function supports UI state management, provider coordination, data normalization, or
-            display behavior required by the surrounding workflow.
-    
-        Args:
-            db_path (str): Value supplied to the helper.
-            name (str): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the fetch_prompt_text helper according to its function annotation and
-            return statements.
-    """
+def fetch_prompt_text( db_path: str, prompt_reference: Any ) -> Optional[ str ]:
+	"""Retrieve prompt text.
+
+	Purpose:
+	    Retrieves prompt text by stable integer ID while retaining temporary compatibility with
+	    existing selectors that submit a Title or Name string.
+
+	Args:
+	    db_path (str): Path to the application SQLite database.
+	    prompt_reference (Any): Prompt ID, Title, or Name used to locate the record.
+
+	Returns:
+	    Optional[str]: Prompt text when a matching record exists; otherwise, None.
+
+	Raises:
+	    Error: Raised when prompt text cannot be retrieved.
+	"""
 	try:
-		conn = sqlite3.connect( db_path )
-		cur = conn.cursor( )
-		cur.execute( 'SELECT Text FROM Prompts WHERE Caption = ?;', (name,) )
-		row = cur.fetchone( )
-		conn.close( )
-		return str( row[ 0 ] ) if row and row[ 0 ] is not None else None
+		throw_if( 'db_path', db_path )
+		
+		if prompt_reference is None:
+			return None
+		
+		row: Optional[ Tuple[ Any, ... ] ] = None
+		
+		with sqlite3.connect( db_path ) as conn:
+			if isinstance( prompt_reference, int ):
+				row = conn.execute( '''
+                                    SELECT "Text"
+                                    FROM "Prompts"
+                                    WHERE "ID" = ?;
+				                    ''', (prompt_reference,) ).fetchone( )
+			
+			else:
+				reference_text = str( prompt_reference ).strip( )
+				
+				if not reference_text:
+					return None
+				
+				try:
+					prompt_id = int( reference_text )
+				except ValueError:
+					prompt_id = None
+				
+				if prompt_id is not None:
+					row = conn.execute( '''
+                                        SELECT "Text"
+                                        FROM "Prompts"
+                                        WHERE "ID" = ?;
+					                    ''', (prompt_id,) ).fetchone( )
+				
+				else:
+					row = conn.execute( '''
+                                        SELECT "Text"
+                                        FROM "Prompts"
+                                        WHERE TRIM(COALESCE("Title", '')) = ?
+                                            COLLATE NOCASE
+                                           OR TRIM(COALESCE("Name", '')) = ?
+                                            COLLATE NOCASE
+                                        ORDER BY CASE
+                                                     WHEN TRIM(COALESCE("Title", '')) = ?
+                                                         COLLATE NOCASE
+                                                         THEN 0
+                                                     ELSE 1
+                                                     END,
+                                                 "ID" LIMIT 1;
+					                    ''',
+						(reference_text, reference_text, reference_text,) ).fetchone( )
+		
+		if not row or row[ 0 ] is None:
+			return None
+		
+		return str( row[ 0 ] )
+	
 	except Exception as e:
 		exception = Error( e )
 		exception.module = 'app'
 		exception.cause = 'fetch_prompt_text'
-		exception.method = 'fetch_prompt_text( ... )'
+		exception.method = ('fetch_prompt_text( db_path: str, prompt_reference: Any ) '
+		                    '-> Optional[ str ]')
 		Logger( ).write( exception )
-		return None
+		raise exception
 
 def fetch_prompts_df( ) -> pd.DataFrame:
-	"""Fetch prompts df.
-    
-        Purpose:
-            Provides the fetch prompts df helper used by the Gipity Streamlit application. The
-            function supports UI state management, provider coordination, data normalization, or
-            display behavior required by the surrounding workflow.
-    
-        Returns:
-            Value produced by the fetch_prompts_df helper according to its function annotation and
-            return statements.
-    """
-	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		df = pd.read_sql_query(
-			'SELECT PromptsId, Caption,  Name, Version, ID FROM Prompts ORDER BY PromptsId DESC',
-			conn )
-	df.insert( 0, 'Selected', False )
-	return df
+	"""Retrieve prompts as a DataFrame.
 
-def fetch_prompt_by_id( pid: int ) -> Dict[ str, Any ] | None:
-	"""Fetch prompt by id.
-    
-        Purpose:
-            Provides the fetch prompt by id helper used by the Gipity Streamlit application. The
-            function supports UI state management, provider coordination, data normalization, or
-            display behavior required by the surrounding workflow.
-    
-        Args:
-            pid (int): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the fetch_prompt_by_id helper according to its function annotation and
-            return statements.
-    """
-	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		cur = conn.execute(
-			'SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE PromptsId=?',
-			(pid,) )
-		row = cur.fetchone( )
-		return dict( zip( [ c[ 0 ] for c in cur.description ], row ) ) if row else None
+	Purpose:
+	    Returns all prompt records using the authoritative Prompts schema and adds the Boolean
+	    selection column used by the Prompt Engineering interface.
 
-def fetch_prompt_by_name( name: str ) -> Dict[ str, Any ] | None:
-	"""Fetch prompt by name.
-    
-        Purpose:
-            Provides the fetch prompt by name helper used by the Gipity Streamlit application. The
-            function supports UI state management, provider coordination, data normalization, or
-            display behavior required by the surrounding workflow.
-    
-        Args:
-            name (str): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the fetch_prompt_by_name helper according to its function annotation
-            and return statements.
-    """
-	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		cur = conn.execute(
-			'SELECT PromptsId, Caption, Name, Text, Version, ID FROM Prompts WHERE Caption=?',
-			(name,) )
-		row = cur.fetchone( )
-		return dict( zip( [ c[ 0 ] for c in cur.description ], row ) ) if row else None
+	Returns:
+	    pd.DataFrame: Prompt records containing Selected, ID, Title, Name, Category, and Text.
 
-def insert_prompt( data: Dict[ str, Any ] ) -> None:
-	"""Insert prompt.
-    
-        Purpose:
-            Provides the insert prompt helper used by the Gipity Streamlit application. The function
-            supports UI state management, provider coordination, data normalization, or display
-            behavior required by the surrounding workflow.
-    
-        Args:
-            data (Dict[str, Any]): Value supplied to the helper.
-    """
-	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		conn.execute(
-			'INSERT INTO Prompts (Caption, Name, Text, Version, ID) VALUES (?, ?, ?, ?, ?)',
-			(data[ 'Caption' ], data[ 'Name' ], data[ 'Text' ], data[ 'Version' ], data[ 'ID' ]) )
+	Raises:
+	    Error: Raised when the prompt DataFrame cannot be created.
+	"""
+	try:
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
+			df_prompts = pd.read_sql_query( '''
+                                            SELECT "ID",
+                                                   "Title",
+                                                   "Name",
+                                                   "Category",
+                                                   "Text"
+                                            FROM "Prompts"
+                                            ORDER BY "ID" DESC;
+			                                ''', conn )
+		
+		df_prompts.insert( 0, 'Selected', False )
+		return df_prompts
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'fetch_prompts_df'
+		exception.method = 'fetch_prompts_df( ) -> pd.DataFrame'
+		Logger( ).write( exception )
+		raise exception
 
-def update_prompt( pid: int, data: Dict[ str, Any ] ) -> None:
-	"""Update prompt.
-    
-        Purpose:
-            Updates the prompt state or persisted value used by the Gipity workflow.
-    
-        Args:
-            pid (int): Value supplied to the helper.
-            data (Dict[str, Any]): Value supplied to the helper.
-    """
-	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		conn.execute(
-			'UPDATE Prompts SET Caption=?, Name=?, Text=?, Version=?, ID=? WHERE PromptsId=?',
-			(data[ 'Caption' ], data[ 'Name' ], data[ 'Text' ], data[ 'Version' ], data[ 'ID' ],
-			 pid) )
+def fetch_prompt_by_id( prompt_id: int ) -> Optional[ Dict[ str, Any ] ]:
+	"""Retrieve one prompt by ID.
 
-def delete_prompt( pid: int ) -> None:
-	"""Delete prompt.
-    
-        Purpose:
-            Deletes or removes the prompt resource requested by the caller while preserving safe
-            guard checks.
-    
-        Args:
-            pid (int): Value supplied to the helper.
-    """
-	with sqlite3.connect( cfg.DB_PATH ) as conn:
-		conn.execute( 'DELETE FROM Prompts WHERE PromptsId=?', (pid,) )
+	Purpose:
+	    Reads one prompt record using its stable integer primary-key identifier.
+
+	Args:
+	    prompt_id (int): Prompt primary-key identifier.
+
+	Returns:
+	    Optional[Dict[str, Any]]: Prompt record when found; otherwise, None.
+
+	Raises:
+	    Error: Raised when the prompt record cannot be retrieved.
+	"""
+	try:
+		if prompt_id is None:
+			return None
+		
+		selected_id = int( prompt_id )
+		
+		if selected_id <= 0:
+			return None
+		
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
+			conn.row_factory = sqlite3.Row
+			
+			row = conn.execute( '''
+                                SELECT "ID",
+                                       "Title",
+                                       "Name",
+                                       "Category",
+                                       "Text"
+                                FROM "Prompts"
+                                WHERE "ID" = ?;
+			                    ''', (selected_id,) ).fetchone( )
+		
+		if row is None:
+			return None
+		
+		return { 'ID': int( row[ 'ID' ] ), 'Title': str( row[ 'Title' ] or '' ).strip( ),
+			'Name': str( row[ 'Name' ] or '' ).strip( ),
+			'Category': str( row[ 'Category' ] or '' ).strip( ),
+			'Text': str( row[ 'Text' ] or '' ), }
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'fetch_prompt_by_id'
+		exception.method = ('fetch_prompt_by_id( prompt_id: int ) '
+		                    '-> Optional[ Dict[ str, Any ] ]')
+		Logger( ).write( exception )
+		raise exception
+
+def fetch_prompt_by_name( name: str ) -> Optional[ Dict[ str, Any ] ]:
+	"""Retrieve one prompt by Title or Name.
+
+	Purpose:
+	    Preserves temporary compatibility with legacy Gipity callers that identify prompts using
+	    display text instead of the stable integer primary key.
+
+	Args:
+	    name (str): Prompt Title or Name used to locate the record.
+
+	Returns:
+	    Optional[Dict[str, Any]]: First matching prompt record; otherwise, None.
+
+	Raises:
+	    Error: Raised when the prompt record cannot be retrieved.
+	"""
+	try:
+		selected_name = str( name or '' ).strip( )
+		
+		if not selected_name:
+			return None
+		
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
+			conn.row_factory = sqlite3.Row
+			
+			row = conn.execute( '''
+                                SELECT "ID",
+                                       "Title",
+                                       "Name",
+                                       "Category",
+                                       "Text"
+                                FROM "Prompts"
+                                WHERE TRIM(COALESCE("Title", '')) = ?
+                                    COLLATE NOCASE
+                                   OR TRIM(COALESCE("Name", '')) = ?
+                                    COLLATE NOCASE
+                                ORDER BY CASE
+                                             WHEN TRIM(COALESCE("Title", '')) = ?
+                                                 COLLATE NOCASE
+                                                 THEN 0
+                                             ELSE 1
+                                             END,
+                                         "ID" LIMIT 1;
+			                    ''', (selected_name, selected_name, selected_name,) ).fetchone( )
+		
+		if row is None:
+			return None
+		
+		return { 'ID': int( row[ 'ID' ] ), 'Title': str( row[ 'Title' ] or '' ).strip( ),
+			'Name': str( row[ 'Name' ] or '' ).strip( ),
+			'Category': str( row[ 'Category' ] or '' ).strip( ),
+			'Text': str( row[ 'Text' ] or '' ), }
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'fetch_prompt_by_name'
+		exception.method = ('fetch_prompt_by_name( name: str ) '
+		                    '-> Optional[ Dict[ str, Any ] ]')
+		Logger( ).write( exception )
+		raise exception
+
+def insert_prompt( data: Dict[ str, Any ] ) -> int:
+	"""Insert a prompt record.
+
+	Purpose:
+	    Creates a prompt using the authoritative Title, Name, Category, and Text fields and
+	    returns the generated integer primary-key identifier.
+
+	Args:
+	    data (Dict[str, Any]): Prompt values containing Title, Name, Category, and Text.
+
+	Returns:
+	    int: Integer ID assigned to the inserted prompt record.
+
+	Raises:
+	    Error: Raised when the prompt record cannot be inserted.
+	"""
+	try:
+		throw_if( 'data', data )
+		
+		title = str( data.get( 'Title', '' ) or '' ).strip( )
+		name = str( data.get( 'Name', '' ) or '' ).strip( )
+		category = str( data.get( 'Category', '' ) or '' ).strip( )
+		text = str( data.get( 'Text', '' ) or '' )
+		
+		if not title and not name:
+			raise ValueError( 'Title or Name is required before creating a prompt.' )
+		
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
+			cursor = conn.execute( '''
+                                   INSERT INTO "Prompts"
+                                   ("Title",
+                                    "Name",
+                                    "Category",
+                                    "Text")
+                                   VALUES (?, ?, ?, ?);
+			                       ''', (title, name, category, text,) )
+			
+			conn.commit( )
+			prompt_id = int( cursor.lastrowid )
+		
+		return prompt_id
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'insert_prompt'
+		exception.method = ('insert_prompt( data: Dict[ str, Any ] ) -> int')
+		Logger( ).write( exception )
+		raise exception
+
+def update_prompt( prompt_id: int, data: Dict[ str, Any ] ) -> None:
+	"""Update a prompt record.
+
+	Purpose:
+	    Updates the authoritative Title, Name, Category, and Text values for one prompt
+	    identified by its stable integer primary key.
+
+	Args:
+	    prompt_id (int): Prompt primary-key identifier.
+	    data (Dict[str, Any]): Updated Title, Name, Category, and Text values.
+
+	Returns:
+	    None: The function updates the persistent prompt record.
+
+	Raises:
+	    Error: Raised when the prompt record cannot be updated.
+	"""
+	try:
+		throw_if( 'data', data )
+		
+		selected_id = int( prompt_id )
+		
+		if selected_id <= 0:
+			raise ValueError( 'Prompt ID must be greater than zero.' )
+		
+		title = str( data.get( 'Title', '' ) or '' ).strip( )
+		name = str( data.get( 'Name', '' ) or '' ).strip( )
+		category = str( data.get( 'Category', '' ) or '' ).strip( )
+		text = str( data.get( 'Text', '' ) or '' )
+		
+		if not title and not name:
+			raise ValueError( 'Title or Name is required before updating a prompt.' )
+		
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
+			cursor = conn.execute( '''
+                                   UPDATE "Prompts"
+                                   SET "Title"    = ?,
+                                       "Name"     = ?,
+                                       "Category" = ?,
+                                       "Text"     = ?
+                                   WHERE "ID" = ?;
+			                       ''', (title, name, category, text, selected_id,) )
+			
+			if cursor.rowcount == 0:
+				raise ValueError( f'Prompt ID {selected_id} was not found.' )
+			
+			conn.commit( )
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'update_prompt'
+		exception.method = ('update_prompt( prompt_id: int, '
+		                    'data: Dict[ str, Any ] ) -> None')
+		Logger( ).write( exception )
+		raise exception
+
+def delete_prompt( prompt_id: int ) -> None:
+	"""Delete a prompt record.
+
+	Purpose:
+	    Removes one prompt from the authoritative Prompts table using its stable integer
+	    primary-key identifier.
+
+	Args:
+	    prompt_id (int): Prompt primary-key identifier.
+
+	Returns:
+	    None: The function removes the persistent prompt record.
+
+	Raises:
+	    Error: Raised when the prompt record cannot be deleted.
+	"""
+	try:
+		selected_id = int( prompt_id )
+		
+		if selected_id <= 0:
+			raise ValueError( 'Prompt ID must be greater than zero.' )
+		
+		with sqlite3.connect( cfg.DB_PATH ) as conn:
+			cursor = conn.execute( '''
+                                   DELETE
+                                   FROM "Prompts"
+                                   WHERE "ID" = ?;
+			                       ''', (selected_id,) )
+			
+			if cursor.rowcount == 0:
+				raise ValueError( f'Prompt ID {selected_id} was not found.' )
+			
+			conn.commit( )
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'delete_prompt'
+		exception.method = ('delete_prompt( prompt_id: int ) -> None')
+		Logger( ).write( exception )
+		raise exception
+
+def format_prompt_option( prompt_id: int, prompt_lookup: Dict[ int, Dict[ str, Any ] ] ) -> str:
+	"""Format a prompt selector option.
+
+	Purpose:
+	    Converts a stable prompt identifier into its user-facing Title. Name and the prompt
+	    identifier are used as fallbacks when Title is empty.
+
+	Args:
+	    prompt_id (int): Prompt primary-key identifier.
+	    prompt_lookup (Dict[int, Dict[str, Any]]): Prompt records indexed by integer ID.
+
+	Returns:
+	    str: User-facing prompt selector label.
+	"""
+	record = prompt_lookup.get( int( prompt_id ), { } )
+	
+	title = str( record.get( 'Title', '' ) or '' ).strip( )
+	
+	if title:
+		return title
+	
+	name = str( record.get( 'Name', '' ) or '' ).strip( )
+	
+	if name:
+		return name
+	
+	return f'Prompt {prompt_id}'
 
 def build_prompt( user_input: str ) -> str:
 	"""Build prompt.
@@ -6611,8 +7701,8 @@ def get_audio_task_options( ) -> list[ str ]:
     """
 	return [ '', 'Transcribe', 'Translate', 'Text-to-Speech' ]
 
-def get_audio_model_options( task: str | None, transcriber: Transcription, translator: Translation,
-		tts: TTS ) -> list[ str ]:
+def get_audio_model_options( task: str | None, transcriber: Transcription,
+	translator: Translation, tts: TTS ) -> list[ str ]:
 	"""Get audio model options.
     
         Purpose:
@@ -6735,8 +7825,8 @@ def get_audio_response_format_options( task: str | None, model: str | None,
 		return [ '', 'mp3', 'opus', 'aac', 'flac', 'wav', 'pcm' ]
 	return [ '' ]
 
-def get_audio_include_options( task: str | None, model: str | None, transcriber: Transcription ) -> \
-list[ str ]:
+def get_audio_include_options( task: str | None, model: str | None,
+	transcriber: Transcription ) -> list[ str ]:
 	"""Get audio include options.
     
         Purpose:
@@ -7124,6 +8214,9 @@ def reset_audio_tts_controls( ) -> None:
 		if key in st.session_state:
 			del st.session_state[ key ]
 
+# ==============================================================================
+# Init
+# ==============================================================================
 initialize_database( )
 embedder = load_embedder( )
 if not isinstance( st.session_state.get( 'messages' ), list ):
@@ -7137,6 +8230,10 @@ st.set_page_config( page_title='Gipity', page_icon=cfg.FAVICON, layout='wide',
 st.caption( cfg.APP_SUBTITLE )
 inject_response_css( )
 init_state( )
+
+# ==============================================================================
+# Sidebar
+# ==============================================================================
 with st.sidebar:
 	style_subheaders( )
 	st.logo( cfg.LOGO_PATH, size='large' )
@@ -7176,6 +8273,10 @@ with st.sidebar:
 		if google_cse_id:
 			st.session_state.google_cse_id = google_cse_id
 			os.environ[ 'GOOGLE_CSE_ID' ] = google_cse_id
+			
+# ==============================================================================
+# TEXT MODE
+# ==============================================================================
 if mode == 'Text':
 	ensure_text_mode_state( )
 	text = Chat( )
@@ -7285,6 +8386,9 @@ if mode == 'Text':
 			if prompt_text is not None:
 				st.session_state[ 'text_system_instructions' ] = prompt_text
 	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		st.subheader( '💬 Text Generation', help=cfg.TEXT_GENERATION )
@@ -7293,60 +8397,115 @@ if mode == 'Text':
 			st.session_state[ 'text_system_instructions' ] = ''
 			st.session_state[ 'instructions_last_loaded' ] = ''
 			st.session_state[ 'clear_instructions' ] = False
+		# ------------------------------------------------------------------
+		# Expander - Mind Controls
+		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			
+			# --------- LLM Settings
 			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
-				llm_c1, llm_c2, llm_c3, llm_c4, llm_c5, llm_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
-				with llm_c1:
+				llm1_c1, llm1_c2, llm1_c3 = st.columns(  [ 0.33, 0.33, 0.33 ], border=True,
+					gap='xxsmall' )
+				
+				# ---------- Model ------------
+				with llm1_c1:
 					model_options = list( text.model_options )
 					set_text_model = st.selectbox( label='Select Model', options=model_options,
 						key='text_model', placeholder='Options', index=None,
 						help='REQUIRED. Text Generation model used by the AI' )
 					text_model = st.session_state[ 'text_model' ]
-				with llm_c2:
+					
+				# ---------- Reasoning ------------
+				with llm1_c2:
 					reasoning_options = list( text.reasoning_options )
 					set_text_reasoning = st.selectbox( label='Reasoning', options=reasoning_options,
 						key='text_reasoning', help=cfg.REASONING, index=None,
 						placeholder='Options' )
 					text_reasoning = st.session_state[ 'text_reasoning' ]
-				with llm_c3:
+				
+				# ---------- Top-P ------------
+				with llm1_c3:
 					set_text_top_p = st.slider( label='Top-P', min_value=0.0, max_value=1.0,
 						step=0.01, help=cfg.TOP_P, key='text_top_percent' )
 					text_top_percent = st.session_state[ 'text_top_percent' ]
-				with llm_c4:
+				
+				# ---------- Temperature ------------
+				llm2_c1, llm2_c2, llm2_c3 = st.columns( [ 0.33, 0.33, 0.33 ], border=True,
+					gap='xxsmall' )
+				with llm2_c1:
 					set_text_temperature = st.slider( label='Temperature', min_value=0.0,
 						max_value=2.0, step=0.01, help=cfg.TEMPERATURE, key='text_temperature' )
 					text_temperature = st.session_state[ 'text_temperature' ]
-				with llm_c5:
+				
+				# ---------- Presense Penalty ------------
+				with llm2_c2:
 					set_text_presence = st.slider( label='Presense Penalty', min_value=-2.0,
 						max_value=2.0, step=0.01, help=cfg.PRESENCE_PENALTY,
 						key='text_presence_penalty' )
 					text_presence = st.session_state[ 'text_presence_penalty' ]
-				with llm_c6:
+				
+				# ---------- Frequency Penalty ------------
+				with llm2_c3:
 					set_text_freq = st.slider( label='Frequency Penalty', min_value=-2.0,
 						max_value=2.0, step=0.01, help=cfg.FREQUENCY_PENALTY,
 						key='text_frequency_penalty' )
 					text_frequency = st.session_state[ 'text_frequency_penalty' ]
+					
+				# ---------- Reset Button ------------
 				st.button( label='Reset', key='reset_text_model', width='stretch',
 					on_click=reset_text_llm_controls )
+			
+			# --------- Tool Settings
 			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
-				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5, tool_c6 = st.columns(
-					[ 0.16, 0.16, 0.16, 0.16, 0.16, 0.16 ], border=True, gap='xxsmall' )
+				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5 = st.columns(
+					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
+				
+				# ---------- Max Calls ------------
 				with tool_c1:
 					set_text_calls = st.slider( label='Max Calls', min_value=0, max_value=10,
 						step=1, help=cfg.MAX_TOOL_CALLS, key='text_max_calls' )
 					text_max_calls = st.session_state[ 'text_max_calls' ]
+				
+				# ---------- Choice ------------
 				with tool_c2:
 					choice_options = list( text.choice_options )
 					set_text_choice = st.selectbox( label='Choice', options=choice_options,
 						key='text_tool_choice', help=cfg.CHOICE, index=None, placeholder='Options' )
 					text_tool_choice = st.session_state[ 'text_tool_choice' ]
+				
+				# ---------- Includes ------------
 				with tool_c3:
 					include_options = list( text.include_options )
 					set_text_include = st.multiselect( label='Include', options=include_options,
 						key='text_include', help=cfg.INCLUDE, placeholder='Options' )
 					text_include = st.session_state[ 'text_include' ]
+				
+				# ---------- Tools ------------
 				with tool_c4:
+					tool_options = list( text.tool_options )
+					set_text_tools = st.multiselect( label='Tools', options=tool_options,
+						key='text_tools', help=cfg.TOOLS, placeholder='Options' )
+					text_tools = st.session_state[ 'text_tools' ]
+				
+				# ---------- Allow Parallel ------------
+				with tool_c5:
+					set_text_parallel = st.toggle( label='Allow Parallel',
+						key='text_parallel_calls', help=cfg.PARALLEL_TOOL_CALLS )
+					text_parallel_calls = st.session_state[ 'text_parallel_calls' ]
+				
+				# ---------- Vector Stores ------------
+				store_c1, store_c2 = st.columns( [ 0.60, 0.40 ], border=True )
+				with store_c1:
+					set_text_vector_store_ids = st.text_input( label='Vector Store IDs',
+						key='text_vector_store_ids',
+						value=st.session_state.get( 'text_vector_store_ids', '' ),
+						help='Required when the file_search tool is selected. Enter one or more vector '
+						     'store IDs separated by commas.',
+						width='stretch', placeholder='vs_...' )
+					text_vector_store_ids = st.session_state.get( 'text_vector_store_ids', '' )
+				
+				# ---------- Allowed Domains ------------
+				with store_c2:
 					set_text_domains = st.text_area( label='Allowed Domains',
 						key='text_domains_input',
 						value='\n'.join( st.session_state.get( 'text_domains', [ ] ) ),
@@ -7354,76 +8513,90 @@ if mode == 'Text':
 					text_domains = [ d.strip( ) for d in
 					                 re.split( '[\\s,;]+', set_text_domains or '' ) if d.strip( ) ]
 					st.session_state[ 'text_domains' ] = text_domains
-				with tool_c5:
-					tool_options = list( text.tool_options )
-					set_text_tools = st.multiselect( label='Tools', options=tool_options,
-						key='text_tools', help=cfg.TOOLS, placeholder='Options' )
-					text_tools = st.session_state[ 'text_tools' ]
-				with tool_c6:
-					set_text_parallel = st.toggle( label='Allow Parallel',
-						key='text_parallel_calls', help=cfg.PARALLEL_TOOL_CALLS )
-					text_parallel_calls = st.session_state[ 'text_parallel_calls' ]
-				set_text_vector_store_ids = st.text_input( label='Vector Store IDs',
-					key='text_vector_store_ids',
-					value=st.session_state.get( 'text_vector_store_ids', '' ),
-					help='Required when the file_search tool is selected. Enter one or more vector store IDs separated by commas.',
-					width='stretch', placeholder='vs_...' )
-				text_vector_store_ids = st.session_state.get( 'text_vector_store_ids', '' )
+				
+				# ---------- Reset ------------
 				st.button( label='Reset', key='reset_text_tools', width='stretch',
 					on_click=reset_text_tool_controls )
-			with st.expander( label='Response Settings', icon='↔️', expanded=False,
-					width='stretch' ):
-				resp_c1, resp_c2, resp_c3, resp_c4, resp_c5, resp_c6, resp_c7 = st.columns(
-					[ 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.14 ], border=True, gap='xxsmall' )
-				with resp_c1:
+			
+			# ---------- Response Settings ------------
+			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
+				resp1_c1, resp1_c2, resp1_c3, resp1_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25, ],
+					border=True, gap='xxsmall' )
+				
+				# --------- Input Mode ------------------
+				with resp1_c1:
 					input_mode_options = [ '', 'conversation', 'single_turn' ]
 					set_text_input = st.selectbox( label='Input Mode', options=input_mode_options,
 						key='text_input',
 						help='Optional. Controls whether prior chat messages are sent back to the Responses API as context.',
 						placeholder='Options' )
 					text_input = st.session_state.get( 'text_input', '' )
-				with resp_c2:
+				
+				# --------- Max Tokens ------------------
+				with resp1_c2:
 					set_text_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
 						step=500, help=cfg.MAX_OUTPUT_TOKENS, key='text_max_tokens' )
 					text_tokens = st.session_state[ 'text_max_tokens' ]
-				with resp_c3:
+				
+				# --------- Response Format ------------------
+				with resp1_c3:
 					format_options = list( text.format_options )
 					set_text_response_format = st.selectbox( label='Response Format',
 						options=format_options, key='text_response_format',
 						help='Optional. Responses API text.format setting. Use "text" for plain text responses.',
 						placeholder='Options' )
 					text_response_format = st.session_state.get( 'text_response_format', '' )
-				with resp_c4:
+				
+				# --------- Previous ID ------------------
+				with resp1_c4:
 					set_text_previous_id = st.text_input( label='Previous Response ID',
 						key='text_previous_response_id',
 						value=st.session_state.get( 'text_previous_response_id', '' ),
-						help='Optional. Responses API previous_response_id. Ignored in single_turn and conversation modes.',
+						help='Optional. Ignored in single_turn and conversation modes.',
 						width='stretch', placeholder='Enter Previous Response ID' )
 					text_previous_response_id = st.session_state.get( 'text_previous_response_id',
 						'' )
-				with resp_c5:
+				
+				# --------- Store ------------------
+				resp2_c1, resp2_c2, resp2_c3, resp2_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+					border=True, gap='xxsmall' )
+				with resp2_c1:
 					set_text_store = st.toggle( label='Store', key='text_store', help=cfg.STORE )
 					text_store = st.session_state[ 'text_store' ]
-				with resp_c6:
+				
+				# --------- Stream ------------------
+				with resp2_c2:
 					set_text_stream = st.toggle( label='Stream', key='text_stream',
 						help=cfg.STREAM )
 					text_stream = st.session_state[ 'text_stream' ]
-				with resp_c7:
+				
+				# --------- Background ------------------
+				with resp2_c3:
 					set_text_background = st.toggle( label='Background', key='text_background',
 						help=cfg.BACKGROUND_MODE )
 					text_background = st.session_state[ 'text_background' ]
-				set_text_conversation_id = st.text_input( label='Conversation ID',
-					key='text_conversation_id',
-					value=st.session_state.get( 'text_conversation_id', '' ),
-					help='Optional. Only used when Input Mode is conversation. Leave blank to use local message context instead.',
-					width='stretch', placeholder='conv_...' )
-				text_conversation_id = st.session_state.get( 'text_conversation_id', '' )
+				
+				# --------- Conversation ------------------
+				with resp2_c4:
+					set_text_conversation_id = st.text_input( label='Conversation ID',
+						key='text_conversation_id',
+						value=st.session_state.get( 'text_conversation_id', '' ),
+						help='Optional. Only used when Input Mode is conversation. Leave blank to use local message context instead.',
+						width='stretch', placeholder='conv_...' )
+					text_conversation_id = st.session_state.get( 'text_conversation_id', '' )
+				
+				# --------- Reset Controls ------------------
 				st.button( label='Reset', key='reset_text_response', width='stretch',
 					on_click=reset_text_response_controls )
-			with st.expander( label='Structured Output Settings', icon='🧾', expanded=False,
+			
+			# ---------- Structured Output Settings ------------
+			with st.expander( label='Structured Output', icon='🧾', expanded=False,
 					width='stretch' ):
-				struct_c1, struct_c2 = st.columns( [ 0.6, 0.4 ], border=True, gap='xxsmall' )
-				with struct_c1:
+				
+				# --------- Name ------------------
+				struct1_c1, struct1_c2, struct1_c3 = st.columns( [ 0.30, 0.50, 0.20  ], border=True,
+					gap='xxsmall' )
+				with struct1_c1:
 					set_text_json_schema_name = st.text_input( label='Schema Name',
 						key='text_json_schema_name',
 						value=st.session_state.get( 'text_json_schema_name',
@@ -7432,19 +8605,27 @@ if mode == 'Text':
 						placeholder='structured_response' )
 					text_json_schema_name = st.session_state.get( 'text_json_schema_name',
 						'structured_response' )
-				with struct_c2:
+				
+				# --------- JSON ------------------
+				with struct1_c2:
+					set_text_json_schema = st.text_area( label='JSON Schema', height=80,
+						width='stretch', key='text_json_schema',
+						help='Used only when Response Format is json_schema. Enter the JSON Schema object, not a Python dictionary.',
+						placeholder='{ "type": "object", "properties": { ... }, "required": [ ... ] }' )
+					text_json_schema = st.session_state.get( 'text_json_schema', '' )
+				
+				# --------- Strict ------------------
+				with struct1_c3:
 					set_text_json_schema_strict = st.toggle( label='Strict Schema',
 						key='text_json_schema_strict',
 						help='Used only when Response Format is json_schema.' )
 					text_json_schema_strict = st.session_state.get( 'text_json_schema_strict',
 						True )
-				set_text_json_schema = st.text_area( label='JSON Schema', height=160,
-					width='stretch', key='text_json_schema',
-					help='Used only when Response Format is json_schema. Enter the JSON Schema object, not a Python dictionary.',
-					placeholder='{ "type": "object", "properties": { ... }, "required": [ ... ] }' )
-				text_json_schema = st.session_state.get( 'text_json_schema', '' )
+				
+				# --------- Reset Controls ------------------
 				st.button( label='Reset', key='reset_text_structured_output', width='stretch',
 					on_click=reset_text_structured_output_controls )
+				
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -7584,6 +8765,10 @@ if mode == 'Text':
 			st.session_state.last_answer = ''
 			st.session_state.last_sources = [ ]
 			st.rerun( )
+		
+# ==============================================================================
+# IMAGES MODE
+# ==============================================================================
 elif mode == 'Images':
 	image = Images( )
 	if st.session_state.get( 'clear_instructions' ):
@@ -7884,6 +9069,10 @@ elif mode == 'Images':
 				if st.button( 'Clear Messages', key='clear_image_edit',
 						on_click=clear_image_messages ):
 					st.rerun( )
+					
+# ==============================================================================
+# AUDIO MODE
+# ==============================================================================
 elif mode == 'Audio':
 	ensure_audio_mode_state( )
 	transcriber = Transcription( )
@@ -7914,6 +9103,7 @@ elif mode == 'Audio':
 			'OpenAI audio transcription, translation, and text-to-speech workflows.' ) )
 		st.divider( )
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			
 			with st.expander( label='LLM Options', icon='🧊', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
@@ -7980,6 +9170,7 @@ elif mode == 'Audio':
 					audio_response_format = st.session_state.get( 'audio_response_format', '' )
 				st.button( label='Reset', key='reset_audio_task', width='stretch',
 					on_click=reset_audio_task_controls )
+			
 			with st.expander( label='Inference Options', icon='🎛️', expanded=False,
 					width='stretch' ):
 				inf_c1, inf_c2, inf_c3, inf_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
@@ -8016,6 +9207,7 @@ elif mode == 'Audio':
 						if key in st.session_state:
 							del st.session_state[ key ]
 					st.rerun( )
+			
 			with st.expander( label='Sound Options', icon='🔊', expanded=False, width='stretch' ):
 				snd_c1, snd_c2, snd_c3, snd_c4, snd_c5 = st.columns( [ 0.2, 0.2, 0.2, 0.2, 0.2 ],
 					border=True, gap='xxsmall' )
@@ -8052,6 +9244,7 @@ elif mode == 'Audio':
 						help='Autoplay local audio playback when supported.' )
 				st.button( label='Reset', key='reset_audio_tts', width='stretch',
 					on_click=reset_audio_tts_controls )
+		
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -8251,7 +9444,7 @@ elif mode == 'Audio':
 							st.error( f'Text-to-Speech failed: {exc}' )
 			else:
 				with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
-					message = 'Audio chat input is routed to Text-to-Speech only. Use Upload Audio or Record Audio for transcription and translation.'
+					message = 'Use Upload Audio or Record Audio for transcription and translation.'
 					st.markdown( message )
 					st.session_state.audio_messages.append(
 						{ 'role': 'assistant', 'content': message } )
@@ -8268,6 +9461,10 @@ elif mode == 'Audio':
 			if st.button( 'Clear Outputs', key='clear_audio_outputs', width='stretch',
 					on_click=clear_audio_outputs ):
 				st.rerun( )
+				
+# ==============================================================================
+# DOCQNA MODE
+# ==============================================================================
 elif mode == 'Document Q&A':
 	ensure_docqna_mode_state( )
 	if not isinstance( st.session_state.get( 'docqna_messages' ), list ):
@@ -8296,7 +9493,9 @@ elif mode == 'Document Q&A':
 		st.subheader( '📖 Document Q & A', help=getattr( cfg, 'DOCUMENT_QNA',
 			'Ask questions against local uploads, OpenAI file IDs, or OpenAI vector stores.' ) )
 		st.divider( )
+		
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			
 			with st.expander( label='Source Controls', icon='📚', expanded=False, width='stretch' ):
 				source_c1, source_c2, source_c3, source_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
@@ -8354,6 +9553,7 @@ elif mode == 'Document Q&A':
 							st.rerun( )
 						else:
 							st.warning( 'No current Vector Stores mode store ID is available.' )
+			
 			with st.expander( label='Retrieval Controls', icon='🧩', expanded=False,
 					width='stretch' ):
 				retrieval_c1, retrieval_c2, retrieval_c3 = st.columns( [ 0.34, 0.33, 0.33 ],
@@ -8437,6 +9637,7 @@ elif mode == 'Document Q&A':
 				with action_c3:
 					st.button( label='Clear Outputs', key='docqna_clear_outputs', width='stretch',
 						on_click=clear_docqna_outputs )
+			
 			with st.expander( label='Generation Controls', icon='🎛️', expanded=False,
 					width='stretch' ):
 				gen_c1, gen_c2, gen_c3, gen_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
@@ -8471,6 +9672,7 @@ elif mode == 'Document Q&A':
 			with reset_controls_c2:
 				st.button( label='Unload Documents', key='docqna_unload_documents', width='stretch',
 					on_click=unload_docqna_documents )
+		
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -8633,6 +9835,10 @@ elif mode == 'Document Q&A':
 			if st.button( 'Reset All', key='docqna_reset_all', width='stretch',
 					on_click=reset_docqna_all ):
 				st.rerun( )
+
+# ==============================================================================
+# EMBEDDINGS MODE
+# ==============================================================================
 elif mode == 'Embeddings':
 	ensure_embeddings_mode_state( )
 	embedding = Embeddings( )
@@ -8840,6 +10046,10 @@ elif mode == 'Embeddings':
 		if isinstance( usage, dict ) and len( usage ) > 0:
 			with st.expander( label='Embedding Usage', icon='📊', expanded=False, width='stretch' ):
 				st.json( usage )
+				
+# ==============================================================================
+# FILES API MODE
+# ==============================================================================
 elif mode == 'Files':
 	ensure_files_mode_state( )
 	files = Files( )
@@ -9169,6 +10379,10 @@ elif mode == 'Files':
 			if st.button( 'Reset All', key='reset_files_all', width='stretch',
 					on_click=reset_files_all ):
 				st.rerun( )
+				
+# ==============================================================================
+# VECTOR STORE MODE
+# ==============================================================================
 elif mode == 'Vector Stores':
 	ensure_vectorstores_mode_state( )
 	vector = VectorStores( )
@@ -9192,7 +10406,9 @@ elif mode == 'Vector Stores':
 		st.subheader( '🧊 Vector Stores', help=getattr( cfg, 'VECTORSTORES_API',
 			'Create, manage, search, and query OpenAI vector stores.' ) )
 		st.divider( )
+		
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			
 			with st.expander( label='Store Controls', icon='🗄️', expanded=False, width='stretch' ):
 				ctrl_c1, ctrl_c2, ctrl_c3, ctrl_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
@@ -9225,6 +10441,7 @@ elif mode == 'Vector Stores':
 					value=st.session_state.get( 'stores_metadata', '' ), height=100,
 					width='stretch', help='Optional JSON object used as vector store metadata.',
 					placeholder='{ "project": "example" }' )
+			
 			with st.expander( label='Chunking Controls', icon='🧩', expanded=False,
 					width='stretch' ):
 				chunk_c1, chunk_c2, chunk_c3 = st.columns( [ 0.34, 0.33, 0.33 ], border=True,
@@ -9278,6 +10495,7 @@ elif mode == 'Vector Stores':
 					st.slider( label='Chunk Overlap', min_value=0, max_value=max_overlap, step=25,
 						key='stores_chunk_overlap',
 						help='Static chunking overlap in tokens. Cannot exceed half the chunk size.' )
+			
 			with st.expander( label='File Controls', icon='📎', expanded=False, width='stretch' ):
 				file_c1, file_c2 = st.columns( [ 0.5, 0.5 ], border=True, gap='xxsmall' )
 				with file_c1:
@@ -9299,6 +10517,7 @@ elif mode == 'Vector Stores':
 					value=st.session_state.get( 'stores_batch_id', '' ),
 					help='Vector store file batch ID used for retrieve/cancel workflows.',
 					width='stretch', placeholder='vsfb_...' )
+			
 			with st.expander( label='Search Controls', icon='🔎', expanded=False, width='stretch' ):
 				search_c1, search_c2, search_c3, search_c4 = st.columns( [ 0.4, 0.2, 0.2, 0.2 ],
 					border=True, gap='xxsmall' )
@@ -9326,6 +10545,7 @@ elif mode == 'Vector Stores':
 						help='Optional native search score threshold.' )
 					st.toggle( label='Rewrite Query', key='stores_rewrite_query',
 						help='Optional native vector store query rewriting.' )
+			
 			with st.expander( label='Current Store', icon='🎯', expanded=False, width='stretch' ):
 				store_rows = st.session_state.get( 'stores_table', [ ] )
 				store_options = build_vector_store_selection_options( store_rows )
@@ -9355,6 +10575,7 @@ elif mode == 'Vector Stores':
 					disabled=True, key='stores_selected_id_display',
 					help='Resolved vector store ID used by store, file, batch, search, and answer actions.',
 					width='stretch' )
+		
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -9743,6 +10964,10 @@ elif mode == 'Vector Stores':
 			if st.button( 'Reset All', key='reset_vector_store_all', width='stretch',
 					on_click=reset_vector_store_all ):
 				st.rerun( )
+
+# ==============================================================================
+# PROMPT ENGINEERING MODE
+# ==============================================================================
 elif mode == 'Prompt Engineering':
 	import sqlite3
 	import math
@@ -9770,11 +10995,13 @@ elif mode == 'Prompt Engineering':
 			"""Get conn.
             
                 Purpose:
-                    Returns the conn value used by the Gipity interface. The helper centralizes option
+                    Returns the conn value used by the Gipity interface. The helper centralizes
+                    option
                     lookup and fallback behavior for callers.
             
                 Returns:
-                    Value produced by the get_conn helper according to its function annotation and return
+                    Value produced by the get_conn helper according to its function annotation
+                    and return
                     statements.
             """
 			return sqlite3.connect( cfg.DB_PATH )
@@ -9797,7 +11024,8 @@ elif mode == 'Prompt Engineering':
 			"""Load prompt.
             
                 Purpose:
-                    Loads the prompt resource or state required by the Gipity workflow and returns the
+                    Loads the prompt resource or state required by the Gipity workflow and
+                    returns the
                     prepared value for caller use.
             
                 Args:
@@ -9825,7 +11053,8 @@ elif mode == 'Prompt Engineering':
 			st.selectbox( 'Direction', [ 'ASC', 'DESC' ], key='pe_sort_dir' )
 		with c4:
 			st.markdown(
-				"<div style='font-size:0.95rem;font-weight:600;margin-bottom:0.25rem;'>Go to ID</div>",
+				"<div style='font-size:0.95rem;font-weight:600;margin-bottom:0.25rem;'>Go to "
+				"ID</div>",
 				unsafe_allow_html=True )
 			a1, a2, a3 = st.columns( [ 2, 1, 1 ] )
 			with a1:
@@ -9844,7 +11073,11 @@ elif mode == 'Prompt Engineering':
 			s = f'%{st.session_state.pe_search}%'
 			params.extend( [ s, s ] )
 		offset = (st.session_state.pe_page - 1) * PAGE_SIZE
-		query = f'\n\t        SELECT PromptsId, Caption, Name, Text, Version, ID\n\t        FROM {TABLE}\n\t        {where}\n\t        ORDER BY {st.session_state.pe_sort_col} {st.session_state.pe_sort_dir}\n\t        LIMIT {PAGE_SIZE} OFFSET {offset}\n\t    '
+		query = (f'\n\t        SELECT PromptsId, Caption, Name, Text, Version, ID\n\t        FROM '
+		         f'{TABLE}\n\t        {where}\n\t        '
+		         f'ORDER BY {st.session_state.pe_sort_col} {st.session_state.pe_sort_dir}\n\t        '
+		         f'LIMIT {PAGE_SIZE} OFFSET '
+		         f'{offset}\n\t    ')
 		count_query = f'SELECT COUNT(*) FROM {TABLE} {where}'
 		with get_conn( ) as conn:
 			rows = conn.execute( query, params ).fetchall( )
@@ -9854,8 +11087,8 @@ elif mode == 'Prompt Engineering':
 		for r in rows:
 			table_rows.append(
 				{ 'Selected': r[ 0 ] == st.session_state.pe_selected_id, 'PromptsId': r[ 0 ],
-				  'Caption': r[ 1 ], 'Name': r[ 2 ], 'Text': r[ 3 ], 'Version': r[ 4 ],
-				  'ID': r[ 5 ] } )
+					'Caption': r[ 1 ], 'Name': r[ 2 ], 'Text': r[ 3 ], 'Version': r[ 4 ],
+					'ID': r[ 5 ] } )
 		edited = st.data_editor( table_rows, hide_index=True, use_container_width=True,
 			key='prompt_table' )
 		selected = [ r for r in edited if isinstance( r, dict ) and r.get( 'Selected' ) ]
@@ -9879,27 +11112,34 @@ elif mode == 'Prompt Engineering':
 				st.session_state.pe_page += 1
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		with st.expander( '🖊️ Edit Prompt', expanded=False ):
-			st.text_input( 'PromptsId', value=st.session_state.pe_selected_id or '', disabled=True )
+			st.text_input( 'PromptsId', value=st.session_state.pe_selected_id or '',
+				disabled=True )
 			st.text_input( 'Name', key='pe_name' )
 			st.text_area( 'Text', key='pe_text', height=260 )
 			st.text_input( 'Version', key='pe_version' )
 			c1, c2, c3 = st.columns( 3 )
 			with c1:
 				if st.button(
-						'💾 Save Changes' if st.session_state.pe_selected_id else '➕ Create Prompt' ):
+						'💾 Save Changes' if st.session_state.pe_selected_id else '➕ Create '
+						                                                         'Prompt' ):
 					with get_conn( ) as conn:
 						if st.session_state.pe_selected_id:
 							conn.execute(
-								f'\n\t                            UPDATE {TABLE}\n\t                            SET Caption=?, Name=?, Text=?, Version=?, ID=?\n\t                            WHERE PromptsId=?\n\t                            ',
+								f'\n\t                            UPDATE {TABLE}\n\t               '
+								f'             SET Caption=?, Name=?, Text=?, Version=?, ID=?\n\t  '
+								f'                          WHERE PromptsId=?\n\t                  '
+								f'          ',
 								(st.session_state.pe_caption, st.session_state.pe_name,
-								 st.session_state.pe_text, st.session_state.pe_version,
-								 st.session_state.pe_id, st.session_state.pe_selected_id) )
+									st.session_state.pe_text, st.session_state.pe_version,
+									st.session_state.pe_id, st.session_state.pe_selected_id) )
 						else:
 							conn.execute(
-								f'\n\t                            INSERT INTO {TABLE} (Caption, Name, Text, Version, ID)\n\t                            VALUES (?, ?, ?, ? , ?)\n\t                            ',
+								f'\n\t                            INSERT INTO {TABLE} (Caption, '
+								f'Name, Text, Version, ID)\n\t                            VALUES ('
+								f'?, ?, ?, ? , ?)\n\t                            ',
 								(st.session_state.pe_caption, st.session_state.pe_name,
-								 st.session_state.pe_text, st.session_state.pe_version,
-								 st.session_state.pe_id) )
+									st.session_state.pe_text, st.session_state.pe_version,
+									st.session_state.pe_id) )
 						conn.commit( )
 					st.success( 'Saved.' )
 					reset_selection( )
@@ -9913,6 +11153,10 @@ elif mode == 'Prompt Engineering':
 					st.success( 'Deleted.' )
 			with c3:
 				st.button( '🧹 Clear Selection', on_click=reset_selection )
+
+# ==============================================================================
+# DATA EXPORT MODE
+# ==============================================================================
 elif mode == 'Data Export':
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
@@ -9959,13 +11203,17 @@ elif mode == 'Data Export':
 		pdf.save( )
 		st.download_button( 'Download Chat History (PDF)', buf.getvalue( ), 'buddy_chat.pdf',
 			mime='application/pdf' )
+
+# ==============================================================================
+# DATA MANAGEMENT MODE
+# ==============================================================================
 elif mode == 'Data Management':
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		st.subheader( '🏛️ Data Management', help=cfg.DATA_MANAGEMENT )
 		tabs = st.tabs(
 			[ 'Import', 'Browse', 'CRUD', 'Explore', 'Filter', 'Aggregate', 'Visualize', 'Admin',
-			  'SQL' ] )
+				'SQL' ] )
 		tables = list_tables( )
 		if not tables:
 			st.info( 'No tables available.' )
@@ -9986,7 +11234,8 @@ elif mode == 'Data Management':
 							for col in df.columns:
 								sql_type = get_sqlite_type( df[ col ].dtype )
 								columns.append( f'"{col}" {sql_type}' )
-							create_stmt = f'''CREATE TABLE "{table_name}" ({', '.join( columns )});'''
+							create_stmt = f'''CREATE TABLE "{table_name}" (
+{', '.join( columns )});'''
 							conn.execute( create_stmt )
 							placeholders = ', '.join( [ '?' ] * len( df.columns ) )
 							insert_stmt = f'INSERT INTO "{table_name}" VALUES ({placeholders});'
@@ -10058,7 +11307,8 @@ elif mode == 'Data Management':
 						cols = list( insert_data.keys( ) )
 						quoted_cols = [ f'"{c}"' for c in cols ]
 						placeholders = ', '.join( [ '?' ] * len( cols ) )
-						stmt = f'''INSERT INTO "{table}" ({', '.join( quoted_cols )}) VALUES ({placeholders});'''
+						stmt = f'''INSERT INTO "{table}" ({', '.join( quoted_cols )}) VALUES (
+{placeholders});'''
 						with create_connection( ) as conn:
 							conn.execute( stmt, list( insert_data.values( ) ) )
 							conn.commit( )
@@ -10187,7 +11437,8 @@ elif mode == 'Data Management':
 					st.session_state.dm_confirm_drop = True
 				if st.session_state.dm_confirm_drop:
 					st.warning(
-						f'You are about to permanently delete table {table}. This action cannot be undone.' )
+						f'You are about to permanently delete table {table}. This action cannot be '
+						f'undone.' )
 					col1, col2 = st.columns( 2 )
 					if col1.button( 'Confirm Drop', key='admin_confirm_drop' ):
 						try:
@@ -10225,7 +11476,7 @@ elif mode == 'Data Management':
 				primary_key = st.checkbox( 'PRIMARY KEY', key=f'pk_{i}' )
 				auto_inc = st.checkbox( 'AUTOINCREMENT (INTEGER only)', key=f'ai_{i}' )
 				columns.append( { 'name': col_name, 'type': col_type, 'not_null': not_null,
-				                  'primary_key': primary_key, 'auto_increment': auto_inc } )
+					'primary_key': primary_key, 'auto_increment': auto_inc } )
 			if st.button( 'Create Table' ):
 				try:
 					create_custom_table( new_table_name, columns )
@@ -10329,10 +11580,14 @@ elif mode == 'Data Management':
 						exception.method = 'module'
 						Logger( ).write( exception )
 						st.error( f'Execution failed: {e}' )
+						
+# ======================================================================================
+# FOOTER — SECTION
+# ======================================================================================
 st.markdown( '\n\t<style>\n\t.block-container {\n\t\tpadding-bottom: 3rem;\n\t}\n\t</style>\n\t',
 	unsafe_allow_html=True )
 st.markdown(
-	'\n\t<style>\n\t.boo-status-bar {\n\t\tposition: fixed;\n\t\tbottom: 0;\n\t\tleft: 0;\n\t\twidth: 100%;\n\t\tbackground-color: rgba(20, 20, 20, 0.95);\n\t\tborder-top: 1px solid #5A5A5A;\n\t\tpadding: 10px 16px;\n\t\tfont-size: 0.80rem;\n\t\tcolor: #5181B0;\n\t\tz-index: 1000;\n\t}\n\t.boo-status-inner {\n\t\tdisplay: flex;\n\t\tjustify-content: space-between;\n\t\talign-items: center;\n\t\tmax-width: 100%;\n\t}\n\t</style>\n\t',
+	'\n\t<style>\n\t.boo-status-bar {\n\t\tposition: fixed;\n\t\tbottom: 0;\n\t\tleft: 0;\n\t\twidth: 100%;\n\t\tbackground-color: rgba(27, 27, 27, 0.95);\n\t\tborder-top: 1px solid #4d4d4d;\n\t\tpadding: 10px 16px;\n\t\tfont-size: 0.80rem;\n\t\tcolor: #4aa2f7;\n\t\tz-index: 1000;\n\t}\n\t.boo-status-inner {\n\t\tdisplay: flex;\n\t\tjustify-content: space-between;\n\t\talign-items: center;\n\t\tmax-width: 100%;\n\t}\n\t</style>\n\t',
 	unsafe_allow_html=True )
 _mode_to_model_key = { 'Text': 'text_model', 'Images': 'image_model', 'Audio': 'audio_model',
                        'Embeddings': 'embedding_model', 'Document Q&A': 'docqna_model',
