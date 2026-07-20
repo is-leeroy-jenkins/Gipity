@@ -7509,6 +7509,332 @@ def format_prompt_option( prompt_id: int, prompt_lookup: Dict[ int, Dict[ str, A
 	
 	return f'Prompt {prompt_id}'
 
+# ----- PROMPT CATEGORY NORMALIZATION ------
+
+def normalize_prompt_category( category: str ) -> str:
+	"""Normalize a prompt category.
+
+	Purpose:
+	    Converts a prompt category into a stable comparison value by removing surrounding
+	    whitespace, collapsing internal whitespace, normalizing ampersands, and converting
+	    text to lowercase.
+
+	Args:
+	    category (str): Prompt category to normalize.
+
+	Returns:
+	    str: Normalized prompt-category value.
+	"""
+	if not isinstance( category, str ):
+		return ''
+	
+	normalized = category.strip( )
+	
+	if not normalized:
+		return ''
+	
+	normalized = normalized.replace( '&', ' and ' )
+	normalized = normalized.replace( '_', ' ' )
+	normalized = normalized.replace( '-', ' ' )
+	normalized = re.sub( r'\s+', ' ', normalized )
+	normalized = normalized.lower( ).strip( )
+	
+	return normalized
+
+def get_prompt_category_aliases( category: str ) -> Tuple[ str, ... ]:
+	"""Return accepted aliases for a prompt category.
+
+	Purpose:
+	    Provides explicit normalized aliases for known category-label variations without
+	    permitting unrestricted substring matching between unrelated categories.
+
+	Args:
+	    category (str): Canonical prompt category.
+
+	Returns:
+	    Tuple[str, ...]: Normalized canonical category and recognized aliases.
+	"""
+	normalized_category = normalize_prompt_category( category )
+	
+	alias_map: Dict[ str, Tuple[ str, ... ] ] = {
+		normalize_prompt_category( 'Research / Academic' ): (
+			normalize_prompt_category( 'Research / Academic' ),
+			normalize_prompt_category( 'Research and Academic' ),
+			normalize_prompt_category( 'Academic Research' ),),
+		normalize_prompt_category( 'Prompt Engineering' ): (
+			normalize_prompt_category( 'Prompt Engineering' ),
+			normalize_prompt_category( 'Prompt Design' ),),
+		normalize_prompt_category( 'Writing / Administrative' ): (
+			normalize_prompt_category( 'Writing / Administrative' ),
+			normalize_prompt_category( 'Writing and Administrative' ),
+			normalize_prompt_category( 'Administrative Writing' ),),
+		normalize_prompt_category( 'Compliance / Legal / Budget' ): (
+			normalize_prompt_category( 'Compliance / Legal / Budget' ),
+			normalize_prompt_category( 'Compliance Legal Budget' ),
+			normalize_prompt_category( 'Compliance and Legal and Budget' ),),
+		normalize_prompt_category( 'Image Generation' ): (
+			normalize_prompt_category( 'Image Generation' ),
+			normalize_prompt_category( 'Generate Images' ),),
+		normalize_prompt_category( 'Business / Finance / Marketing' ): (
+			normalize_prompt_category( 'Business / Finance / Marketing' ),
+			normalize_prompt_category( 'Business Finance Marketing' ),
+			normalize_prompt_category( 'Business and Finance and Marketing' ),),
+		normalize_prompt_category( 'Software Engineering' ): (
+			normalize_prompt_category( 'Software Engineering' ),
+			normalize_prompt_category( 'Programming' ),
+			normalize_prompt_category( 'Software Development' ),),
+		normalize_prompt_category( 'Data Analytics & Governance' ): (
+			normalize_prompt_category( 'Data Analytics & Governance' ),
+			normalize_prompt_category( 'Data Analytics and Governance' ),
+			normalize_prompt_category( 'Analytics and Data Governance' ),),
+		normalize_prompt_category( 'Instruction/ Training / Planning' ): (
+			normalize_prompt_category( 'Instruction/ Training / Planning' ),
+			normalize_prompt_category( 'Instruction / Training / Planning' ),
+			normalize_prompt_category( 'Instruction Training Planning' ),),
+		normalize_prompt_category( 'Translation API' ): (
+			normalize_prompt_category( 'Translation API' ),
+			normalize_prompt_category( 'Translation' ),),
+		normalize_prompt_category( 'Transcription API' ): (
+			normalize_prompt_category( 'Transcription API' ),
+			normalize_prompt_category( 'Transcription' ),),
+		normalize_prompt_category( 'Speech API' ): (normalize_prompt_category( 'Speech API' ),
+			normalize_prompt_category( 'Text To Speech' ),
+			normalize_prompt_category( 'Text-to-Speech' ), normalize_prompt_category( 'TTS' ),),
+		normalize_prompt_category( 'Image Analysis' ): (
+			normalize_prompt_category( 'Image Analysis' ),
+			normalize_prompt_category( 'Image Understanding' ),
+			normalize_prompt_category( 'Vision Analysis' ),),
+		normalize_prompt_category( 'Image Editing' ): (normalize_prompt_category( 'Image '
+		                                                                          'Editing' ),
+			normalize_prompt_category( 'Edit Images' ),
+			normalize_prompt_category( 'Image Modification' ),), }
+	
+	if normalized_category in alias_map:
+		return alias_map[ normalized_category ]
+	
+	if normalized_category:
+		return (normalized_category,)
+	
+	return tuple( )
+
+def prompt_category_matches_policy( category: str, allowed_categories: Tuple[ str, ... ] ) -> bool:
+	"""Determine whether a prompt category is allowed.
+
+	Purpose:
+	    Compares a database category with the canonical categories permitted by one Gipity
+	    mode. Matching uses normalized exact values and explicit aliases only.
+
+	Args:
+	    category (str): Database prompt category.
+	    allowed_categories (Tuple[str, ...]): Categories permitted by the current mode.
+
+	Returns:
+	    bool: True when the database category is permitted; otherwise, False.
+	"""
+	normalized_category = normalize_prompt_category( category )
+	
+	if not normalized_category:
+		return False
+	
+	if not isinstance( allowed_categories, tuple ):
+		return False
+	
+	for allowed_category in allowed_categories:
+		aliases = get_prompt_category_aliases( allowed_category )
+		
+		if normalized_category in aliases:
+			return True
+	
+	return False
+
+def filter_prompt_categories( available_categories: List[ str ],
+	allowed_categories: Tuple[ str, ... ] ) -> List[ str ]:
+	"""Filter prompt categories for one mode.
+
+	Purpose:
+	    Restricts database categories to those allowed by the current mode while preserving
+	    their exact database labels and stable display order.
+
+	Args:
+	    available_categories (List[str]): Categories read from the Prompts table.
+	    allowed_categories (Tuple[str, ...]): Categories permitted by the current mode.
+
+	Returns:
+	    List[str]: Allowed database categories ordered according to the mode policy.
+	"""
+	if not isinstance( available_categories, list ):
+		return [ ]
+	
+	if not isinstance( allowed_categories, tuple ):
+		return [ ]
+	
+	filtered_categories: List[ str ] = [ ]
+	
+	for allowed_category in allowed_categories:
+		allowed_aliases = get_prompt_category_aliases( allowed_category )
+		
+		for available_category in available_categories:
+			if not isinstance( available_category, str ):
+				continue
+			
+			category_value = available_category.strip( )
+			
+			if not category_value:
+				continue
+			
+			normalized_available = normalize_prompt_category( category_value )
+			
+			if normalized_available not in allowed_aliases:
+				continue
+			
+			if category_value in filtered_categories:
+				continue
+			
+			filtered_categories.append( category_value )
+	
+	return filtered_categories
+
+# ------ SYSTEM PROMPT STATE OPERATIONs ------
+
+def load_prompt_into_state( prompt_id_key: str, instruction_key: str ) -> None:
+	"""Load a selected prompt into session state.
+
+	Purpose:
+	    Retrieves the prompt selected through a mode-specific prompt selector and copies its
+	    Text value into the corresponding editable system-instruction control.
+
+	Args:
+	    prompt_id_key (str): Session-state key containing the selected prompt ID.
+	    instruction_key (str): Session-state key receiving the selected prompt text.
+
+	Returns:
+	    None: The function updates Streamlit session state.
+
+	Raises:
+	    Error: Raised when the supplied state keys are invalid or the selected prompt cannot
+	        be retrieved.
+	"""
+	try:
+		throw_if( 'prompt_id_key', prompt_id_key )
+		throw_if( 'instruction_key', instruction_key )
+		
+		selected_prompt_id = st.session_state.get( prompt_id_key, None )
+		
+		if selected_prompt_id in (None, ''):
+			st.session_state[ instruction_key ] = ''
+			return
+		
+		try:
+			prompt_id = int( selected_prompt_id )
+		except (TypeError, ValueError) as e:
+			raise ValueError( f'The selected prompt ID is invalid: {selected_prompt_id}' ) from e
+		
+		if prompt_id <= 0:
+			raise ValueError( 'The selected prompt ID must be greater than zero.' )
+		
+		prompt_record = fetch_prompt_by_id( prompt_id )
+		
+		if prompt_record is None:
+			raise ValueError( f'Prompt ID {prompt_id} was not found.' )
+		
+		prompt_text = prompt_record.get( 'Text', '' )
+		
+		st.session_state[ instruction_key ] = str( prompt_text or '' )
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'load_prompt_into_state'
+		exception.method = ('load_prompt_into_state( '
+		                    'prompt_id_key: str, instruction_key: str ) -> None')
+		Logger( ).write( exception )
+		raise exception
+
+def clear_prompt_state( category_key: str, prompt_id_key: str, instruction_key: str ) -> None:
+	"""Clear one mode's system-prompt state.
+
+	Purpose:
+	    Clears the selected category, selected prompt ID, and editable instruction text for
+	    one application mode without modifying any record in the Prompts table.
+
+	Args:
+	    category_key (str): Session-state key containing the selected prompt category.
+	    prompt_id_key (str): Session-state key containing the selected prompt ID.
+	    instruction_key (str): Session-state key containing the editable instruction text.
+
+	Returns:
+	    None: The function updates Streamlit session state.
+
+	Raises:
+	    Error: Raised when the supplied state keys are invalid or cannot be cleared.
+	"""
+	try:
+		throw_if( 'category_key', category_key )
+		throw_if( 'prompt_id_key', prompt_id_key )
+		throw_if( 'instruction_key', instruction_key )
+		
+		st.session_state[ category_key ] = None
+		st.session_state[ prompt_id_key ] = None
+		st.session_state[ instruction_key ] = ''
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'clear_prompt_state'
+		exception.method = ('clear_prompt_state( category_key: str, '
+		                    'prompt_id_key: str, instruction_key: str ) -> None')
+		Logger( ).write( exception )
+		raise exception
+
+def convert_prompt_state( instruction_key: str ) -> None:
+	"""Convert mode-specific system instructions.
+
+	Purpose:
+	    Converts the specified instruction value between supported XML prompt blocks and
+	    Markdown or HTML heading notation using Gipity's existing conversion helpers.
+
+	Args:
+	    instruction_key (str): Session-state key containing the editable instruction text.
+
+	Returns:
+	    None: The function updates Streamlit session state.
+
+	Raises:
+	    Error: Raised when the supplied state key is invalid or the instruction text cannot
+	        be converted.
+	"""
+	try:
+		throw_if( 'instruction_key', instruction_key )
+		
+		instruction_text = st.session_state.get( instruction_key, '' )
+		
+		if instruction_text is None:
+			st.session_state[ instruction_key ] = ''
+			return
+		
+		if not isinstance( instruction_text, str ):
+			instruction_text = str( instruction_text )
+		
+		source_text = instruction_text.strip( )
+		
+		if not source_text:
+			return
+		
+		if cfg.XML_BLOCK_PATTERN.search( source_text ):
+			converted_text = convert_xml( source_text )
+		else:
+			converted_text = convert_markdown( source_text )
+		
+		st.session_state[ instruction_key ] = str( converted_text or '' )
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'convert_prompt_state'
+		exception.method = ('convert_prompt_state( instruction_key: str ) -> None')
+		Logger( ).write( exception )
+		raise exception
+	
 def build_prompt( user_input: str ) -> str:
 	"""Build prompt.
     
