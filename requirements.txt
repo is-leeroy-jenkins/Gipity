@@ -29,3 +29,10 @@ pyyaml
 streamlit
 streamlit-extras
 streamlit-pdf
+# mkdocs
+mkdocs
+mkdocs-material
+mkdocstrings[python]
+mkdocs-autorefs
+pymdown-extensions
+black
