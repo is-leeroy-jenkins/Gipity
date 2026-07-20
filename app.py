@@ -6861,7 +6861,7 @@ def rename_table( old_name: str, new_name: str ) -> None:
 # ======================================================================================
 
 def fetch_prompt_records( db_path: str,
-		categories: Optional[ List[ str ] ] = None ) -> List[ Dict[ str, Any ] ]:
+	categories: Optional[ List[ str ] ] = None ) -> List[ Dict[ str, Any ] ]:
 	"""Retrieve prompt records.
 
 	Purpose:
@@ -6880,72 +6880,57 @@ def fetch_prompt_records( db_path: str,
 	"""
 	try:
 		throw_if( 'db_path', db_path )
-
+		
 		query = '''
-			SELECT
-				"ID",
-				"Title",
-				"Name",
-				"Category",
-				"Text"
-			FROM "Prompts"
-		'''
-
+                SELECT "ID",
+                       "Title",
+                       "Name",
+                       "Category",
+                       "Text"
+                FROM "Prompts" \
+		        '''
+		
 		parameters: List[ Any ] = [ ]
-
+		
 		if categories:
-			normalized_categories = [
-				str( category ).strip( )
-				for category in categories
-				if str( category ).strip( )
-			]
-
+			normalized_categories = [ str( category ).strip( ) for category in categories if
+				str( category ).strip( ) ]
+			
 			if normalized_categories:
-				placeholders = ', '.join(
-					[ '?' for _ in normalized_categories ]
-				)
-
+				placeholders = ', '.join( [ '?' for _ in normalized_categories ] )
+				
 				query += f'''
 					WHERE TRIM(COALESCE("Category", '')) COLLATE NOCASE
 					      IN ({placeholders})
 				'''
-
+				
 				parameters.extend( normalized_categories )
-
+		
 		query += '''
 			ORDER BY
 				COALESCE("Category", '') COLLATE NOCASE,
 				COALESCE(NULLIF(TRIM("Title"), ''), "Name") COLLATE NOCASE,
 				"ID";
 		'''
-
+		
 		with sqlite3.connect( db_path ) as conn:
 			conn.row_factory = sqlite3.Row
 			rows = conn.execute( query, parameters ).fetchall( )
-
-		return [
-			{
-				'ID': int( row[ 'ID' ] ),
-				'Title': str( row[ 'Title' ] or '' ).strip( ),
-				'Name': str( row[ 'Name' ] or '' ).strip( ),
-				'Category': str( row[ 'Category' ] or '' ).strip( ),
-				'Text': str( row[ 'Text' ] or '' ),
-			}
-			for row in rows
-		]
-
+		
+		return [ { 'ID': int( row[ 'ID' ] ), 'Title': str( row[ 'Title' ] or '' ).strip( ),
+			'Name': str( row[ 'Name' ] or '' ).strip( ),
+			'Category': str( row[ 'Category' ] or '' ).strip( ),
+			'Text': str( row[ 'Text' ] or '' ), } for row in rows ]
+	
 	except Exception as e:
 		exception = Error( e )
 		exception.module = 'app'
 		exception.cause = 'fetch_prompt_records'
-		exception.method = (
-			'fetch_prompt_records( db_path: str, '
-			'categories: Optional[ List[ str ] ] = None ) '
-			'-> List[ Dict[ str, Any ] ]'
-		)
+		exception.method = ('fetch_prompt_records( db_path: str, '
+		                    'categories: Optional[ List[ str ] ] = None ) '
+		                    '-> List[ Dict[ str, Any ] ]')
 		Logger( ).write( exception )
 		raise exception
-
 
 def fetch_prompt_categories( db_path: str ) -> List[ str ]:
 	"""Retrieve prompt categories.
@@ -6965,36 +6950,27 @@ def fetch_prompt_categories( db_path: str ) -> List[ str ]:
 	"""
 	try:
 		throw_if( 'db_path', db_path )
-
+		
 		with sqlite3.connect( db_path ) as conn:
-			rows = conn.execute(
-				'''
-				SELECT DISTINCT TRIM("Category")
-				FROM "Prompts"
-				WHERE TRIM(COALESCE("Category", '')) <> ''
-				ORDER BY TRIM("Category") COLLATE NOCASE;
-				'''
-			).fetchall( )
-
-		return [
-			str( row[ 0 ] ).strip( )
-			for row in rows
-			if row and str( row[ 0 ] or '' ).strip( )
-		]
-
+			rows = conn.execute( '''
+                                 SELECT DISTINCT TRIM("Category")
+                                 FROM "Prompts"
+                                 WHERE TRIM(COALESCE("Category", '')) <> ''
+                                 ORDER BY TRIM("Category") COLLATE NOCASE;
+			                     ''' ).fetchall( )
+		
+		return [ str( row[ 0 ] ).strip( ) for row in rows if
+			row and str( row[ 0 ] or '' ).strip( ) ]
+	
 	except Exception as e:
 		exception = Error( e )
 		exception.module = 'app'
 		exception.cause = 'fetch_prompt_categories'
-		exception.method = (
-			'fetch_prompt_categories( db_path: str ) -> List[ str ]'
-		)
+		exception.method = ('fetch_prompt_categories( db_path: str ) -> List[ str ]')
 		Logger( ).write( exception )
 		raise exception
 
-
-def fetch_prompts_by_category( db_path: str,
-		category: str ) -> List[ Dict[ str, Any ] ]:
+def fetch_prompts_by_category( db_path: str, category: str ) -> List[ Dict[ str, Any ] ]:
 	"""Retrieve prompts for one category.
 
 	Purpose:
@@ -7013,59 +6989,45 @@ def fetch_prompts_by_category( db_path: str,
 	"""
 	try:
 		throw_if( 'db_path', db_path )
-
+		
 		selected_category = str( category or '' ).strip( )
-
+		
 		if not selected_category:
 			return [ ]
-
+		
 		with sqlite3.connect( db_path ) as conn:
 			conn.row_factory = sqlite3.Row
-
-			rows = conn.execute(
-				'''
-				SELECT
-					"ID",
-					"Title",
-					"Name",
-					"Category",
-					"Text"
-				FROM "Prompts"
-				WHERE TRIM(COALESCE("Category", '')) = ?
-				      COLLATE NOCASE
-				ORDER BY
-					COALESCE(NULLIF(TRIM("Title"), ''), "Name")
-						COLLATE NOCASE,
-					"ID";
-				''',
-				(selected_category,)
-			).fetchall( )
-
-		return [
-			{
-				'ID': int( row[ 'ID' ] ),
-				'Title': str( row[ 'Title' ] or '' ).strip( ),
-				'Name': str( row[ 'Name' ] or '' ).strip( ),
-				'Category': str( row[ 'Category' ] or '' ).strip( ),
-				'Text': str( row[ 'Text' ] or '' ),
-			}
-			for row in rows
-		]
-
+			
+			rows = conn.execute( '''
+                                 SELECT "ID",
+                                        "Title",
+                                        "Name",
+                                        "Category",
+                                        "Text"
+                                 FROM "Prompts"
+                                 WHERE TRIM(COALESCE("Category", '')) = ?
+                                     COLLATE NOCASE
+                                 ORDER BY COALESCE(NULLIF(TRIM("Title"), ''), "Name")
+                                              COLLATE NOCASE,
+                                          "ID";
+			                     ''', (selected_category,) ).fetchall( )
+		
+		return [ { 'ID': int( row[ 'ID' ] ), 'Title': str( row[ 'Title' ] or '' ).strip( ),
+			'Name': str( row[ 'Name' ] or '' ).strip( ),
+			'Category': str( row[ 'Category' ] or '' ).strip( ),
+			'Text': str( row[ 'Text' ] or '' ), } for row in rows ]
+	
 	except Exception as e:
 		exception = Error( e )
 		exception.module = 'app'
 		exception.cause = 'fetch_prompts_by_category'
-		exception.method = (
-			'fetch_prompts_by_category( db_path: str, category: str ) '
-			'-> List[ Dict[ str, Any ] ]'
-		)
+		exception.method = ('fetch_prompts_by_category( db_path: str, category: str ) '
+		                    '-> List[ Dict[ str, Any ] ]')
 		Logger( ).write( exception )
 		raise exception
 
-
 def fetch_prompt_titles( db_path: str,
-		categories: Optional[ List[ str ] ] = None ) -> List[ Tuple[ int, str ] ]:
+	categories: Optional[ List[ str ] ] = None ) -> List[ Tuple[ int, str ] ]:
 	"""Retrieve prompt identifiers and display titles.
 
 	Purpose:
@@ -7083,32 +7045,20 @@ def fetch_prompt_titles( db_path: str,
 	    Error: Raised when prompt identifiers and titles cannot be retrieved.
 	"""
 	try:
-		records = fetch_prompt_records(
-			db_path=db_path,
-			categories=categories
-		)
-
-		return [
-			(
-				int( record[ 'ID' ] ),
-				str(
-					record[ 'Title' ]
-					or record[ 'Name' ]
-					or f"Prompt {record[ 'ID' ]}"
-				).strip( )
-			)
-			for record in records
-		]
-
+		records = fetch_prompt_records( db_path=db_path, categories=categories )
+		
+		return [ (int( record[ 'ID' ] ),
+			str( record[ 'Title' ] or record[ 'Name' ] or f"Prompt {record[ 'ID' ]}" ).strip( ))
+			for
+			record in records ]
+	
 	except Exception as e:
 		exception = Error( e )
 		exception.module = 'app'
 		exception.cause = 'fetch_prompt_titles'
-		exception.method = (
-			'fetch_prompt_titles( db_path: str, '
-			'categories: Optional[ List[ str ] ] = None ) '
-			'-> List[ Tuple[ int, str ] ]'
-		)
+		exception.method = ('fetch_prompt_titles( db_path: str, '
+		                    'categories: Optional[ List[ str ] ] = None ) '
+		                    '-> List[ Tuple[ int, str ] ]')
 		Logger( ).write( exception )
 		raise exception
 
@@ -8402,7 +8352,7 @@ if mode == 'Text':
 		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			# --------- LLM Settings
+			# --------- LLM Settings  --------------
 			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
 				llm1_c1, llm1_c2, llm1_c3 = st.columns(  [ 0.33, 0.33, 0.33 ], border=True,
 					gap='xxsmall' )
@@ -8455,7 +8405,7 @@ if mode == 'Text':
 				st.button( label='Reset', key='reset_text_model', width='stretch',
 					on_click=reset_text_llm_controls )
 			
-			# --------- Tool Settings
+			# --------- Tool Settings --------------
 			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
 				tool_c1, tool_c2, tool_c3, tool_c4, tool_c5 = st.columns(
 					[ 0.20, 0.20, 0.20, 0.20, 0.20 ], border=True, gap='xxsmall' )
@@ -8589,7 +8539,7 @@ if mode == 'Text':
 				st.button( label='Reset', key='reset_text_response', width='stretch',
 					on_click=reset_text_response_controls )
 			
-			# ---------- Structured Output Settings ------------
+			# ---------- Structured Output ------------
 			with st.expander( label='Structured Output', icon='🧾', expanded=False,
 					width='stretch' ):
 				
@@ -8625,7 +8575,10 @@ if mode == 'Text':
 				# --------- Reset Controls ------------------
 				st.button( label='Reset', key='reset_text_structured_output', width='stretch',
 					on_click=reset_text_structured_output_controls )
-				
+		
+		# ------------------------------------------------------------------
+		# Expander - System Instructions
+		# ------------------------------------------------------------------
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -8644,13 +8597,19 @@ if mode == 'Text':
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
 					on_click=convert_text_system_instructions )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
 		if st.session_state.get( 'text_messages' ) is None:
 			st.session_state.text_messages = [ ]
 		for msg in st.session_state.text_messages:
 			self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
 			with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
 				st.markdown( msg.get( 'content', '' ) )
+		
+		# ------------------------------------------------------------------
+		# Messages
+		# ------------------------------------------------------------------
 		prompt = st.chat_input( 'Gipity Generate …', key='text_chat_input' )
 		if prompt is not None and str( prompt ).strip( ):
 			prompt = str( prompt ).strip( )
@@ -8661,6 +8620,7 @@ if mode == 'Text':
 				st.session_state.text_messages.append( { 'role': 'user', 'content': prompt } )
 				with st.chat_message( 'user', avatar='' ):
 					st.markdown( prompt )
+				
 				with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
 					with st.spinner( 'Thinking…' ):
 						response_text = None
@@ -8758,6 +8718,8 @@ if mode == 'Text':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							pass
+		
+		# ------ Clear Messages -----
 		if st.button( 'Clear Messages', key='clear_text_messages' ):
 			st.session_state.text_messages = [ ]
 			st.session_state[ 'text_previous_response_id' ] = ''
@@ -8777,75 +8739,118 @@ elif mode == 'Images':
 		st.session_state[ 'clear_instructions' ] = False
 	if not isinstance( st.session_state.get( 'image_number' ), int ):
 		st.session_state[ 'image_number' ] = 1
+		
 	if int( st.session_state.get( 'image_number', 1 ) or 1 ) < 1:
 		st.session_state[ 'image_number' ] = 1
+		
 	if not isinstance( st.session_state.get( 'image_max_tokens' ), int ):
 		st.session_state[ 'image_max_tokens' ] = 0
+		
 	if not isinstance( st.session_state.get( 'image_temperature' ), float ):
 		st.session_state[ 'image_temperature' ] = 0.0
+		
 	if not isinstance( st.session_state.get( 'image_include' ), list ):
 		st.session_state[ 'image_include' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'image_compression' ), float ):
 		st.session_state[ 'image_compression' ] = 0.0
+		
 	if not st.session_state.get( 'image_analysis_detail' ):
 		st.session_state[ 'image_analysis_detail' ] = 'auto'
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		st.subheader( '📷 Images API', help=cfg.IMAGES_API )
 		st.divider( )
+		
+		# ------------------------------------------------------------------
+		# Expander - Mind Controls
+		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			
+			# ------ LLM Settings ------
 			with st.expander( label='LLM Settings', icon='🧊', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
+				
+				# ------ Mode ------
 				with llm_c1:
 					image_mode = st.selectbox( label='Image Mode',
 						options=[ 'Generation', 'Analysis', 'Editing' ], key='image_mode',
 						help='Available OpenAI image workflows.', index=None,
 						placeholder='Options' )
+				
+				# ------ Model ------
 				with llm_c2:
 					image_model = st.selectbox( label='Select Model',
 						options=get_image_models( image ), key='image_model',
 						help='Required for image generation and image editing.', index=None,
 						placeholder='Options' )
+				
+				# ------ Analysis ------
 				with llm_c3:
 					image_analysis_model = st.selectbox( label='Analysis Model',
 						options=get_image_analysis_models( image ), key='image_analysis_model',
 						help='Responses API vision model used for image analysis.', index=None,
 						placeholder='Options' )
+				
+				# ------ Number ------
 				with llm_c4:
 					image_number = st.slider( label='Number', min_value=1, max_value=10, step=1,
 						help='Number of images to request.', key='image_number' )
+				
+				# ------ Reset Controls ------
 				st.button( label='Reset', key='reset_image_llm', width='stretch',
 					on_click=reset_image_llm_settings )
+			
+			# ------ Visual Settings ------
 			with st.expander( label='Visual Settings', icon='👁️', expanded=False, width='stretch' ):
 				vis_c1, vis_c2, vis_c3, vis_c4, vis_c5 = st.columns( [ 0.2, 0.2, 0.2, 0.2, 0.2 ],
 					border=True, gap='xxsmall' )
+				
+				# ------ Format ------
 				with vis_c1:
 					image_mime_type = st.selectbox( label='Output Format',
 						options=get_image_mime_options( image ), key='image_mime_type',
 						help='Image output format: png, jpeg, or webp.', index=None,
 						placeholder='Options' )
+				
+				# ------ Size ------
 				with vis_c2:
 					image_size = st.selectbox( label='Image Size',
 						options=get_image_size_options( image ), key='image_size',
 						help='Requested output image size.', index=None, placeholder='Options' )
+				
+				# ------ Quality ------
 				with vis_c3:
 					image_quality = st.selectbox( label='Image Quality',
 						options=get_image_quality_options( image ), key='image_quality',
 						help='Requested image quality.', index=None, placeholder='Options' )
+				
+				# ------ Background ------
 				with vis_c4:
 					image_backcolor = st.selectbox( label='Background',
 						options=get_image_background_options( image ), key='image_backcolor',
 						help='Requested background mode for image generation and editing.',
 						index=None, placeholder='Options' )
+				
+				# ------ Compression ------
 				with vis_c5:
 					image_compression = st.slider( label='Compression', min_value=0.0,
 						max_value=1.0, step=0.01, help=cfg.IMAGE_COMPRESSION,
 						key='image_compression' )
+				
+				# ------ Reset Controls ------
 				st.button( label='Reset', key='reset_image_visual', width='stretch',
 					on_click=reset_image_visual_settings )
-			with st.expander( label='Analysis Settings', icon='🔎', expanded=False,
-					width='stretch' ):
+			
+			# ------ Analysis Settings ------
+			with st.expander( label='Analysis Settings', icon='🔎', expanded=False, width='stretch' ):
+				
+				# ------ Detail ------
 				ana_s1, ana_s2, ana_s3, ana_s4, ana_s5 = st.columns( [ 0.2, 0.2, 0.2, 0.2, 0.2 ],
 					border=True, gap='xxsmall' )
 				with ana_s1:
@@ -8853,24 +8858,38 @@ elif mode == 'Images':
 						options=get_image_detail_options( image ), key='image_analysis_detail',
 						help='Vision detail level for image analysis.', index=None,
 						placeholder='Options' )
+				
+				# ------ Tokens  ------
 				with ana_s2:
 					image_max_tokens = st.slider( label='Max Tokens', min_value=0, max_value=100000,
 						step=500, help=cfg.MAX_OUTPUT_TOKENS, key='image_max_tokens' )
+				
+				# ------ Temperature ------
 				with ana_s3:
 					image_temperature = st.slider( label='Temperature', min_value=0.0,
 						max_value=2.0, step=0.01, help=cfg.TEMPERATURE, key='image_temperature' )
+				
+				# ------ Include ------
 				with ana_s4:
 					include_options = list( image.include_options )
 					image_include = st.multiselect( label='Include', options=include_options,
 						key='image_include', help=cfg.INCLUDE, placeholder='Options' )
+				
+				# ------ Store ------
 				with ana_s5:
 					image_store = st.toggle( label='Store', key='image_store', help=cfg.STORE )
+				
+				# ------ Reset Controls ------
 				if st.button( label='Reset', key='reset_image_analysis', width='stretch' ):
 					for key in [ 'image_analysis_detail', 'image_max_tokens', 'image_temperature',
 					             'image_include', 'image_store' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					st.rerun( )
+		
+		# ------------------------------------------------------------------
+		# Expander - System Instructions
+		# ------------------------------------------------------------------
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -8882,13 +8901,20 @@ elif mode == 'Images':
 			with in_right:
 				st.selectbox( label='Use Template', options=prompt_names, index=None,
 					key='instructions', on_change=load_image_instruction_template )
+			
 			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
+			
+			# ------ Clear Instructions ------
 			with btn_c1:
 				st.button( label='Clear Instructions', width='stretch',
 					on_click=clear_image_instructions )
+			
+			# ------ Format Conversion ------
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
 					on_click=convert_image_system_instructions )
+		
+		# ------ Generation Tab ------
 		tab_gen, tab_analyze, tab_edit = st.tabs( [ 'Generate', 'Analyze', 'Edit' ] )
 		with tab_gen:
 			if st.session_state.get( 'image_input' ) is not None:
@@ -8896,6 +8922,10 @@ elif mode == 'Images':
 					if isinstance( msg, dict ):
 						with st.chat_message( msg.get( 'role', 'assistant' ), avatar='' ):
 							st.markdown( msg.get( 'content', '' ) )
+			
+			# ------------------------------------------------------------------
+			# Messages
+			# ------------------------------------------------------------------
 			prompt = st.chat_input( 'Enter image generation prompt...',
 				key='image_generate_message' )
 			gen_c1, gen_c2 = st.columns( [ 0.5, 0.5 ] )
@@ -8946,6 +8976,8 @@ elif mode == 'Images':
 				if st.button( 'Clear Messages', key='clear_image_generation',
 						on_click=clear_image_messages ):
 					st.rerun( )
+		
+		# ------ Analysis Tab ------
 		with tab_analyze:
 			uploaded_img = st.file_uploader( 'Upload an image for analysis',
 				type=[ 'png', 'jpg', 'jpeg', 'webp' ], accept_multiple_files=False,
@@ -8959,7 +8991,12 @@ elif mode == 'Images':
 					if isinstance( msg, dict ):
 						with st.chat_message( msg.get( 'role', 'assistant' ), avatar='' ):
 							st.markdown( msg.get( 'content', '' ) )
+			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
+			# ------------------------------------------------------------------
+			# Messages
+			# ------------------------------------------------------------------
 			prompt = st.chat_input( 'Enter image analysis prompt...', key='image_analysis_message' )
 			ana_c1, ana_c2 = st.columns( [ 0.5, 0.5 ] )
 			with ana_c1:
@@ -9000,10 +9037,13 @@ elif mode == 'Images':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Analysis Failed: {exc}' )
+			
 			with ana_c2:
 				if st.button( 'Clear Messages', key='clear_image_analysis',
 						on_click=clear_image_messages ):
 					st.rerun( )
+		
+		# ------ Editing Tab ------
 		with tab_edit:
 			uploaded_img = st.file_uploader( 'Upload Image for Edit',
 				type=[ 'png', 'jpg', 'jpeg', 'webp' ], accept_multiple_files=False,
@@ -9017,7 +9057,12 @@ elif mode == 'Images':
 					if isinstance( msg, dict ):
 						with st.chat_message( msg.get( 'role', 'assistant' ), avatar='' ):
 							st.markdown( msg.get( 'content', '' ) )
+			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
+			# ------------------------------------------------------------------
+			# Messages
+			# ------------------------------------------------------------------
 			prompt = st.chat_input( 'Enter image editing prompt...', key='image_edit_message' )
 			edit_c1, edit_c2 = st.columns( [ 0.5, 0.5 ] )
 			with edit_c1:
@@ -9065,6 +9110,7 @@ elif mode == 'Images':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Edit Failed: {exc}' )
+			
 			with edit_c2:
 				if st.button( 'Clear Messages', key='clear_image_edit',
 						on_click=clear_image_messages ):
@@ -9081,32 +9127,51 @@ elif mode == 'Audio':
 	if st.session_state.get( 'clear_instructions' ):
 		st.session_state[ 'audio_system_instructions' ] = ''
 		st.session_state[ 'clear_instructions' ] = False
+		
 	if 'audio_tts_input' not in st.session_state:
 		st.session_state[ 'audio_tts_input' ] = ''
+		
 	if not isinstance( st.session_state.get( 'audio_messages' ), list ):
 		st.session_state.audio_messages = [ ]
+		
 	if not isinstance( st.session_state.get( 'audio_include' ), list ):
 		st.session_state[ 'audio_include' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'audio_speed' ), float ):
 		st.session_state[ 'audio_speed' ] = 1.0
+		
 	if not isinstance( st.session_state.get( 'audio_output' ), str ):
 		st.session_state[ 'audio_output' ] = ''
+		
 	if 'audio_output_bytes' not in st.session_state:
 		st.session_state[ 'audio_output_bytes' ] = None
+		
 	if not isinstance( st.session_state.get( 'audio_last_result' ), dict ):
 		st.session_state[ 'audio_last_result' ] = { }
+		
 	if not isinstance( st.session_state.get( 'audio_last_usage' ), dict ):
 		st.session_state[ 'audio_last_usage' ] = { }
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		st.subheader( '🎧 Audio API', help=getattr( cfg, 'AUDIO_API',
 			'OpenAI audio transcription, translation, and text-to-speech workflows.' ) )
 		st.divider( )
+		
+		# ------------------------------------------------------------------
+		# Expander - Mind Controls
+		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
+			# ----- LLM Options  ------
 			with st.expander( label='LLM Options', icon='🧊', expanded=False, width='stretch' ):
 				llm_c1, llm_c2, llm_c3, llm_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
+				
+				# ----- Task ------
 				with llm_c1:
 					audio_task = st.selectbox( label='Task', options=get_audio_task_options( ),
 						key='audio_task', help='Select the Audio API workflow to run.', index=None,
@@ -9136,6 +9201,8 @@ elif mode == 'Audio':
 				speed_options = get_audio_speed_options( tts )
 				if st.session_state.get( 'audio_speed' ) not in speed_options:
 					st.session_state[ 'audio_speed' ] = 1.0
+				
+				# ----- Model ------
 				with llm_c2:
 					audio_model = st.selectbox( label='Model', options=model_options,
 						key='audio_model', help='Task-aware OpenAI Audio API model.', index=None,
@@ -9152,6 +9219,8 @@ elif mode == 'Audio':
 					st.session_state[ 'audio_include' ] = [ value for value in
 					                                        st.session_state.get( 'audio_include',
 						                                        [ ] ) if value in include_options ]
+					
+				# ----- Transcription -----
 				with llm_c3:
 					if audio_task == 'Transcribe':
 						audio_language = st.selectbox( label='Language', options=language_options,
@@ -9162,6 +9231,8 @@ elif mode == 'Audio':
 						st.caption( 'Language' )
 						st.info( 'Only used as a transcription source-language hint.' )
 						audio_language = st.session_state.get( 'audio_language', '' )
+				
+				# ----- Format -----
 				with llm_c4:
 					audio_response_format = st.selectbox( label='Format', options=format_options,
 						key='audio_response_format',
@@ -9171,15 +9242,20 @@ elif mode == 'Audio':
 				st.button( label='Reset', key='reset_audio_task', width='stretch',
 					on_click=reset_audio_task_controls )
 			
+			# ----- Inference Options -----
 			with st.expander( label='Inference Options', icon='🎛️', expanded=False,
 					width='stretch' ):
 				inf_c1, inf_c2, inf_c3, inf_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
+				
+				# ----- Temperature -----
 				with inf_c1:
 					audio_temperature = st.slider( label='Temperature', min_value=0.0,
 						max_value=1.0, step=0.01,
 						help='Used by Whisper transcription/translation paths where supported. Ignored by TTS.',
 						key='audio_temperature' )
+				
+				# ----- Include -----
 				with inf_c2:
 					if len( include_options ) > 0:
 						audio_include = st.multiselect( label='Include', options=include_options,
@@ -9189,18 +9265,24 @@ elif mode == 'Audio':
 						st.caption( 'Include' )
 						st.info( 'No include options for the selected task/model.' )
 						audio_include = st.session_state.get( 'audio_include', [ ] )
+				
+				# ----- Stream -----
 				with inf_c3:
 					audio_stream = st.toggle( label='Stream', key='audio_stream',
 						help=getattr( cfg, 'STREAM',
 							'Streaming is retained but not sent until stream rendering is implemented.' ) )
 					if audio_stream:
 						st.caption( 'Streaming is not sent until stream-event rendering is added.' )
+				
+				# ----- Background -----
 				with inf_c4:
 					audio_background = st.toggle( label='Background', key='audio_background',
 						help=getattr( cfg, 'BACKGROUND_MODE',
 							'Background mode is retained but not sent for Audio API calls.' ) )
 					if audio_background:
 						st.caption( 'Background mode is not sent for these Audio API calls.' )
+				
+				# ----- Reset Controls -----
 				if st.button( label='Reset', key='reset_audio_inference', width='stretch' ):
 					for key in [ 'audio_temperature', 'audio_include', 'audio_stream',
 					             'audio_background' ]:
@@ -9208,9 +9290,12 @@ elif mode == 'Audio':
 							del st.session_state[ key ]
 					st.rerun( )
 			
+			# ----- Sound Options -----
 			with st.expander( label='Sound Options', icon='🔊', expanded=False, width='stretch' ):
 				snd_c1, snd_c2, snd_c3, snd_c4, snd_c5 = st.columns( [ 0.2, 0.2, 0.2, 0.2, 0.2 ],
 					border=True, gap='xxsmall' )
+				
+				# ----- Voice -----
 				with snd_c1:
 					if audio_task == 'Text-to-Speech':
 						audio_voice = st.selectbox( label='Voice', options=voice_options,
@@ -9220,6 +9305,8 @@ elif mode == 'Audio':
 						st.caption( 'Voice' )
 						st.info( 'Only used by Text-to-Speech.' )
 						audio_voice = st.session_state.get( 'audio_voice', '' )
+				
+				# ----- Speed -----
 				with snd_c2:
 					if audio_task == 'Text-to-Speech':
 						audio_speed = st.select_slider( label='Speed', options=speed_options,
@@ -9228,23 +9315,34 @@ elif mode == 'Audio':
 						st.caption( 'Speed' )
 						st.info( 'Only used by Text-to-Speech.' )
 						audio_speed = st.session_state.get( 'audio_speed', 1.0 )
+				
+				# ----- Start -----
 				with snd_c3:
 					audio_start_time = st.slider( label='Start Time', min_value=0.0,
 						max_value=600.0, step=0.5, help='Playback start time in seconds.',
 						key='audio_start_time' )
+				
+				# ----- End -----
 				with snd_c4:
 					audio_end_time = st.slider( label='End Time', min_value=0.0, max_value=600.0,
 						step=0.5,
 						help='Playback end time in seconds. Zero leaves playback unconstrained.',
 						key='audio_end_time' )
+				
+				# ----- Loop -----
 				with snd_c5:
 					audio_loop = st.toggle( label='Loop', key='audio_loop',
 						help='Loop local audio playback when supported.' )
 					audio_autoplay = st.toggle( label='Autoplay', key='audio_autoplay',
 						help='Autoplay local audio playback when supported.' )
+				
+				# ----- Reset -----
 				st.button( label='Reset', key='reset_audio_tts', width='stretch',
 					on_click=reset_audio_tts_controls )
 		
+		# ------------------------------------------------------------------
+		# Expander - System Instructions
+		# ------------------------------------------------------------------
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -9265,11 +9363,15 @@ elif mode == 'Audio':
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
 					on_click=convert_audio_system_instructions )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
 		upload_col, record_col, playback_col = st.columns( [ 0.34, 0.33, 0.33 ], border=True,
 			gap='small' )
 		audio_input_types = sorted(
 			set( transcriber.mime_options or [ ] ) | set( translator.mime_options or [ ] ) )
+		
+		# ----- Upload -----
 		with upload_col:
 			st.markdown( '#### Upload Audio' )
 			uploaded_audio = st.file_uploader( label='Upload Audio File', type=audio_input_types,
@@ -9310,6 +9412,8 @@ elif mode == 'Audio':
 						exception.method = 'module'
 						Logger( ).write( exception )
 						st.error( f'Audio processing failed: {exc}' )
+		
+		# ----- Record -----
 		with record_col:
 			st.markdown( '#### Record Audio' )
 			recorded_audio = st.audio_input( label='Record Audio', key='audio_recording_input' )
@@ -9348,6 +9452,8 @@ elif mode == 'Audio':
 						exception.method = 'module'
 						Logger( ).write( exception )
 						st.error( f'Recording processing failed: {exc}' )
+		
+		# ----- Playback -----
 		with playback_col:
 			st.markdown( '#### Playback / Speech' )
 			if st.session_state.get( 'audio_task' ) == 'Text-to-Speech':
@@ -9399,7 +9505,12 @@ elif mode == 'Audio':
 				st.caption( 'Last text output' )
 				st.text_area( label='Audio Output', value=output_text, height=140, width='stretch',
 					disabled=True )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Messages
+		# ------------------------------------------------------------------
 		if st.session_state.get( 'audio_messages' ) is not None:
 			for msg in st.session_state.audio_messages:
 				if not isinstance( msg, dict ):
@@ -9407,6 +9518,7 @@ elif mode == 'Audio':
 				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
 				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
 					st.markdown( msg.get( 'content', '' ) )
+		
 		prompt = st.chat_input( 'Enter audio generation prompt …' )
 		if prompt is not None and str( prompt ).strip( ):
 			prompt = str( prompt ).strip( )
@@ -9452,11 +9564,15 @@ elif mode == 'Audio':
 		if isinstance( audio_last_usage, dict ) and len( audio_last_usage ) > 0:
 			with st.expander( label='Audio Usage', icon='📊', expanded=False, width='stretch' ):
 				st.json( audio_last_usage )
+		
+		# ----- Clear Messsages -----
 		reset_c1, reset_c2 = st.columns( [ 0.5, 0.5 ] )
 		with reset_c1:
 			if st.button( 'Clear Messages', key='clear_audio_messages', width='stretch',
 					on_click=clear_audio_messages ):
 				st.rerun( )
+		
+		# ----- Clear Options ------
 		with reset_c2:
 			if st.button( 'Clear Outputs', key='clear_audio_outputs', width='stretch',
 					on_click=clear_audio_outputs ):
@@ -9488,17 +9604,27 @@ elif mode == 'Document Q&A':
 	if st.session_state.get( 'clear_instructions' ):
 		st.session_state[ 'docqna_system_instructions' ] = ''
 		st.session_state[ 'clear_instructions' ] = False
+		
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		st.subheader( '📖 Document Q & A', help=getattr( cfg, 'DOCUMENT_QNA',
 			'Ask questions against local uploads, OpenAI file IDs, or OpenAI vector stores.' ) )
 		st.divider( )
 		
+		# ------------------------------------------------------------------
+		# Expander - Mind Controls
+		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
+			# ----- Source -----
 			with st.expander( label='Source Controls', icon='📚', expanded=False, width='stretch' ):
 				source_c1, source_c2, source_c3, source_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
+				
+				# ----- Document -----
 				with source_c1:
 					source_options = get_docqna_source_options( )
 					if st.session_state.get( 'docqna_source' ) not in source_options:
@@ -9508,6 +9634,8 @@ elif mode == 'Document Q&A':
 						index=source_options.index( st.session_state.get( 'docqna_source',
 							'Local Upload' ) ) if st.session_state.get(
 							'docqna_source' ) in source_options else None, placeholder='Options' )
+				
+				# ----- Model -----
 				with source_c2:
 					model_options = [ '', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4.1-mini',
 					                  'gpt-4.1-nano', 'gpt-4o-mini' ]
@@ -9517,21 +9645,31 @@ elif mode == 'Document Q&A':
 						key='docqna_model',
 						help='Model used for local generated answers, file analysis, or vector stores.',
 						index=None, placeholder='Options' )
+				
+				# ----- Upload -----
 				with source_c3:
 					docqna_multi_mode = st.toggle( label='Multi-Document', key='docqna_multi_mode',
 						help='Allow multiple local uploaded documents.' )
+				
+				# ----- Diagnostics -----
 				with source_c4:
 					docqna_show_diagnostics = st.toggle( label='Diagnostics',
 						key='docqna_show_diagnostics',
 						help='Show retrieval and source diagnostics.' )
+				
+				# ----- Open File -----
 				st.text_input( label='OpenAI File ID', key='docqna_file_id',
 					value=st.session_state.get( 'docqna_file_id', '' ),
 					help='OpenAI file ID used when Source is OpenAI File ID.', width='stretch',
 					placeholder='file-...' )
+				
+				# ----- Open Store -----
 				st.text_input( label='OpenAI Vector Store ID', key='docqna_vector_store_id',
 					value=st.session_state.get( 'docqna_vector_store_id', '' ),
 					help='OpenAI vector store ID used when Source is OpenAI Vector Store ID.',
 					width='stretch', placeholder='vs_...' )
+				
+				# ----- Current File -----
 				link_c1, link_c2 = st.columns( [ 0.5, 0.5 ] )
 				with link_c1:
 					if st.button( 'Use Current Files ID', key='docqna_use_files_id',
@@ -9543,6 +9681,8 @@ elif mode == 'Document Q&A':
 							st.rerun( )
 						else:
 							st.warning( 'No current Files mode file ID is available.' )
+				
+				# ----- Current Store -----
 				with link_c2:
 					if st.button( 'Use Current Vector Store ID', key='docqna_use_vector_store_id',
 							width='stretch' ):
@@ -9554,14 +9694,19 @@ elif mode == 'Document Q&A':
 						else:
 							st.warning( 'No current Vector Stores mode store ID is available.' )
 			
+			# ----- Retrieval -----
 			with st.expander( label='Retrieval Controls', icon='🧩', expanded=False,
 					width='stretch' ):
 				retrieval_c1, retrieval_c2, retrieval_c3 = st.columns( [ 0.34, 0.33, 0.33 ],
 					border=True, gap='xxsmall' )
+				
+				# ----- Top-K -----
 				with retrieval_c1:
 					st.slider( label='Top-K Chunks', min_value=1, max_value=25, step=1,
 						key='docqna_top_k',
 						help='Number of local chunks or vector store results to retrieve.' )
+				
+				# ----- Size -----
 				with retrieval_c2:
 					try:
 						current_chunk_size = int(
@@ -9577,8 +9722,11 @@ elif mode == 'Document Q&A':
 						st.session_state[ 'docqna_chunk_size' ] = 100
 					elif current_chunk_size > 5000:
 						st.session_state[ 'docqna_chunk_size' ] = 5000
+					
 					st.slider( label='Chunk Size', min_value=100, max_value=5000, step=50,
 						key='docqna_chunk_size', help='Local word-based chunk size.' )
+				
+				# ----- Overlap -----
 				with retrieval_c3:
 					max_overlap = max( 0,
 						int( st.session_state.get( 'docqna_chunk_size', 900 ) or 900 ) - 1 )
@@ -9596,9 +9744,12 @@ elif mode == 'Document Q&A':
 						st.session_state[ 'docqna_chunk_overlap' ] = 0
 					elif current_overlap >= max_overlap:
 						st.session_state[ 'docqna_chunk_overlap' ] = max( 0, max_overlap // 5 )
+					
 					st.slider( label='Chunk Overlap', min_value=0, max_value=max_overlap, step=25,
 						key='docqna_chunk_overlap',
 						help='Local word overlap between adjacent chunks.' )
+				
+				# ----- Index -----
 				action_c1, action_c2, action_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 				with action_c1:
 					if st.button( 'Rebuild Local Index', key='docqna_rebuild_index',
@@ -9617,6 +9768,8 @@ elif mode == 'Document Q&A':
 								exception.method = 'module'
 								Logger( ).write( exception )
 								st.error( f'Rebuild index failed: {exc}' )
+				
+				# ----- Summarize -----
 				with action_c2:
 					if st.button( 'Summarize Active Source', key='docqna_summarize_source',
 							width='stretch' ):
@@ -9634,30 +9787,41 @@ elif mode == 'Document Q&A':
 								exception.method = 'module'
 								Logger( ).write( exception )
 								st.error( f'Summary failed: {exc}' )
+				
+				# ----- Clear Outputs -----
 				with action_c3:
 					st.button( label='Clear Outputs', key='docqna_clear_outputs', width='stretch',
 						on_click=clear_docqna_outputs )
 			
+			# ----- Generation -----
 			with st.expander( label='Generation Controls', icon='🎛️', expanded=False,
 					width='stretch' ):
 				gen_c1, gen_c2, gen_c3, gen_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
+				
+				# ----- Temperature -----
 				with gen_c1:
 					if 'docqna_temperature' not in st.session_state:
 						st.session_state[ 'docqna_temperature' ] = 0.2
 					st.slider( label='Temperature', min_value=0.0, max_value=2.0, step=0.05,
 						key='docqna_temperature', help='Sampling temperature' )
+				
+				# ----- Top-P -----
 				with gen_c2:
 					if 'docqna_top_percent' not in st.session_state:
 						st.session_state[ 'docqna_top_percent' ] = 1.0
 					st.slider( label='Top-P', min_value=0.0, max_value=1.0, step=0.05,
 						key='docqna_top_percent',
 						help='Nucleus sampling value used by the generated-answer path.' )
+				
+				# ----- Tokens -----
 				with gen_c3:
 					if 'docqna_max_tokens' not in st.session_state:
 						st.session_state[ 'docqna_max_tokens' ] = 2000
 					st.slider( label='Max Tokens', min_value=256, max_value=16000, step=256,
 						key='docqna_max_tokens', help='Maximum output tokens.' )
+				
+				# ----- Reasoning -----
 				with gen_c4:
 					if 'docqna_reasoning' not in st.session_state:
 						st.session_state[ 'docqna_reasoning' ] = ''
@@ -9665,14 +9829,21 @@ elif mode == 'Document Q&A':
 						options=[ '', 'minimal', 'low', 'medium', 'high' ], key='docqna_reasoning',
 						help='Reserved for compatible models and wrappers.', index=None,
 						placeholder='Options' )
+			
+			# ----- Reset Controls -----
 			reset_controls_c1, reset_controls_c2 = st.columns( [ 0.5, 0.5 ] )
 			with reset_controls_c1:
 				st.button( label='Reset Controls', key='docqna_reset_controls', width='stretch',
 					on_click=reset_docqna_controls )
+			
+			# ----- Unload Documents -----
 			with reset_controls_c2:
 				st.button( label='Unload Documents', key='docqna_unload_documents', width='stretch',
 					on_click=unload_docqna_documents )
 		
+		# ------------------------------------------------------------------
+		# Expander - System Instructions
+		# ------------------------------------------------------------------
 		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
 			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
 			prompt_names = fetch_prompt_names( cfg.DB_PATH )
@@ -9686,14 +9857,21 @@ elif mode == 'Document Q&A':
 			with in_right:
 				st.selectbox( label='Use Template', options=prompt_names, index=None,
 					key='instructions', on_change=load_docqna_instruction_template )
+			
+			# ----- Clear Instructions -----
 			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
 			with btn_c1:
 				st.button( label='Clear Instructions', width='stretch',
 					on_click=clear_docqna_instructions )
+			
+			# ----- Convert Format -----
 			with btn_c2:
 				st.button( label='XML <-> Markdown', width='stretch',
 					on_click=convert_docqna_system_instructions )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ----- Document Loader -----
 		load_col, status_col = st.columns( [ 0.4, 0.6 ], border=True, gap='small' )
 		with load_col:
 			st.markdown( '#### Document Loading' )
@@ -9732,20 +9910,28 @@ elif mode == 'Document Q&A':
 				st.caption( 'Active documents: ' + ', '.join( names ) )
 			else:
 				st.info( 'No local document is currently loaded.' )
+			
+			# ----- Show -----
 			preview_c1, preview_c2 = st.columns( [ 0.5, 0.5 ] )
 			with preview_c1:
 				if st.button( 'Preview Documents', key='docqna_preview_documents',
 						width='stretch' ):
 					st.session_state[ 'docqna_show_preview' ] = True
+			
+			# ----- Hide -----
 			with preview_c2:
 				if st.button( 'Hide Preview', key='docqna_hide_preview', width='stretch' ):
 					st.session_state[ 'docqna_show_preview' ] = False
 			if st.session_state.get( 'docqna_show_preview', True ):
 				render_docqna_document_preview( )
+		
+		# ----- Document Status -----
 		with status_col:
 			st.markdown( '#### Document Status' )
 			render_docqna_status( )
+			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
 			source = st.session_state.get( 'docqna_source', 'Local Upload' )
 			if source == 'OpenAI File ID':
 				file_id = st.session_state.get( 'docqna_file_id', '' )
@@ -9765,6 +9951,7 @@ elif mode == 'Document Q&A':
 			else:
 				st.warning( 'Local document index is not ready.' )
 			if st.session_state.get( 'docqna_show_diagnostics', True ):
+				
 				with st.expander( label='Retrieval Diagnostics', icon='🔎', expanded=False,
 						width='stretch' ):
 					st.write( { 'source': st.session_state.get( 'docqna_source', 'Local Upload' ),
@@ -9777,7 +9964,12 @@ elif mode == 'Document Q&A':
 					            'vector_store_id': st.session_state.get( 'docqna_vector_store_id',
 						            '' ) } )
 					render_docqna_retrieval_hits( )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Messages
+		# ------------------------------------------------------------------
 		if st.session_state.get( 'docqna_messages' ) is not None:
 			for msg in st.session_state.docqna_messages:
 				if not isinstance( msg, dict ):
@@ -9785,6 +9977,7 @@ elif mode == 'Document Q&A':
 				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
 				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
 					st.markdown( msg.get( 'content', '' ) )
+		
 		prompt = st.chat_input( 'Ask a question about the active document source …' )
 		if prompt is not None and str( prompt ).strip( ):
 			prompt = str( prompt ).strip( )
@@ -9822,15 +10015,21 @@ elif mode == 'Document Q&A':
 					width='stretch' ):
 				df_sources = pd.DataFrame( last_sources )
 				st.data_editor( df_sources, use_container_width=True, hide_index=True )
+		
+		# ----- -----
 		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 		with reset_c1:
 			if st.button( 'Clear Messages', key='docqna_clear_messages', width='stretch',
 					on_click=clear_docqna_messages ):
 				st.rerun( )
+		
+		# ----- Clear Outputs -----
 		with reset_c2:
 			if st.button( 'Clear Outputs', key='docqna_clear_mode_outputs', width='stretch',
 					on_click=clear_docqna_outputs ):
 				st.rerun( )
+		
+		# ----- Reset All -----
 		with reset_c3:
 			if st.button( 'Reset All', key='docqna_reset_all', width='stretch',
 					on_click=reset_docqna_all ):
@@ -10048,7 +10247,7 @@ elif mode == 'Embeddings':
 				st.json( usage )
 				
 # ==============================================================================
-# FILES API MODE
+# FILES MODE
 # ==============================================================================
 elif mode == 'Files':
 	ensure_files_mode_state( )
