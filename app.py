@@ -10132,7 +10132,7 @@ elif mode == 'Document Q&A':
 						help='Show retrieval and source diagnostics.' )
 				
 				
-				source_c5, source_c6, source_c3, source_c4 = st.columns( [ 0.5, 0.5 ], border=True,
+				source_c5, source_c6 = st.columns( [ 0.5, 0.5 ], border=True,
 					gap='xxsmall' )
 				
 				# ----- Open File -----
