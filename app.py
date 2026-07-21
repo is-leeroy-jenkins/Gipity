@@ -10357,6 +10357,7 @@ elif mode == 'Document Q&A':
 					exception.module = 'app'
 					Logger( ).write( exception )
 					st.error( f'Document loading failed: {exc}' )
+					
 			names = get_docqna_active_document_names( )
 			if len( names ) > 0:
 				st.caption( 'Active documents: ' + ', '.join( names ) )
@@ -10364,7 +10365,7 @@ elif mode == 'Document Q&A':
 			# ----- Show -----
 			preview_c1, preview_c2 = st.columns( [ 0.5, 0.5 ] )
 			with preview_c1:
-				if st.button( 'Preview=', key='docqna_preview_documents', width='stretch' ):
+				if st.button( 'Preview', key='docqna_preview_documents', width='stretch' ):
 					st.session_state[ 'docqna_show_preview' ] = True
 			
 			# ----- Hide -----
@@ -10397,8 +10398,7 @@ elif mode == 'Document Q&A':
 						'OpenAI Vector Store ID source selected, but no vector store ID is set.' )
 			elif st.session_state.get( 'docqna_vec_ready', False ):
 				st.success( 'Local document index is ready.' )
-			else:
-				st.warning( 'Local document index is not ready.' )
+				
 			if st.session_state.get( 'docqna_show_diagnostics', True ):
 				
 				with st.expander( label='Retrieval Diagnostics', icon='🩺', expanded=False,
