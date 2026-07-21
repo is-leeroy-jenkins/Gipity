@@ -10094,7 +10094,7 @@ elif mode == 'Document Q&A':
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
 			# ----- Source -----
-			with st.expander( label='Source Controls', icon='📚', expanded=False, width='stretch' ):
+			with st.expander( label='Source Settings', icon='📚', expanded=False, width='stretch' ):
 				source_c1, source_c2, source_c3, source_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
 				
@@ -10174,7 +10174,7 @@ elif mode == 'Document Q&A':
 							st.warning( 'No current Vector Stores mode store ID is available.' )
 			
 			# ----- Retrieval -----
-			with st.expander( label='Retrieval Controls', icon='🧩', expanded=False,
+			with st.expander( label='Retrieval Settings', icon='🧩', expanded=False,
 					width='stretch' ):
 				retrieval_c1, retrieval_c2, retrieval_c3 = st.columns( [ 0.34, 0.33, 0.33 ],
 					border=True, gap='xxsmall' )
@@ -10273,7 +10273,7 @@ elif mode == 'Document Q&A':
 						on_click=clear_docqna_outputs, icon='🔄' )
 			
 			# ----- Generation -----
-			with st.expander( label='Generation Controls', icon='🎛️', expanded=False,
+			with st.expander( label='Generation Settings', icon='🎛️', expanded=False,
 					width='stretch' ):
 				gen_c1, gen_c2, gen_c3, gen_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
@@ -10350,8 +10350,6 @@ elif mode == 'Document Q&A':
 							except Exception as e:
 								exception = Error( e )
 								exception.module = 'app'
-								exception.cause = 'module'
-								exception.method = 'module'
 								Logger( ).write( exception )
 								pass
 					else:
@@ -10359,15 +10357,11 @@ elif mode == 'Document Q&A':
 				except Exception as exc:
 					exception = Error( exc )
 					exception.module = 'app'
-					exception.cause = 'module'
-					exception.method = 'module'
 					Logger( ).write( exception )
 					st.error( f'Document loading failed: {exc}' )
 			names = get_docqna_active_document_names( )
 			if len( names ) > 0:
 				st.caption( 'Active documents: ' + ', '.join( names ) )
-			else:
-				st.info( 'No local document is currently loaded.' )
 			
 			# ----- Show -----
 			preview_c1, preview_c2 = st.columns( [ 0.5, 0.5 ] )
@@ -10410,7 +10404,7 @@ elif mode == 'Document Q&A':
 				st.warning( 'Local document index is not ready.' )
 			if st.session_state.get( 'docqna_show_diagnostics', True ):
 				
-				with st.expander( label='Retrieval Diagnostics', icon='🔎', expanded=False,
+				with st.expander( label='Retrieval Diagnostics', icon='🩺', expanded=False,
 						width='stretch' ):
 					st.write( { 'source': st.session_state.get( 'docqna_source', 'Local Upload' ),
 					            'index_status': st.session_state.get( 'docqna_index_status',
@@ -10421,6 +10415,7 @@ elif mode == 'Document Q&A':
 					            'file_id': st.session_state.get( 'docqna_file_id', '' ),
 					            'vector_store_id': st.session_state.get( 'docqna_vector_store_id',
 						            '' ) } )
+					
 					render_docqna_retrieval_hits( )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
