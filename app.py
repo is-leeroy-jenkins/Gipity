@@ -10131,17 +10131,23 @@ elif mode == 'Document Q&A':
 						key='docqna_show_diagnostics',
 						help='Show retrieval and source diagnostics.' )
 				
+				
+				source_c5, source_c6, source_c3, source_c4 = st.columns( [ 0.5, 0.5 ], border=True,
+					gap='xxsmall' )
+				
 				# ----- Open File -----
-				st.text_input( label='OpenAI File ID', key='docqna_file_id',
-					value=st.session_state.get( 'docqna_file_id', '' ),
-					help='OpenAI file ID used when Source is OpenAI File ID.', width='stretch',
-					placeholder='file-...' )
+				with source_c5:
+					st.text_input( label='OpenAI File ID', key='docqna_file_id',
+						value=st.session_state.get( 'docqna_file_id', '' ),
+						help='OpenAI file ID used when Source is OpenAI File ID.', width='stretch',
+						placeholder='file-...' )
 				
 				# ----- Open Store -----
-				st.text_input( label='OpenAI Vector Store ID', key='docqna_vector_store_id',
-					value=st.session_state.get( 'docqna_vector_store_id', '' ),
-					help='OpenAI vector store ID used when Source is OpenAI Vector Store ID.',
-					width='stretch', placeholder='vs_...' )
+				with source_c6:
+					st.text_input( label='OpenAI Vector Store ID', key='docqna_vector_store_id',
+						value=st.session_state.get( 'docqna_vector_store_id', '' ),
+						help='OpenAI vector store ID used when Source is OpenAI Vector Store ID.',
+						width='stretch', placeholder='vs_...' )
 				
 				# ----- Current File -----
 				link_c1, link_c2 = st.columns( [ 0.5, 0.5 ] )
@@ -10327,7 +10333,7 @@ elif mode == 'Document Q&A':
 		# ----- Document Loader -----
 		load_col, status_col = st.columns( [ 0.4, 0.6 ], border=True, gap='small' )
 		with load_col:
-			st.markdown( '#### Document Loading' )
+			st.markdown( '##### Document Loading' )
 			accepted_types = [ 'pdf', 'txt', 'md', 'docx', 'csv', 'json', 'xml', 'py', 'cs', 'sql',
 			                   'yaml', 'yml', 'html', 'css', 'js', 'ts' ]
 			uploaded = st.file_uploader( label='Upload Document', type=accepted_types,
@@ -10380,7 +10386,7 @@ elif mode == 'Document Q&A':
 		
 		# ----- Document Status -----
 		with status_col:
-			st.markdown( '#### Document Status' )
+			st.markdown( '##### Document Status' )
 			render_docqna_status( )
 			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
