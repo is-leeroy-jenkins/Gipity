@@ -1394,6 +1394,181 @@ def extract_sources( response: Any ) -> List[ Dict[ str, Any ] ]:
 					  'url': None, 'files_id': s.get( 'files_id' ) } )
 	return sources
 
+def extract_text_from_bytes( file_bytes: bytes ) -> str:
+	"""Extract text from bytes.
+    
+    Purpose:
+        Extracts text from bytes for downstream application use. The function normalizes
+        provider or file-system data into a stable shape that the Streamlit interface and helper
+        workflows can consume safely.
+    
+    Args:
+        file_bytes (bytes): File bytes value used by this workflow.
+    
+    Returns:
+        Value produced by the operation for display or downstream processing.
+    """
+	try:
+		import fitz  # PyMuPDF
+		doc = fitz.open( stream=file_bytes, filetype="pdf" )
+		text = ""
+		for page in doc:
+			text += page.get_text( )
+		return text.strip( )
+	
+	except Exception as _logged_exception:
+		try:
+			error = Error( _logged_exception )
+			error.module = 'app'
+			error.cause = 'extract_text_from_bytes'
+			error.method = 'extract_text_from_bytes( file_bytes: bytes )'
+			Logger( ).write( error )
+		except Exception:
+			pass
+		try:
+			return file_bytes.decode( errors="ignore" )
+		except Exception as _logged_exception:
+			try:
+				error = Error( _logged_exception )
+				error.module = 'app'
+				error.cause = 'extract_text_from_bytes'
+				error.method = 'extract_text_from_bytes( file_bytes: bytes )'
+				Logger( ).write( error )
+			except Exception:
+				pass
+			return ""
+
+def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
+	"""Extract docqna pdf text.
+    
+        Purpose:
+            Extracts the docqna pdf text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_pdf_text helper according to its function
+            annotation and return statements.
+    """
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	try:
+		import fitz
+		pages: list[ str ] = [ ]
+		with fitz.open( stream=file_bytes, filetype='pdf' ) as doc:
+			for page in doc:
+				pages.append( page.get_text( 'text' ) )
+		return '\n\n'.join( pages ).strip( )
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'extract_docqna_pdf_text'
+		exception.method = 'extract_docqna_pdf_text( ... )'
+		Logger( ).write( exception )
+		try:
+			return extract_text_from_bytes( file_bytes )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'app'
+			exception.cause = 'extract_docqna_pdf_text'
+			exception.method = 'extract_docqna_pdf_text( ... )'
+			Logger( ).write( exception )
+			return ''
+
+def extract_docqna_text_file( file_bytes: bytes ) -> str:
+	"""Extract docqna text file.
+    
+        Purpose:
+            Extracts the docqna text file value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_text_file helper according to its function
+            annotation and return statements.
+    """
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	for encoding in [ 'utf-8', 'utf-8-sig', 'cp1252', 'latin-1' ]:
+		try:
+			return file_bytes.decode( encoding ).strip( )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'app'
+			exception.cause = 'extract_docqna_text_file'
+			exception.method = 'extract_docqna_text_file( ... )'
+			Logger( ).write( exception )
+			continue
+	return ''
+
+def extract_docqna_docx_text( file_bytes: bytes ) -> str:
+	"""Extract docqna docx text.
+    
+        Purpose:
+            Extracts the docqna docx text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_docx_text helper according to its function
+            annotation and return statements.
+    """
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	try:
+		with zipfile.ZipFile( io.BytesIO( file_bytes ) ) as archive:
+			xml_bytes = archive.read( 'word/document.xml' )
+		root = ET.fromstring( xml_bytes )
+		namespace = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+		paragraphs: list[ str ] = [ ]
+		for paragraph in root.iter( f'{namespace}p' ):
+			parts: list[ str ] = [ ]
+			for node in paragraph.iter( f'{namespace}t' ):
+				if node.text:
+					parts.append( node.text )
+			text = ''.join( parts ).strip( )
+			if text:
+				paragraphs.append( text )
+		return '\n\n'.join( paragraphs ).strip( )
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'extract_docqna_docx_text'
+		exception.method = 'extract_docqna_docx_text( ... )'
+		Logger( ).write( exception )
+		return ''
+
+def extract_docqna_text( filename: str, file_bytes: bytes ) -> str:
+	"""Extract docqna text.
+    
+        Purpose:
+            Extracts the docqna text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            filename (str): Value supplied to the helper.
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_text helper according to its function annotation
+            and return statements.
+    """
+	extension = get_docqna_file_extension( filename )
+	if extension == '.pdf':
+		return extract_docqna_pdf_text( file_bytes )
+	if extension == '.docx':
+		return extract_docqna_docx_text( file_bytes )
+	if extension in [ '.txt', '.md', '.csv', '.json', '.xml', '.py', '.cs', '.sql', '.yaml', '.yml',
+	                  '.html', '.css', '.js', '.ts' ]:
+		return extract_docqna_text_file( file_bytes )
+	return extract_docqna_text_file( file_bytes )
+
 def save_temp( upload ) -> str | None:
 	"""Save temp.
     
@@ -2922,7 +3097,7 @@ def rebuild_index( embedder: SentenceTransformer ) -> None:
 			b = doc_bytes.get( name )
 			if not b:
 				continue
-			text = extract_text_from_pdf( b )
+			text = extract_text_from_bytes( b )
 			if not text:
 				continue
 			chunks = chunk_text( text )
@@ -3291,165 +3466,6 @@ def compute_fingerprint( file_bytes: bytes | None ) -> str:
 	if not isinstance( file_bytes, bytes ):
 		return ''
 	return hashlib.sha256( file_bytes ).hexdigest( )
-
-def extract_text_from_bytes( file_bytes: bytes ) -> str:
-	"""Extract text from bytes.
-	
-	Purpose:
-	    Extracts structured information from a provider response, uploaded file, or application
-	    data object. The function normalizes provider-specific shapes into values that can be rendered,
-	    stored, or passed to later processing steps.
-	
-	Args:
-	    file_bytes (bytes): File bytes value used by the operation.
-	
-	Returns:
-	    str: Return value produced by the operation."""
-	try:
-		import fitz  # PyMuPDF
-		
-		doc = fitz.open( stream=file_bytes, filetype="pdf" )
-		text = ""
-		for page in doc:
-			text += page.get_text( )
-		return text.strip( )
-	
-	except Exception:
-		try:
-			return file_bytes.decode( errors="ignore" )
-		except Exception:
-			return ""
-
-def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
-	"""Extract docqna pdf text.
-    
-        Purpose:
-            Extracts the docqna pdf text value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_docqna_pdf_text helper according to its function
-            annotation and return statements.
-    """
-	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
-		return ''
-	try:
-		import fitz
-		pages: list[ str ] = [ ]
-		with fitz.open( stream=file_bytes, filetype='pdf' ) as doc:
-			for page in doc:
-				pages.append( page.get_text( 'text' ) )
-		return '\n\n'.join( pages ).strip( )
-	except Exception as e:
-		exception = Error( e )
-		exception.module = 'app'
-		exception.cause = 'extract_docqna_pdf_text'
-		exception.method = 'extract_docqna_pdf_text( ... )'
-		Logger( ).write( exception )
-		try:
-			return extract_text_from_bytes( file_bytes )
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'app'
-			exception.cause = 'extract_docqna_pdf_text'
-			exception.method = 'extract_docqna_pdf_text( ... )'
-			Logger( ).write( exception )
-			return ''
-
-def extract_docqna_text_file( file_bytes: bytes ) -> str:
-	"""Extract docqna text file.
-    
-        Purpose:
-            Extracts the docqna text file value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_docqna_text_file helper according to its function
-            annotation and return statements.
-    """
-	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
-		return ''
-	for encoding in [ 'utf-8', 'utf-8-sig', 'cp1252', 'latin-1' ]:
-		try:
-			return file_bytes.decode( encoding ).strip( )
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'app'
-			exception.cause = 'extract_docqna_text_file'
-			exception.method = 'extract_docqna_text_file( ... )'
-			Logger( ).write( exception )
-			continue
-	return ''
-
-def extract_docqna_docx_text( file_bytes: bytes ) -> str:
-	"""Extract docqna docx text.
-    
-        Purpose:
-            Extracts the docqna docx text value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_docqna_docx_text helper according to its function
-            annotation and return statements.
-    """
-	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
-		return ''
-	try:
-		with zipfile.ZipFile( io.BytesIO( file_bytes ) ) as archive:
-			xml_bytes = archive.read( 'word/document.xml' )
-		root = ET.fromstring( xml_bytes )
-		namespace = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-		paragraphs: list[ str ] = [ ]
-		for paragraph in root.iter( f'{namespace}p' ):
-			parts: list[ str ] = [ ]
-			for node in paragraph.iter( f'{namespace}t' ):
-				if node.text:
-					parts.append( node.text )
-			text = ''.join( parts ).strip( )
-			if text:
-				paragraphs.append( text )
-		return '\n\n'.join( paragraphs ).strip( )
-	except Exception as e:
-		exception = Error( e )
-		exception.module = 'app'
-		exception.cause = 'extract_docqna_docx_text'
-		exception.method = 'extract_docqna_docx_text( ... )'
-		Logger( ).write( exception )
-		return ''
-
-def extract_docqna_text( filename: str, file_bytes: bytes ) -> str:
-	"""Extract docqna text.
-    
-        Purpose:
-            Extracts the docqna text value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            filename (str): Value supplied to the helper.
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_docqna_text helper according to its function annotation
-            and return statements.
-    """
-	extension = get_docqna_file_extension( filename )
-	if extension == '.pdf':
-		return extract_docqna_pdf_text( file_bytes )
-	if extension == '.docx':
-		return extract_docqna_docx_text( file_bytes )
-	if extension in [ '.txt', '.md', '.csv', '.json', '.xml', '.py', '.cs', '.sql', '.yaml', '.yml',
-	                  '.html', '.css', '.js', '.ts' ]:
-		return extract_docqna_text_file( file_bytes )
-	return extract_docqna_text_file( file_bytes )
 
 def load_docqna_uploaded_files( uploaded: Any ) -> list[ dict[ str, Any ] ]:
 	"""Load docqna uploaded files.
@@ -5638,7 +5654,7 @@ def run_vector_store_delete_file( vector: VectorStores, store_id: str | None,
 	result = vector.delete_file( store_id=store_id.strip( ), file_id=file_id.strip( ) )
 	return result if isinstance( result, dict ) else { }
 
-def run_vector_store_create_batch( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+def run_vector_store_create_batch( vector: VectorStores, store_id: str | None ) -> Dict[ str, Any ]:
 	"""Run vector store create batch.
     
         Purpose:
@@ -5672,7 +5688,7 @@ def run_vector_store_create_batch( vector: VectorStores, store_id: str | None ) 
 		st.session_state[ 'stores_batch_id' ] = result.get( 'id' )
 	return result
 
-def run_vector_store_retrieve_batch( vector: VectorStores, store_id: str | None ) -> dict[
+def run_vector_store_retrieve_batch( vector: VectorStores, store_id: str | None ) -> Dict[
 	str, Any ]:
 	"""Run vector store retrieve batch.
     
@@ -5701,7 +5717,7 @@ def run_vector_store_retrieve_batch( vector: VectorStores, store_id: str | None 
 	st.session_state[ 'stores_batch_result' ] = result
 	return result
 
-def run_vector_store_cancel_batch( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+def run_vector_store_cancel_batch( vector: VectorStores, store_id: str | None ) -> Dict[ str, Any ]:
 	"""Run vector store cancel batch.
     
         Purpose:
@@ -5729,8 +5745,7 @@ def run_vector_store_cancel_batch( vector: VectorStores, store_id: str | None ) 
 	st.session_state[ 'stores_batch_result' ] = result
 	return result
 
-def run_vector_store_search( vector: VectorStores, store_id: str | None ) -> list[
-	dict[ str, Any ] ]:
+def run_vector_store_search( vector: VectorStores, store_id: str | None ) -> List[ Dict[ str, Any ] ]:
 	"""Run vector store search.
     
         Purpose:
@@ -6856,9 +6871,7 @@ def rename_table( old_name: str, new_name: str ) -> None:
 				conn.execute( idx_sql )
 		conn.commit( )
 
-# ======================================================================================
-# PROMPT REPOSITORY
-# ======================================================================================
+# ----- PROMPT REPOSITORY -----
 
 def fetch_prompt_records( db_path: str,
 	categories: Optional[ List[ str ] ] = None ) -> List[ Dict[ str, Any ] ]:
@@ -7834,6 +7847,228 @@ def convert_prompt_state( instruction_key: str ) -> None:
 		exception.method = ('convert_prompt_state( instruction_key: str ) -> None')
 		Logger( ).write( exception )
 		raise exception
+
+def render_system_prompt_expander( state_prefix: str, instruction_key: str,
+	allowed_categories: Tuple[ str, ... ], label: str = 'System Instructions',
+	height: int = 135 ) -> None:
+	"""Render a category-driven system-instruction expander.
+
+	Purpose:
+	    Renders a reusable System Instructions interface containing an editable instruction
+	    area, mode-filtered category selector, prompt selector, clear control, and XML or
+	    Markdown conversion control. Prompt selection uses the stable integer ID stored in
+	    the authoritative Prompts table.
+
+	Args:
+	    state_prefix (str): Prefix used to construct mode-specific widget and state keys.
+	    instruction_key (str): Session-state key containing the editable instruction text.
+	    allowed_categories (Tuple[str, ...]): Canonical prompt categories permitted by the
+	        current application mode.
+	    label (str): Text displayed in the Streamlit expander header.
+	    height (int): Height of the editable instruction text area in pixels.
+
+	Returns:
+	    None: The function renders Streamlit controls and updates session state.
+
+	Raises:
+	    Error: Raised when prompt data cannot be retrieved or the expander cannot be rendered.
+	"""
+	try:
+		throw_if( 'state_prefix', state_prefix )
+		throw_if( 'instruction_key', instruction_key )
+		throw_if( 'allowed_categories', allowed_categories )
+		
+		if not isinstance( allowed_categories, tuple ):
+			raise TypeError( 'allowed_categories must be a tuple of category names.' )
+		
+		try:
+			text_area_height = int( height )
+		except (TypeError, ValueError):
+			text_area_height = 135
+		
+		if text_area_height <= 0:
+			text_area_height = 135
+		
+		# ------------------------------------------------------------------
+		# Mode-Specific State Contract
+		# ------------------------------------------------------------------
+		category_key = f'{state_prefix}_prompt_category'
+		prompt_id_key = f'{state_prefix}_prompt_id'
+		
+		st.session_state.setdefault( instruction_key, '' )
+		st.session_state.setdefault( category_key, None )
+		st.session_state.setdefault( prompt_id_key, None )
+		
+		if st.session_state.get( category_key ) == '':
+			st.session_state[ category_key ] = None
+		
+		if st.session_state.get( prompt_id_key ) == '':
+			st.session_state[ prompt_id_key ] = None
+		
+		# ------------------------------------------------------------------
+		# Category Repository
+		# ------------------------------------------------------------------
+		database_categories = fetch_prompt_categories( cfg.DB_PATH )
+		
+		mode_categories = filter_prompt_categories( available_categories=database_categories,
+			allowed_categories=allowed_categories )
+		
+		selected_category = st.session_state.get( category_key, None )
+		
+		if selected_category not in mode_categories:
+			st.session_state[ category_key ] = None
+			st.session_state[ prompt_id_key ] = None
+			selected_category = None
+		
+		# ------------------------------------------------------------------
+		# Widget Callbacks
+		# ------------------------------------------------------------------
+		def on_category_change( ) -> None:
+			"""Clear prompt state after a category change.
+
+			Purpose:
+			    Clears the selected prompt and instruction text when the user chooses a
+			    different category so a prompt from the prior category cannot remain active.
+
+			Returns:
+			    None: The callback updates Streamlit session state.
+			"""
+			st.session_state[ prompt_id_key ] = None
+			st.session_state[ instruction_key ] = ''
+		
+		def on_prompt_change( ) -> None:
+			"""Load the selected prompt.
+
+			Purpose:
+			    Loads the selected prompt's Text value into the current mode's editable
+			    system-instruction state.
+
+			Returns:
+			    None: The callback updates Streamlit session state.
+			"""
+			load_prompt_into_state( prompt_id_key=prompt_id_key, instruction_key=instruction_key )
+		
+		def on_clear( ) -> None:
+			"""Clear the current mode's prompt state.
+
+			Purpose:
+			    Clears the selected category, prompt ID, and editable system instructions
+			    without modifying the underlying prompt record.
+
+			Returns:
+			    None: The callback updates Streamlit session state.
+			"""
+			clear_prompt_state( category_key=category_key, prompt_id_key=prompt_id_key,
+				instruction_key=instruction_key )
+		
+		def on_convert( ) -> None:
+			"""Convert the current system instructions.
+
+			Purpose:
+			    Converts the current mode's system instructions between supported XML prompt
+			    blocks and Markdown or HTML heading notation.
+
+			Returns:
+			    None: The callback updates Streamlit session state.
+			"""
+			convert_prompt_state( instruction_key=instruction_key )
+		
+		# ------------------------------------------------------------------
+		# System Instructions Expander
+		# ------------------------------------------------------------------
+		with st.expander( label=label, icon='🖥️', expanded=False, width='stretch' ):
+			instruction_column, selector_column = st.columns( [ 0.70, 0.30 ] )
+			
+			# --------------------------------------------------------------
+			# Category and Prompt Selectors
+			# --------------------------------------------------------------
+			with selector_column:
+				category_placeholder = 'Select Category'
+				
+				if not database_categories:
+					category_placeholder = ('No Categories in Prompts')
+				
+				elif not mode_categories:
+					category_placeholder = ('No Categories Match This Mode')
+				
+				st.selectbox( label='Category', options=mode_categories, index=None,
+					key=category_key, on_change=on_category_change,
+					placeholder=category_placeholder, disabled=not mode_categories,
+					help=('Categories are read from Prompts.Category '
+					      'and filtered for the current mode.'), width='stretch' )
+				
+				active_category = st.session_state.get( category_key, None )
+				
+				prompt_records: List[ Dict[ str, Any ] ] = [ ]
+				
+				if active_category:
+					prompt_records = fetch_prompts_by_category( db_path=cfg.DB_PATH,
+						category=str( active_category ) )
+				
+				prompt_lookup: Dict[ int, Dict[ str, Any ] ] = { int( record[ 'ID' ] ): record for
+					record in prompt_records if record.get( 'ID' ) is not None }
+				
+				prompt_ids = list( prompt_lookup.keys( ) )
+				
+				selected_prompt_id = st.session_state.get( prompt_id_key, None )
+				
+				if selected_prompt_id is not None:
+					try:
+						selected_prompt_id = int( selected_prompt_id )
+					except (TypeError, ValueError):
+						selected_prompt_id = None
+				
+				if selected_prompt_id not in prompt_ids:
+					st.session_state[ prompt_id_key ] = None
+				
+				if active_category and prompt_ids:
+					prompt_placeholder = 'Select Prompt'
+				
+				elif active_category:
+					prompt_placeholder = 'No Prompts Found'
+				
+				else:
+					prompt_placeholder = 'Select Category First'
+				
+				st.selectbox( label='Prompt', options=prompt_ids,
+					format_func=lambda prompt_id: format_prompt_option( prompt_id=prompt_id,
+						prompt_lookup=prompt_lookup ), index=None, key=prompt_id_key,
+					on_change=on_prompt_change, placeholder=prompt_placeholder,
+					disabled=(not active_category or not prompt_ids),
+					help=('Prompts are read from the selected category '
+					      'and tracked by their stable database ID.'), width='stretch' )
+			
+			# --------------------------------------------------------------
+			# Editable Instruction Text
+			# --------------------------------------------------------------
+			with instruction_column:
+				st.text_area( label='Enter Text', height=text_area_height, width='stretch',
+					help=cfg.SYSTEM_INSTRUCTIONS, key=instruction_key )
+			
+			# --------------------------------------------------------------
+			# Expander Actions
+			# --------------------------------------------------------------
+			clear_column, convert_column = st.columns( [ 0.80, 0.20 ] )
+			
+			with clear_column:
+				st.button( label='Clear Instructions', key=f'{state_prefix}_clear_instructions',
+					icon='🧹', width='stretch', on_click=on_clear )
+			
+			with convert_column:
+				st.button( label='XML ↔️ Markdown', key=f'{state_prefix}_convert_instructions',
+					width='stretch', on_click=on_convert )
+	
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'render_system_prompt_expander'
+		exception.method = ('render_system_prompt_expander( state_prefix: str, '
+		                    'instruction_key: str, '
+		                    'allowed_categories: Tuple[ str, ... ], '
+		                    'label: str = \'System Instructions\', '
+		                    'height: int = 135 ) -> None')
+		Logger( ).write( exception )
+		raise exception
 	
 def build_prompt( user_input: str ) -> str:
 	"""Build prompt.
@@ -8610,58 +8845,27 @@ if mode == 'Text':
 	
 	def reset_text_response_controls( ) -> None:
 		"""Reset text response controls.
-        
-            Purpose:
-                Resets the text response controls state used by the application. The function clears
-                related Streamlit keys without performing provider calls.
-        """
-		for key in [ 'text_stream', 'text_store', 'text_max_tokens', 'text_background',
-		             'text_response_format', 'text_input', 'text_previous_response_id',
-		             'text_conversation_id' ]:
+
+		Purpose:
+		    Resets the Text mode response-control state without modifying model, tool,
+		    prompt-template, conversation-message, or database state.
+
+		Returns:
+		    None: The function removes the response-control keys from Streamlit session state.
+		"""
+		for key in [
+			'text_stream',
+			'text_store',
+			'text_max_tokens',
+			'text_background',
+			'text_response_format',
+			'text_input',
+			'text_previous_response_id',
+			'text_conversation_id',
+		]:
 			if key in st.session_state:
 				del st.session_state[ key ]
-	
-	def clear_text_instructions( ) -> None:
-		"""Clear text instructions.
-        
-            Purpose:
-                Clears the text instructions state used by the current workflow so the user interface
-                can start from a clean output state.
-        """
-		st.session_state[ 'text_system_instructions' ] = ''
-		st.session_state[ 'instructions' ] = ''
-	
-	def convert_text_system_instructions( ) -> None:
-		"""Convert text system instructions.
-        
-            Purpose:
-                Provides the convert text system instructions helper used by the Gipity Streamlit
-                application. The function supports UI state management, provider coordination, data
-                normalization, or display behavior required by the surrounding workflow.
-        """
-		text_value = st.session_state.get( 'text_system_instructions', '' )
-		if not isinstance( text_value, str ) or not text_value.strip( ):
-			return
-		source = text_value.strip( )
-		if cfg.XML_BLOCK_PATTERN.search( source ):
-			converted = convert_xml( source )
-		else:
-			converted = convert_markdown( source )
-		st.session_state[ 'text_system_instructions' ] = converted
-	
-	def load_text_instruction_template( ) -> None:
-		"""Load text instruction template.
-        
-            Purpose:
-                Loads the text instruction template resource or state required by the Gipity workflow
-                and returns the prepared value for caller use.
-        """
-		name = st.session_state.get( 'instructions' )
-		if name and name != 'No Templates Found':
-			prompt_text = fetch_prompt_text( cfg.DB_PATH, name )
-			if prompt_text is not None:
-				st.session_state[ 'text_system_instructions' ] = prompt_text
-	
+				
 	# ------------------------------------------------------------------
 	# Main Chat UI
 	# ------------------------------------------------------------------
@@ -8669,10 +8873,6 @@ if mode == 'Text':
 	with center:
 		st.subheader( '💬 Text Generation', help=cfg.TEXT_GENERATION )
 		st.divider( )
-		if st.session_state.get( 'clear_instructions' ):
-			st.session_state[ 'text_system_instructions' ] = ''
-			st.session_state[ 'instructions_last_loaded' ] = ''
-			st.session_state[ 'clear_instructions' ] = False
 		# ------------------------------------------------------------------
 		# Expander - Mind Controls
 		# ------------------------------------------------------------------
@@ -8705,9 +8905,10 @@ if mode == 'Text':
 						step=0.01, help=cfg.TOP_P, key='text_top_percent' )
 					text_top_percent = st.session_state[ 'text_top_percent' ]
 				
-				# ---------- Temperature ------------
 				llm2_c1, llm2_c2, llm2_c3 = st.columns( [ 0.33, 0.33, 0.33 ], border=True,
 					gap='xxsmall' )
+				
+				# ---------- Temperature ------------
 				with llm2_c1:
 					set_text_temperature = st.slider( label='Temperature', min_value=0.0,
 						max_value=2.0, step=0.01, help=cfg.TEMPERATURE, key='text_temperature' )
@@ -8729,7 +8930,7 @@ if mode == 'Text':
 					
 				# ---------- Reset Button ------------
 				st.button( label='Reset', key='reset_text_model', width='stretch',
-					on_click=reset_text_llm_controls )
+					on_click=reset_text_llm_controls, icon='🔄' )
 			
 			# --------- Tool Settings --------------
 			with st.expander( label='Tool Settings', icon='🛠️', expanded=False, width='stretch' ):
@@ -8792,7 +8993,7 @@ if mode == 'Text':
 				
 				# ---------- Reset ------------
 				st.button( label='Reset', key='reset_text_tools', width='stretch',
-					on_click=reset_text_tool_controls )
+					on_click=reset_text_tool_controls, icon='🔄' )
 			
 			# ---------- Response Settings ------------
 			with st.expander( label='Response Settings', icon='↔️', expanded=False, width='stretch' ):
@@ -8863,7 +9064,7 @@ if mode == 'Text':
 				
 				# --------- Reset Controls ------------------
 				st.button( label='Reset', key='reset_text_response', width='stretch',
-					on_click=reset_text_response_controls )
+					on_click=reset_text_response_controls, icon='🔄' )
 			
 			# ---------- Structured Output ------------
 			with st.expander( label='Structured Output', icon='🧾', expanded=False,
@@ -8900,7 +9101,7 @@ if mode == 'Text':
 				
 				# --------- Reset Controls ------------------
 				st.button( label='Reset', key='reset_text_structured_output', width='stretch',
-					on_click=reset_text_structured_output_controls )
+					on_click=reset_text_structured_output_controls, icon='🔄' )
 		
 		# ------------------------------------------------------------------
 		# Expander - System Instructions
