@@ -10974,7 +10974,7 @@ elif mode == 'Files':
 		# Expander - System Instructions
 		# ------------------------------------------------------------------
 		render_system_prompt_expander( state_prefix='files',
-			instruction_key='files_system_instructions',  llowed_categories=FILES_PROMPT_CATEGORIES,
+			instruction_key='files_system_instructions', allowed_categories=FILES_PROMPT_CATEGORIES,
 			label='System Instructions', height=135 )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
