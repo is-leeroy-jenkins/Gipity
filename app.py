@@ -10324,8 +10324,6 @@ elif mode == 'Document Q&A':
 			instruction_key='docqna_system_instructions',
 			allowed_categories=DOCQNA_PROMPT_CATEGORIES, label='System Instructions', height=135 )
 		
-		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
-		
 		# ----- Document Loader -----
 		load_col, status_col = st.columns( [ 0.4, 0.6 ], border=True, gap='small' )
 		with load_col:
@@ -10359,8 +10357,6 @@ elif mode == 'Document Q&A':
 			if len( names ) > 0:
 				st.caption( 'Active documents: ' + ', '.join( names ) )
 			
-			st.divider( )
-			
 			# ----- Show -----
 			preview_c1, preview_c2 = st.columns( [ 0.5, 0.5 ] )
 			with preview_c1:
@@ -10378,8 +10374,6 @@ elif mode == 'Document Q&A':
 		with status_col:
 			st.markdown( '##### Document Status' )
 			render_docqna_status( )
-			
-			st.divider( )
 			
 			source = st.session_state.get( 'docqna_source', 'Local Upload' )
 			if source == 'OpenAI File ID':
