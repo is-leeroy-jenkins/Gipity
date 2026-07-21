@@ -10130,8 +10130,7 @@ elif mode == 'Document Q&A':
 					docqna_show_diagnostics = st.toggle( label='Diagnostics',
 						key='docqna_show_diagnostics',
 						help='Show retrieval and source diagnostics.' )
-				
-				
+						
 				source_c5, source_c6 = st.columns( [ 0.5, 0.5 ], border=True,
 					gap='xxsmall' )
 				
