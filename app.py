@@ -10986,7 +10986,7 @@ elif mode == 'Files':
 			if uploaded_file is not None:
 				st.caption( f"Selected: {getattr( uploaded_file, 'name', 'uploaded file' )}" )
 				st.caption( f"Size: {getattr( uploaded_file, 'size', 0 )} bytes" )
-			if st.button( 'Upload File', key='upload_openai_file', width='stretch' ):
+			if st.button( 'Upload File', key='upload_openai_file', width='stretch', icon='📤' ):
 				with st.spinner( 'Uploading file…' ):
 					try:
 						metadata = run_files_upload( files=files, uploaded_file=uploaded_file,
@@ -11113,13 +11113,13 @@ elif mode == 'Files':
 		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 		with reset_c1:
 			if st.button( 'Clear Messages', key='clear_files_messages', width='stretch',
-					on_click=clear_files_messages ):
+					on_click=clear_files_messages, icon='🧹' ):
 				st.rerun( )
 		
 		# ------ Clear Outputs ------
 		with reset_c2:
 			if st.button( 'Clear Outputs', key='clear_files_mode_outputs', width='stretch',
-					on_click=clear_files_outputs ):
+					on_click=clear_files_outputs, icon='↪️' ):
 				st.rerun( )
 		
 		# ------ Reset All ------
@@ -11219,8 +11219,7 @@ elif mode == 'Vector Stores':
 					placeholder='{ "project": "example" }' )
 			
 			# ----- Chunk Controls ------
-			with st.expander( label='Chunking Controls', icon='🧩', expanded=False,
-					width='stretch' ):
+			with st.expander( label='Chunking Controls', icon='🧩', expanded=False, width='stretch' ):
 				chunk_c1, chunk_c2, chunk_c3 = st.columns( [ 0.34, 0.33, 0.33 ], border=True,
 					gap='xxsmall' )
 				
@@ -11410,7 +11409,7 @@ elif mode == 'Vector Stores':
 			# ----- Create Stores ------
 			create_c1, create_c2 = st.columns( [ 0.5, 0.5 ] )
 			with create_c1:
-				if st.button( 'Create Store', key='create_vector_store', width='stretch' ):
+				if st.button( 'Create Store', key='create_vector_store', width='stretch', icon='➕' ):
 					with st.spinner( 'Creating vector store…' ):
 						try:
 							result = run_vector_store_create( vector )
@@ -11436,7 +11435,7 @@ elif mode == 'Vector Stores':
 			
 			# ----- List Stores ------
 			with create_c2:
-				if st.button( 'List Stores', key='list_vector_stores', width='stretch' ):
+				if st.button( 'List Stores', key='list_vector_stores', width='stretch', icon='🔢' ):
 					with st.spinner( 'Listing vector stores…' ):
 						try:
 							rows = run_vector_store_list( vector )
@@ -11455,7 +11454,7 @@ elif mode == 'Vector Stores':
 			# ----- Retrieve Stores ------
 			retrieve_c1, retrieve_c2, retrieve_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 			with retrieve_c1:
-				if st.button( 'Retrieve Store', key='retrieve_vector_store', width='stretch' ):
+				if st.button( 'Retrieve Store', key='retrieve_vector_store', width='stretch', icon='🔍' ):
 					with st.spinner( 'Retrieving vector store…' ):
 						try:
 							result = run_vector_store_retrieve( vector=vector,
@@ -11472,7 +11471,7 @@ elif mode == 'Vector Stores':
 			
 			# ----- Update Stores ------
 			with retrieve_c2:
-				if st.button( 'Update Store', key='update_vector_store', width='stretch' ):
+				if st.button( 'Update Store', key='update_vector_store', width='stretch', icon='🔼' ):
 					with st.spinner( 'Updating vector store…' ):
 						try:
 							result = run_vector_store_update( vector=vector,
@@ -11499,7 +11498,7 @@ elif mode == 'Vector Stores':
 			
 			# ----- Delete Stores ------
 			with retrieve_c3:
-				if st.button( 'Delete Store', key='delete_vector_store', width='stretch' ):
+				if st.button( 'Delete Store', key='delete_vector_store', width='stretch', icon='❌' ):
 					with st.spinner( 'Deleting vector store…' ):
 						try:
 							result = run_vector_store_delete( vector=vector,
@@ -11585,7 +11584,7 @@ elif mode == 'Vector Stores':
 			# ----- Attach Files ------
 			file_action_c1, file_action_c2, file_action_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 			with file_action_c1:
-				if st.button( 'Attach File', key='attach_vector_store_file', width='stretch' ):
+				if st.button( 'Attach File', key='attach_vector_store_file', width='stretch', icon='📎' ):
 					with st.spinner( 'Attaching file…' ):
 						try:
 							result = run_vector_store_attach_file( vector=vector,
@@ -11613,7 +11612,7 @@ elif mode == 'Vector Stores':
 			
 			# ----- List Files ------
 			with file_action_c2:
-				if st.button( 'List Files', key='list_vector_store_files', width='stretch' ):
+				if st.button( 'List Files', key='list_vector_store_files', width='stretch', icon='🔢' ):
 					with st.spinner( 'Listing vector store files…' ):
 						try:
 							rows = run_vector_store_list_files( vector=vector,
@@ -11649,7 +11648,7 @@ elif mode == 'Vector Stores':
 				selected_file_id = get_selected_vector_store_file_id( selected_label=selected_file_label,
 					options=file_options ) or st.session_state.get( 'stores_file_id', '' )
 				
-				if st.button( 'Delete File', key='delete_vector_store_file', width='stretch' ):
+				if st.button( 'Delete File', key='delete_vector_store_file', width='stretch', icon='❌' ):
 					with st.spinner( 'Deleting vector store file…' ):
 						try:
 							result = run_vector_store_delete_file( vector=vector,
@@ -11677,6 +11676,7 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Delete vector store file failed: {exc}' )
+			
 			render_vector_store_files_table( st.session_state.get( 'stores_files_table', [ ] ) )
 		
 		# ----- File Batches ------
