@@ -3569,9 +3569,6 @@ def render_docqna_document_preview( ) -> None:
             Streamlit while preserving the application state expected by the surrounding workflow.
     """
 	docs = st.session_state.get( 'docqna_active_docs', [ ] )
-	if not isinstance( docs, list ) or len( docs ) == 0:
-		st.info( 'No active document loaded.' )
-		return
 	for doc in docs:
 		if not isinstance( doc, dict ):
 			continue
@@ -10362,6 +10359,8 @@ elif mode == 'Document Q&A':
 			if len( names ) > 0:
 				st.caption( 'Active documents: ' + ', '.join( names ) )
 			
+			st.divider( )
+			
 			# ----- Show -----
 			preview_c1, preview_c2 = st.columns( [ 0.5, 0.5 ] )
 			with preview_c1:
@@ -10380,7 +10379,7 @@ elif mode == 'Document Q&A':
 			st.markdown( '##### Document Status' )
 			render_docqna_status( )
 			
-			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			st.divider( )
 			
 			source = st.session_state.get( 'docqna_source', 'Local Upload' )
 			if source == 'OpenAI File ID':
