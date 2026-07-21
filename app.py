@@ -9242,6 +9242,7 @@ elif mode == 'Images':
 		st.session_state[ 'image_system_instructions' ] = ''
 		st.session_state[ 'clear_image_instructions' ] = False
 		st.session_state[ 'clear_instructions' ] = False
+		
 	if not isinstance( st.session_state.get( 'image_number' ), int ):
 		st.session_state[ 'image_number' ] = 1
 		
@@ -9496,11 +9497,13 @@ elif mode == 'Images':
 							else:
 								model = image_analysis_model or 'gpt-4o-mini'
 								append_image_message( 'user', prompt.strip( ) )
-								analysis_result = image.analyze( text=prompt.strip( ),
-									path=tmp_path, instruct=image_system_instructions, model=model,
-									max_tokens=image_max_tokens, temperature=image_temperature,
-									include=image_include, store=image_store, stream=None,
+								analysis_result = image.analyze( text=prompt.strip( ), path=tmp_path,
+									instruct=st.session_state.get( 'image_system_instructions', '' ) or None,
+									model=model, max_tokens=image_max_tokens,
+									temperature=image_temperature, include=image_include,
+									store=image_store, stream=None,
 									detail=image_analysis_detail or 'auto' )
+								
 								if analysis_result is None:
 									st.warning( 'No analysis output was returned.' )
 								else:
@@ -9523,7 +9526,8 @@ elif mode == 'Images':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Analysis Failed: {exc}' )
-			
+							
+			# ----- Clear Messages -----
 			with ana_c2:
 				if st.button( 'Clear Messages', key='clear_image_analysis',
 						on_click=clear_image_messages ):
@@ -11126,7 +11130,7 @@ elif mode == 'Files':
 			if st.button( 'Reset All', key='reset_files_all', width='stretch',
 					on_click=reset_files_all ):
 				st.rerun( )
-				
+
 # ==============================================================================
 # VECTOR STORE MODE
 # ==============================================================================
@@ -11135,35 +11139,55 @@ elif mode == 'Vector Stores':
 	vector = VectorStores( )
 	if not isinstance( st.session_state.get( 'stores_table' ), list ):
 		st.session_state[ 'stores_table' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'stores_files_table' ), list ):
 		st.session_state[ 'stores_files_table' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'stores_store_metadata' ), dict ):
 		st.session_state[ 'stores_store_metadata' ] = { }
+		
 	if not isinstance( st.session_state.get( 'stores_batch_result' ), dict ):
 		st.session_state[ 'stores_batch_result' ] = { }
+		
 	if not isinstance( st.session_state.get( 'stores_search_results' ), list ):
 		st.session_state[ 'stores_search_results' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'stores_messages' ), list ):
 		st.session_state.stores_messages = [ ]
+		
 	if st.session_state.get( 'clear_instructions' ):
 		st.session_state[ 'stores_system_instructions' ] = ''
 		st.session_state[ 'clear_instructions' ] = False
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.025, 0.95, 0.025 ] )
 	with center:
 		st.subheader( '🧊 Vector Stores', help=getattr( cfg, 'VECTORSTORES_API',
 			'Create, manage, search, and query OpenAI vector stores.' ) )
 		st.divider( )
 		
+		# ------------------------------------------------------------------
+		# Expander - Mind Controls
+		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
 			
-			with st.expander( label='Store Controls', icon='🗄️', expanded=False, width='stretch' ):
+			# ----- Store Controls ------
+			with st.expander( label='Store Controls', icon='🗄️', expanded=False,
+					width='stretch' ):
 				ctrl_c1, ctrl_c2, ctrl_c3, ctrl_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
+				
+				# ----- Store Name -----
 				with ctrl_c1:
 					st.text_input( label='Store Name', key='stores_name',
 						value=st.session_state.get( 'stores_name', '' ),
-						help='Name used when creating or updating a vector store.', width='stretch',
+						help='Name used when creating or updating a vector store.',
+						width='stretch',
 						placeholder='Enter store name' )
+				
+				# ----- Vector Stores Model -----
 				with ctrl_c2:
 					model_options = get_vector_store_model_options( vector )
 					if st.session_state.get( 'stores_model' ) not in model_options:
@@ -11171,28 +11195,39 @@ elif mode == 'Vector Stores':
 					st.selectbox( label='Answer Model', options=model_options, key='stores_model',
 						help='Model used only for Responses API file_search answers.', index=None,
 						placeholder='Options' )
+				
+				# ----- Expiration Anchor -----
 				with ctrl_c3:
 					st.selectbox( label='Expiration Anchor', options=[ 'last_active_at' ],
 						key='stores_expires_anchor',
 						help='Expiration anchor for vector store expiration policy.', index=0,
 						placeholder='Options' )
+				
+				# ----- Expiration Days -----
 				with ctrl_c4:
 					st.slider( label='Expiration Days', min_value=0, max_value=365, step=1,
 						key='stores_expires_days',
 						help='Optional expiration days. Zero omits expires_after.' )
+				
+				# ----- Description -----
 				st.text_area( label='Store Description', key='stores_description',
 					value=st.session_state.get( 'stores_description', '' ), height=80,
 					width='stretch', help='Optional vector store description.',
 					placeholder='Optional description' )
+				
+				# ----- Metadata -----
 				st.text_area( label='Store Metadata JSON', key='stores_metadata',
 					value=st.session_state.get( 'stores_metadata', '' ), height=100,
 					width='stretch', help='Optional JSON object used as vector store metadata.',
 					placeholder='{ "project": "example" }' )
 			
+			# ----- Chunk Controls ------
 			with st.expander( label='Chunking Controls', icon='🧩', expanded=False,
 					width='stretch' ):
 				chunk_c1, chunk_c2, chunk_c3 = st.columns( [ 0.34, 0.33, 0.33 ], border=True,
 					gap='xxsmall' )
+				
+				# ----- Strategy ------
 				with chunk_c1:
 					chunking_options = get_vector_store_chunking_options( vector )
 					if st.session_state.get( 'stores_chunking_strategy' ) not in chunking_options:
@@ -11205,6 +11240,8 @@ elif mode == 'Vector Stores':
 								'auto' ) ) if st.session_state.get(
 							'stores_chunking_strategy' ) in chunking_options else None,
 						placeholder='Options' )
+				
+				# ----- Chunk Size ------
 				with chunk_c2:
 					try:
 						current_chunk_size = int(
@@ -11220,8 +11257,11 @@ elif mode == 'Vector Stores':
 						st.session_state[ 'stores_chunk_size' ] = 100
 					elif current_chunk_size > 4096:
 						st.session_state[ 'stores_chunk_size' ] = 4096
+					
 					st.slider( label='Max Chunk Tokens', min_value=100, max_value=4096, step=50,
 						key='stores_chunk_size', help='Static chunking max chunk size in tokens.' )
+				
+				# ----- Oerlap Size ------
 				with chunk_c3:
 					max_overlap = max( 0,
 						int( st.session_state.get( 'stores_chunk_size', 800 ) or 800 ) // 2 )
@@ -11239,44 +11279,64 @@ elif mode == 'Vector Stores':
 						st.session_state[ 'stores_chunk_overlap' ] = 0
 					elif current_overlap > max_overlap:
 						st.session_state[ 'stores_chunk_overlap' ] = max_overlap
+					
 					st.slider( label='Chunk Overlap', min_value=0, max_value=max_overlap, step=25,
 						key='stores_chunk_overlap',
-						help='Static chunking overlap in tokens. Cannot exceed half the chunk size.' )
+						help='Static chunking overlap in tokens. Cannot exceed half the chunk '
+						     'size.' )
 			
+			# ----- File Controles ------
 			with st.expander( label='File Controls', icon='📎', expanded=False, width='stretch' ):
 				file_c1, file_c2 = st.columns( [ 0.5, 0.5 ], border=True, gap='xxsmall' )
+				
+				# ----- ID ------
 				with file_c1:
 					st.text_input( label='File ID', key='stores_file_id',
 						value=st.session_state.get( 'stores_file_id', '' ),
-						help='OpenAI file ID used when attaching or managing one vector store file.',
+						help='OpenAI file ID used when attaching or managing one vector store '
+						     'file.',
 						width='stretch', placeholder='file-...' )
+				
+				# ----- IDs ------
 				with file_c2:
 					st.text_input( label='File IDs', key='stores_file_ids',
 						value=st.session_state.get( 'stores_file_ids', '' ),
-						help='Comma-delimited OpenAI file IDs used for create/store file batch workflows.',
+						help='Comma-delimited OpenAI file IDs used for create/store file batch '
+						     'workflows.',
 						width='stretch', placeholder='file-..., file-...' )
+				
+				# ----- Attributes ------
 				st.text_area( label='File Attributes JSON', key='stores_file_attributes',
 					value=st.session_state.get( 'stores_file_attributes', '' ), height=90,
 					width='stretch',
 					help='Optional JSON object used as vector store file attributes.',
 					placeholder='{ "source": "manual-upload" }' )
+				
+				# ----- Batches -----
 				st.text_input( label='Batch ID', key='stores_batch_id',
 					value=st.session_state.get( 'stores_batch_id', '' ),
 					help='Vector store file batch ID used for retrieve/cancel workflows.',
 					width='stretch', placeholder='vsfb_...' )
 			
+			# ----- Search Controls ------
 			with st.expander( label='Search Controls', icon='🔎', expanded=False, width='stretch' ):
 				search_c1, search_c2, search_c3, search_c4 = st.columns( [ 0.4, 0.2, 0.2, 0.2 ],
 					border=True, gap='xxsmall' )
+				
+				# ----- Query ------
 				with search_c1:
 					st.text_input( label='Search Query', key='stores_search_query',
 						value=st.session_state.get( 'stores_search_query', '' ),
 						help='Native vector store search query.', width='stretch',
 						placeholder='Enter search query' )
+				
+				# ----- Max Results------
 				with search_c2:
 					st.slider( label='Max Results', min_value=1, max_value=50, step=1,
 						key='stores_max_results',
 						help='Maximum number of native search or file_search results.' )
+				
+				# ----- Ranker ------
 				with search_c3:
 					ranker_options = get_vector_store_ranker_options( vector )
 					if st.session_state.get( 'stores_ranker' ) not in ranker_options:
@@ -11286,67 +11346,71 @@ elif mode == 'Vector Stores':
 							st.session_state.get( 'stores_ranker',
 								'auto' ) ) if st.session_state.get(
 							'stores_ranker' ) in ranker_options else None, placeholder='Options' )
+				
+				# ----- Threshold ------
 				with search_c4:
 					st.slider( label='Score Threshold', min_value=0.0, max_value=1.0, step=0.01,
 						key='stores_score_threshold',
 						help='Optional native search score threshold.' )
+					
 					st.toggle( label='Rewrite Query', key='stores_rewrite_query',
 						help='Optional native vector store query rewriting.' )
 			
+			# ----- Current Store ------
 			with st.expander( label='Current Store', icon='🎯', expanded=False, width='stretch' ):
 				store_rows = st.session_state.get( 'stores_table', [ ] )
 				store_options = build_vector_store_selection_options( store_rows )
 				store_labels = [ '' ] + list( store_options.keys( ) )
 				if st.session_state.get( 'stores_selected_label' ) not in store_labels:
 					st.session_state[ 'stores_selected_label' ] = ''
+				
 				selected_label = st.selectbox( label='Selected Vector Store', options=store_labels,
-					key='stores_selected_label', help='Select a vector store from the latest list.',
+					key='stores_selected_label', help='Select a vector store',
 					index=store_labels.index( st.session_state.get( 'stores_selected_label',
 						'' ) ) if st.session_state.get(
-						'stores_selected_label' ) in store_labels else None, placeholder='Options' )
+						'stores_selected_label' ) in store_labels else None,
+					placeholder='Options' )
+				
 				selected_from_table = get_selected_vector_store_id( selected_label=selected_label,
 					options=store_options )
+				
 				manual_id = st.session_state.get( 'stores_manual_id', '' )
 				selected_store_id = selected_from_table or (
 					manual_id.strip( ) if isinstance( manual_id,
 						str ) and manual_id.strip( ) else st.session_state.get( 'stores_id', '' ))
+				
 				st.text_input( label='Manual Vector Store ID', key='stores_manual_id',
 					value=st.session_state.get( 'stores_manual_id', '' ),
-					help='Optional direct vector store ID. Use this if the store is not in the current table.',
+					help='Optional direct vector store ID. Use this if the store is not in the '
+					     'current table.',
 					width='stretch', placeholder='vs_...' )
 				if selected_store_id:
 					st.caption( f'Selected Vector Store ID: `{selected_store_id}`' )
 				else:
 					st.caption( 'No vector store selected.' )
+				
 				st.text_input( label='Resolved Store ID', value=selected_store_id or '',
 					disabled=True, key='stores_selected_id_display',
-					help='Resolved vector store ID used by store, file, batch, search, and answer actions.',
+					help='Resolved vector store ID used by store, file, batch, search, and answer '
+					     'actions.',
 					width='stretch' )
 		
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
-			prompt_names = fetch_prompt_names( cfg.DB_PATH )
-			if not prompt_names:
-				prompt_names = [ '' ]
-			with in_left:
-				st.text_area( label='Enter Text', height=70, width='stretch',
-					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
-						'Optional instructions used for Responses API file_search answers.' ),
-					key='stores_system_instructions' )
-			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=load_vector_store_instruction_template )
-			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
-			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch',
-					on_click=clear_vector_store_instructions )
-			with btn_c2:
-				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=convert_vector_store_system_instructions )
+		# ------------------------------------------------------------------
+		# Expander - System Instructions
+		# ------------------------------------------------------------------
+		render_system_prompt_expander( state_prefix='stores',
+			instruction_key='stores_system_instructions',
+			allowed_categories=VECTORSTORE_PROMPT_CATEGORIES, label='System Instructions',
+			height=135 )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ----- Stores Management ------
 		left_col, right_col = st.columns( [ 0.5, 0.5 ], border=True, gap='small' )
 		with left_col:
 			st.markdown( '#### Vector Store Management' )
+			
+			# ----- Create Stores ------
 			create_c1, create_c2 = st.columns( [ 0.5, 0.5 ] )
 			with create_c1:
 				if st.button( 'Create Store', key='create_vector_store', width='stretch' ):
@@ -11372,6 +11436,8 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Create vector store failed: {exc}' )
+			
+			# ----- List Stores ------
 			with create_c2:
 				if st.button( 'List Stores', key='list_vector_stores', width='stretch' ):
 					with st.spinner( 'Listing vector stores…' ):
@@ -11388,6 +11454,8 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'List vector stores failed: {exc}' )
+			
+			# ----- Retrieve Stores ------
 			retrieve_c1, retrieve_c2, retrieve_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 			with retrieve_c1:
 				if st.button( 'Retrieve Store', key='retrieve_vector_store', width='stretch' ):
@@ -11404,6 +11472,8 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Retrieve vector store failed: {exc}' )
+			
+			# ----- Update Stores ------
 			with retrieve_c2:
 				if st.button( 'Update Store', key='update_vector_store', width='stretch' ):
 					with st.spinner( 'Updating vector store…' ):
@@ -11429,6 +11499,8 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Update vector store failed: {exc}' )
+			
+			# ----- Delete Stores ------
 			with retrieve_c3:
 				if st.button( 'Delete Store', key='delete_vector_store', width='stretch' ):
 					with st.spinner( 'Deleting vector store…' ):
@@ -11448,7 +11520,8 @@ elif mode == 'Vector Stores':
 									Logger( ).write( exception )
 									pass
 							elif result:
-								st.warning( 'Delete request completed without confirmed deletion.' )
+								st.warning( 'Delete request completed without confirmed '
+								            'deletion.' )
 						except Exception as exc:
 							exception = Error( exc )
 							exception.module = 'app'
@@ -11456,9 +11529,13 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Delete vector store failed: {exc}' )
+			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
 			st.markdown( '#### Vector Stores' )
 			render_vector_stores_table( st.session_state.get( 'stores_table', [ ] ) )
+		
+		# ----- Store Details -----
 		with right_col:
 			st.markdown( '#### Selected Store Details' )
 			metadata = st.session_state.get( 'stores_store_metadata', { } )
@@ -11466,7 +11543,10 @@ elif mode == 'Vector Stores':
 				render_vector_store_metadata( metadata )
 			else:
 				st.info( 'Retrieve a vector store to inspect metadata.' )
+			
 			st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+			
+			# ----- Search Stores ------
 			search_c1, search_c2 = st.columns( [ 0.5, 0.5 ] )
 			with search_c1:
 				if st.button( 'Search Store', key='search_vector_store', width='stretch' ):
@@ -11485,18 +11565,27 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Vector store search failed: {exc}' )
+			
+			# ----- Clear Output ------
 			with search_c2:
-				st.button( label='Clear Outputs', key='clear_vector_store_outputs', width='stretch',
-					on_click=clear_vector_store_outputs )
+				st.button( label='Clear Outputs', key='clear_vector_store_outputs',
+					width='stretch', on_click=clear_vector_store_outputs )
+				
+			# ----- Search Results ------
 			results = st.session_state.get( 'stores_search_results', [ ] )
 			if isinstance( results, list ) and len( results ) > 0:
 				with st.expander( label='Search Results', icon='🔎', expanded=False,
 						width='stretch' ):
 					render_vector_store_search_results( results )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ----- Store Files ------
 		file_col, batch_col = st.columns( [ 0.5, 0.5 ], border=True, gap='small' )
 		with file_col:
 			st.markdown( '#### Vector Store Files' )
+			
+			# ----- Attach Files ------
 			file_action_c1, file_action_c2, file_action_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 			with file_action_c1:
 				if st.button( 'Attach File', key='attach_vector_store_file', width='stretch' ):
@@ -11524,6 +11613,8 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Attach file failed: {exc}' )
+			
+			# ----- List Files ------
 			with file_action_c2:
 				if st.button( 'List Files', key='list_vector_store_files', width='stretch' ):
 					with st.spinner( 'Listing vector store files…' ):
@@ -11541,12 +11632,15 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'List vector store files failed: {exc}' )
+			
+			# ----- Files Table ------
 			with file_action_c3:
 				file_rows = st.session_state.get( 'stores_files_table', [ ] )
 				file_options = build_vector_store_file_selection_options( file_rows )
 				file_labels = [ '' ] + list( file_options.keys( ) )
 				if st.session_state.get( 'stores_file_selected_label' ) not in file_labels:
 					st.session_state[ 'stores_file_selected_label' ] = ''
+				
 				selected_file_label = st.selectbox( label='Selected File', options=file_labels,
 					key='stores_file_selected_label',
 					help='Select a vector store file from the latest file list.',
@@ -11554,9 +11648,10 @@ elif mode == 'Vector Stores':
 						'' ) ) if st.session_state.get(
 						'stores_file_selected_label' ) in file_labels else None,
 					placeholder='Options' )
-				selected_file_id = get_selected_vector_store_file_id(
-					selected_label=selected_file_label,
+				
+				selected_file_id = get_selected_vector_store_file_id( selected_label=selected_file_label,
 					options=file_options ) or st.session_state.get( 'stores_file_id', '' )
+				
 				if st.button( 'Delete File', key='delete_vector_store_file', width='stretch' ):
 					with st.spinner( 'Deleting vector store file…' ):
 						try:
@@ -11586,8 +11681,12 @@ elif mode == 'Vector Stores':
 							Logger( ).write( exception )
 							st.error( f'Delete vector store file failed: {exc}' )
 			render_vector_store_files_table( st.session_state.get( 'stores_files_table', [ ] ) )
+		
+		# ----- File Batches ------
 		with batch_col:
 			st.markdown( '#### File Batches' )
+			
+			# ----- Create  ------
 			batch_c1, batch_c2, batch_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 			with batch_c1:
 				if st.button( 'Create Batch', key='create_vector_store_batch', width='stretch' ):
@@ -11604,6 +11703,8 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Create batch failed: {exc}' )
+
+			# ----- Retrieve ------
 			with batch_c2:
 				if st.button( 'Retrieve Batch', key='retrieve_vector_store_batch',
 						width='stretch' ):
@@ -11620,6 +11721,8 @@ elif mode == 'Vector Stores':
 							exception.method = 'module'
 							Logger( ).write( exception )
 							st.error( f'Retrieve batch failed: {exc}' )
+			
+			# ----- Cancel ------
 			with batch_c3:
 				if st.button( 'Cancel Batch', key='cancel_vector_store_batch', width='stretch' ):
 					with st.spinner( 'Cancelling vector store file batch…' ):
@@ -11640,7 +11743,9 @@ elif mode == 'Vector Stores':
 				render_vector_store_batch_result( batch_result )
 			else:
 				st.info( 'No batch result available.' )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
 		if st.session_state.get( 'stores_messages' ) is not None:
 			for msg in st.session_state.stores_messages:
 				if not isinstance( msg, dict ):
@@ -11648,6 +11753,7 @@ elif mode == 'Vector Stores':
 				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
 				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
 					st.markdown( msg.get( 'content', '' ) )
+		
 		prompt = st.chat_input( 'Ask a question using the selected vector store …' )
 		if prompt is not None and str( prompt ).strip( ):
 			prompt = str( prompt ).strip( )
@@ -11698,15 +11804,18 @@ elif mode == 'Vector Stores':
 			with st.expander( label='Last Vector Store Answer', icon='🧠', expanded=False,
 					width='stretch' ):
 				st.markdown( last_answer )
+		
 		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 		with reset_c1:
 			if st.button( 'Clear Messages', key='clear_vector_store_messages', width='stretch',
 					on_click=clear_vector_store_messages ):
 				st.rerun( )
+		
 		with reset_c2:
 			if st.button( 'Clear Outputs', key='clear_vector_store_mode_outputs', width='stretch',
 					on_click=clear_vector_store_outputs ):
 				st.rerun( )
+		
 		with reset_c3:
 			if st.button( 'Reset All', key='reset_vector_store_all', width='stretch',
 					on_click=reset_vector_store_all ):
