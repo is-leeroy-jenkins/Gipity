@@ -10633,13 +10633,13 @@ elif mode == 'Embeddings':
 			# ----- Reset -----
 			btn_cfg1, btn_cfg2 = st.columns( [ 0.5, 0.5 ] )
 			with btn_cfg1:
-				st.button( label='Reset Configuration', key='reset_embeddings_config',
-					width='stretch', on_click=reset_embeddings_controls )
+				st.button( label='Reset Controls', key='reset_embeddings_config',
+					width='stretch', on_click=reset_embeddings_controls, icon='🔄' )
 			
 			# ----- Clear -----
 			with btn_cfg2:
 				st.button( label='Clear Output', key='clear_embeddings_output', width='stretch',
-					on_click=clear_embeddings_output )
+					on_click=clear_embeddings_output, icon='🧹' )
 				
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
