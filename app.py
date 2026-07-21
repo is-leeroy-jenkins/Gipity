@@ -10518,7 +10518,7 @@ elif mode == 'Embeddings':
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
-		st.subheader( '🧬 Embeddings API', help=getattr( cfg, 'EMBEDDINGS_API',
+		st.subheader( '🔣 Embeddings API', help=getattr( cfg, 'EMBEDDINGS_API',
 			'Create vector embeddings from text using the OpenAI Embeddings API.' ) )
 		
 		st.divider( )
