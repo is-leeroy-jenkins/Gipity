@@ -873,6 +873,7 @@ if 'last_call_usage' not in st.session_state:
 if 'token_usage' not in st.session_state:
 	st.session_state.token_usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens':
 		0 }
+
 if 'selected_prompt_id' not in st.session_state:
 	st.session_state[ 'selected_prompt_id' ] = ''
 
@@ -2591,8 +2592,8 @@ def normalize_embedding_dimensions( model: str | None, dimensions: int | None,
 		return max_dimensions
 	return value
 
-def normalize_embedding_chunk_settings( chunk_size: int | None, overlap_amount: int | None ) -> \
-tuple[ int, int ]:
+def normalize_embedding_chunk_settings( chunk_size: int | None,
+	overlap_amount: int | None ) ->  tuple[ int, int ]:
 	"""Normalize embedding chunk settings.
     
         Purpose:
@@ -5601,8 +5602,8 @@ def run_vector_store_attach_file( vector: VectorStores, store_id: str | None ) -
 		chunking_strategy=build_vector_store_chunking_strategy_from_state( vector ) )
 	return result if isinstance( result, dict ) else { }
 
-def run_vector_store_list_files( vector: VectorStores, store_id: str | None ) -> list[
-	dict[ str, Any ] ]:
+def run_vector_store_list_files( vector: VectorStores,
+	store_id: str | None ) -> List[ Dict[ str, Any ] ]:
 	"""Run vector store list files.
     
         Purpose:
@@ -5688,8 +5689,7 @@ def run_vector_store_create_batch( vector: VectorStores, store_id: str | None ) 
 		st.session_state[ 'stores_batch_id' ] = result.get( 'id' )
 	return result
 
-def run_vector_store_retrieve_batch( vector: VectorStores, store_id: str | None ) -> Dict[
-	str, Any ]:
+def run_vector_store_retrieve_batch( vector: VectorStores, store_id: str | None ) -> Dict[ str, Any ]:
 	"""Run vector store retrieve batch.
     
         Purpose:
@@ -8853,16 +8853,9 @@ if mode == 'Text':
 		Returns:
 		    None: The function removes the response-control keys from Streamlit session state.
 		"""
-		for key in [
-			'text_stream',
-			'text_store',
-			'text_max_tokens',
-			'text_background',
-			'text_response_format',
-			'text_input',
-			'text_previous_response_id',
-			'text_conversation_id',
-		]:
+		for key in [ 'text_stream', 'text_store', 'text_max_tokens', 'text_background',
+			'text_response_format', 'text_input', 'text_previous_response_id',
+			'text_conversation_id', ]:
 			if key in st.session_state:
 				del st.session_state[ key ]
 				
@@ -9106,24 +9099,9 @@ if mode == 'Text':
 		# ------------------------------------------------------------------
 		# Expander - System Instructions
 		# ------------------------------------------------------------------
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
-			prompt_names = fetch_prompt_names( cfg.DB_PATH )
-			if not prompt_names:
-				prompt_names = [ '' ]
-			with in_left:
-				st.text_area( label='Enter Text', height=50, width='stretch',
-					help=cfg.SYSTEM_INSTRUCTIONS, key='text_system_instructions' )
-			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=load_text_instruction_template )
-			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
-			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch',
-					on_click=clear_text_instructions )
-			with btn_c2:
-				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=convert_text_system_instructions )
+		render_system_prompt_expander( state_prefix='text',
+			instruction_key='text_system_instructions', allowed_categories=TEXT_PROMPT_CATEGORIES,
+			label='System Instructions', height=135 )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
@@ -9417,29 +9395,10 @@ elif mode == 'Images':
 		# ------------------------------------------------------------------
 		# Expander - System Instructions
 		# ------------------------------------------------------------------
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
-			prompt_names = fetch_prompt_names( cfg.DB_PATH )
-			if not prompt_names:
-				prompt_names = [ '' ]
-			with in_left:
-				image_system_instructions = st.text_area( label='Enter Text', height=50,
-					width='stretch', help=cfg.SYSTEM_INSTRUCTIONS, key='image_system_instructions' )
-			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=load_image_instruction_template )
-			
-			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
-			
-			# ------ Clear Instructions ------
-			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch',
-					on_click=clear_image_instructions )
-			
-			# ------ Format Conversion ------
-			with btn_c2:
-				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=convert_image_system_instructions )
+		render_system_prompt_expander( state_prefix='image',
+			instruction_key='image_system_instructions',
+			allowed_categories=IMAGE_PROMPT_CATEGORIES,
+			label='System Instructions', height=135 )
 		
 		# ------ Generation Tab ------
 		tab_gen, tab_analyze, tab_edit = st.tabs( [ 'Generate', 'Analyze', 'Edit' ] )
@@ -9870,26 +9829,10 @@ elif mode == 'Audio':
 		# ------------------------------------------------------------------
 		# Expander - System Instructions
 		# ------------------------------------------------------------------
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
-			prompt_names = fetch_prompt_names( cfg.DB_PATH )
-			if not prompt_names:
-				prompt_names = [ '' ]
-			with in_left:
-				st.text_area( label='Enter Text', height=70, width='stretch',
-					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
-						'Optional prompt/instructions for the selected Audio task.' ),
-					key='audio_system_instructions' )
-			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=load_audio_instruction_template )
-			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
-			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch',
-					on_click=clear_audio_instructions )
-			with btn_c2:
-				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=convert_audio_system_instructions )
+		render_system_prompt_expander( state_prefix='audio',
+			instruction_key='audio_system_instructions',
+			allowed_categories=AUDIO_PROMPT_CATEGORIES,
+			label='System Instructions', height=135 )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
@@ -10112,22 +10055,31 @@ elif mode == 'Document Q&A':
 	ensure_docqna_mode_state( )
 	if not isinstance( st.session_state.get( 'docqna_messages' ), list ):
 		st.session_state.docqna_messages = [ ]
+		
 	if not isinstance( st.session_state.get( 'docqna_active_docs' ), list ):
 		st.session_state[ 'docqna_active_docs' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'docqna_files' ), list ):
 		st.session_state[ 'docqna_files' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'docqna_texts' ), dict ):
 		st.session_state[ 'docqna_texts' ] = { }
+		
 	if not isinstance( st.session_state.get( 'docqna_chunks' ), list ):
 		st.session_state[ 'docqna_chunks' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'docqna_last_hits' ), list ):
 		st.session_state[ 'docqna_last_hits' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'docqna_last_sources' ), list ):
 		st.session_state[ 'docqna_last_sources' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'docqna_last_answer' ), str ):
 		st.session_state[ 'docqna_last_answer' ] = ''
+		
 	if not isinstance( st.session_state.get( 'docqna_context' ), str ):
 		st.session_state[ 'docqna_context' ] = ''
+		
 	if st.session_state.get( 'clear_instructions' ):
 		st.session_state[ 'docqna_system_instructions' ] = ''
 		st.session_state[ 'clear_instructions' ] = False
@@ -10371,30 +10323,9 @@ elif mode == 'Document Q&A':
 		# ------------------------------------------------------------------
 		# Expander - System Instructions
 		# ------------------------------------------------------------------
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
-			prompt_names = fetch_prompt_names( cfg.DB_PATH )
-			if not prompt_names:
-				prompt_names = [ '' ]
-			with in_left:
-				st.text_area( label='Enter Text', height=90, width='stretch',
-					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
-						'Optional instructions used by Document Q&A answering workflows.' ),
-					key='docqna_system_instructions' )
-			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=load_docqna_instruction_template )
-			
-			# ----- Clear Instructions -----
-			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
-			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch',
-					on_click=clear_docqna_instructions )
-			
-			# ----- Convert Format -----
-			with btn_c2:
-				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=convert_docqna_system_instructions )
+		render_system_prompt_expander( state_prefix='docqna',
+			instruction_key='docqna_system_instructions',
+			allowed_categories=DOCQNA_PROMPT_CATEGORIES, label='System Instructions', height=135 )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
@@ -10570,25 +10501,41 @@ elif mode == 'Embeddings':
 	embedding = Embeddings( )
 	if not isinstance( st.session_state.get( 'embeddings_input_text' ), str ):
 		st.session_state[ 'embeddings_input_text' ] = ''
+		
 	if not isinstance( st.session_state.get( 'embeddings_encoding_format' ), str ):
 		st.session_state[ 'embeddings_encoding_format' ] = 'float'
+		
 	if not isinstance( st.session_state.get( 'embeddings_chunks' ), list ):
 		st.session_state[ 'embeddings_chunks' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'embedding_metrics' ), dict ):
 		st.session_state[ 'embedding_metrics' ] = { }
+		
 	if not isinstance( st.session_state.get( 'embedding_usage' ), dict ):
 		st.session_state[ 'embedding_usage' ] = { }
+		
 	if 'embeddings_df' not in st.session_state or not isinstance(
 			st.session_state.get( 'embeddings_df' ), pd.DataFrame ):
 		st.session_state[ 'embeddings_df' ] = pd.DataFrame( )
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		st.subheader( '🧬 Embeddings API', help=getattr( cfg, 'EMBEDDINGS_API',
 			'Create vector embeddings from text using the OpenAI Embeddings API.' ) )
+		
 		st.divider( )
+		
+		# ------------------------------------------------------------------
+		# Expander - Configuration
+		# ------------------------------------------------------------------
 		with st.expander( label='Configuration', icon='🧊', expanded=False, width='stretch' ):
 			cfg_c1, cfg_c2, cfg_c3, cfg_c4, cfg_c5 = st.columns( [ 0.2, 0.2, 0.2, 0.2, 0.2 ],
 				border=True, gap='xxsmall' )
+			
+			# ----- Model -----
 			with cfg_c1:
 				model_options = get_embedding_model_options( embedding )
 				if st.session_state.get( 'embedding_model' ) not in model_options:
@@ -10597,23 +10544,25 @@ elif mode == 'Embeddings':
 					key='embedding_model', help='OpenAI embedding model.', index=None,
 					placeholder='Options' )
 				embedding_model = st.session_state.get( 'embedding_model', '' )
-			max_dimensions = get_embedding_max_dimensions( embedding_model, embedding )
-			supports_dimensions = embedding_model_supports_dimensions( embedding_model, embedding )
-			try:
-				current_dimensions = int( st.session_state.get( 'embeddings_dimensions', 0 ) or 0 )
-			except Exception as e:
-				exception = Error( e )
-				exception.module = 'app'
-				exception.cause = 'module'
-				exception.method = 'module'
-				Logger( ).write( exception )
-				current_dimensions = 0
-			if not supports_dimensions:
-				st.session_state[ 'embeddings_dimensions' ] = 0
-			elif current_dimensions > max_dimensions:
-				st.session_state[ 'embeddings_dimensions' ] = max_dimensions
-			elif current_dimensions < 0:
-				st.session_state[ 'embeddings_dimensions' ] = 0
+				max_dimensions = get_embedding_max_dimensions( embedding_model, embedding )
+				supports_dimensions = embedding_model_supports_dimensions( embedding_model, embedding )
+				try:
+					current_dimensions = int( st.session_state.get( 'embeddings_dimensions', 0 ) or 0 )
+				except Exception as e:
+					exception = Error( e )
+					exception.module = 'app'
+					exception.cause = 'module'
+					exception.method = 'module'
+					Logger( ).write( exception )
+					current_dimensions = 0
+				if not supports_dimensions:
+					st.session_state[ 'embeddings_dimensions' ] = 0
+				elif current_dimensions > max_dimensions:
+					st.session_state[ 'embeddings_dimensions' ] = max_dimensions
+				elif current_dimensions < 0:
+					st.session_state[ 'embeddings_dimensions' ] = 0
+			
+			# ----- Encoding -----
 			with cfg_c2:
 				encoding_options = get_embedding_encoding_options( embedding )
 				if st.session_state.get( 'embeddings_encoding_format' ) not in encoding_options:
@@ -10624,6 +10573,8 @@ elif mode == 'Embeddings':
 					placeholder='Options' )
 				embeddings_encoding_format = st.session_state.get( 'embeddings_encoding_format',
 					'float' )
+			
+			# ----- Dimensions -----
 			with cfg_c3:
 				embeddings_dimensions = st.slider( label='Dimensions', min_value=0,
 					max_value=max_dimensions, step=1,
@@ -10632,6 +10583,8 @@ elif mode == 'Embeddings':
 				embeddings_dimensions = st.session_state.get( 'embeddings_dimensions', 0 )
 				if not supports_dimensions:
 					st.caption( 'Dimensions are omitted for this model.' )
+			
+			# ----- Size -----
 			with cfg_c4:
 				try:
 					current_chunk_size = int( st.session_state.get( 'embeddings_chunk_size', 800 ) )
@@ -10650,10 +10603,11 @@ elif mode == 'Embeddings':
 					step=50, help='Maximum chunk size in tokenizer tokens.',
 					key='embeddings_chunk_size' )
 				embeddings_chunk_size = st.session_state.get( 'embeddings_chunk_size', 800 )
+			
+			# ----- User ID -----
 			with cfg_c5:
 				try:
-					current_overlap = int(
-						st.session_state.get( 'embeddings_overlap_amount', 0 ) or 0 )
+					current_overlap = int( st.session_state.get( 'embeddings_overlap_amount', 0 ) or 0 )
 				except Exception as e:
 					exception = Error( e )
 					exception.module = 'app'
@@ -10676,17 +10630,28 @@ elif mode == 'Embeddings':
 				value=st.session_state.get( 'embeddings_user', '' ),
 				help='Optional OpenAI user identifier for abuse monitoring.', width='stretch',
 				placeholder='Optional user identifier' )
+			
+			# ----- Reset -----
 			btn_cfg1, btn_cfg2 = st.columns( [ 0.5, 0.5 ] )
 			with btn_cfg1:
 				st.button( label='Reset Configuration', key='reset_embeddings_config',
 					width='stretch', on_click=reset_embeddings_controls )
+			
+			# ----- Clear -----
 			with btn_cfg2:
 				st.button( label='Clear Output', key='clear_embeddings_output', width='stretch',
 					on_click=clear_embeddings_output )
+				
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Input Text
+		# ------------------------------------------------------------------
 		st.text_area( label='Input Text', height=260, width='stretch', key='embeddings_input_text',
 			help='Text to normalize, chunk, and submit to the OpenAI Embeddings API.',
 			placeholder='Enter text to embed...' )
+		
+		# ----- Create Embeddings -----
 		action_c1, action_c2 = st.columns( [ 0.5, 0.5 ] )
 		with action_c1:
 			if st.button( 'Create Embeddings', key='create_embeddings', width='stretch' ):
@@ -10749,11 +10714,18 @@ elif mode == 'Embeddings':
 						Logger( ).write( exception )
 						err = Error( exc )
 						st.error( f'Embedding creation failed: {err.info}' )
+		
+		# ----- Reset All -----
 		with action_c2:
 			if st.button( 'Reset All', key='reset_embeddings_all', width='stretch',
 					on_click=reset_embeddings_all ):
 				st.rerun( )
+				
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Metrics
+		# ------------------------------------------------------------------
 		metrics = st.session_state.get( 'embedding_metrics', { } )
 		if isinstance( metrics, dict ) and len( metrics ) > 0:
 			render_embedding_metrics( metrics )
@@ -10781,30 +10753,49 @@ elif mode == 'Files':
 	files = Files( )
 	if 'files_manual_id' not in st.session_state:
 		st.session_state[ 'files_manual_id' ] = ''
+		
 	if 'files_selected_label' not in st.session_state:
 		st.session_state[ 'files_selected_label' ] = ''
+		
 	if not isinstance( st.session_state.get( 'files_table' ), list ):
 		st.session_state[ 'files_table' ] = [ ]
+		
 	if not isinstance( st.session_state.get( 'files_metadata' ), dict ):
 		st.session_state[ 'files_metadata' ] = { }
+		
 	if not isinstance( st.session_state.get( 'files_delete_result' ), dict ):
 		st.session_state[ 'files_delete_result' ] = { }
+		
 	if not isinstance( st.session_state.get( 'files_last_answer' ), str ):
 		st.session_state[ 'files_last_answer' ] = ''
+		
 	if not isinstance( st.session_state.get( 'files_messages' ), list ):
 		st.session_state.files_messages = [ ]
+		
 	if st.session_state.get( 'clear_instructions' ):
 		st.session_state[ 'files_system_instructions' ] = ''
 		st.session_state[ 'clear_instructions' ] = False
+	
+	# ------------------------------------------------------------------
+	# Main Chat UI
+	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	with center:
 		st.subheader( '📁 Files API', help=getattr( cfg, 'FILES_API',
 			'Upload, list, retrieve, inspect, and delete OpenAI Files API files.' ) )
 		st.divider( )
+		
+		# ------------------------------------------------------------------
+		# Expander - Mind Controls
+		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			
+			# ----- File Management -----
 			with st.expander( label='File Management', icon='📂', expanded=False, width='stretch' ):
 				mgmt_c1, mgmt_c2, mgmt_c3, mgmt_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
+				
+				# ------ Upload ------
 				with mgmt_c1:
 					upload_purposes = get_files_upload_purpose_options( files )
 					if st.session_state.get( 'files_purpose' ) not in upload_purposes:
@@ -10814,6 +10805,8 @@ elif mode == 'Files':
 						index=upload_purposes.index( st.session_state.get( 'files_purpose',
 							'user_data' ) ) if st.session_state.get(
 							'files_purpose' ) in upload_purposes else None, placeholder='Options' )
+				
+				# ------ Purpose ------
 				with mgmt_c2:
 					filter_purposes = get_files_filter_purpose_options( files )
 					if st.session_state.get( 'files_filter_purpose' ) not in filter_purposes:
@@ -10825,6 +10818,8 @@ elif mode == 'Files':
 							'' ) ) if st.session_state.get(
 							'files_filter_purpose' ) in filter_purposes else None,
 						placeholder='Options' )
+				
+				# ------ Model ------
 				with mgmt_c3:
 					model_options = get_files_model_options( files )
 					if st.session_state.get( 'files_model' ) not in model_options:
@@ -10832,17 +10827,25 @@ elif mode == 'Files':
 					files_model = st.selectbox( label='Analysis Model', options=model_options,
 						key='files_model', help='Optional model used for selected-file analysis.',
 						index=None, placeholder='Options' )
+				
+				# ------ File Type ------
 				with mgmt_c4:
 					files_type = st.selectbox( label='File Type',
 						options=[ '', 'metadata', 'content', 'analysis' ], key='files_type',
 						help='Optional local UI classification for the selected file workflow.',
 						index=None, placeholder='Options' )
+				
+				# ------ Manual ID ------
 				st.text_input( label='Manual File ID', key='files_manual_id',
 					value=st.session_state.get( 'files_manual_id', '' ),
 					help='Optional direct OpenAI file ID. Use this if the file is not in the current table.',
 					width='stretch', placeholder='file-...' )
+				
+				# ------  ------
 				st.button( label='Reset Controls', key='reset_files_controls', width='stretch',
 					on_click=reset_files_controls )
+			
+			# ----- Current File -----
 			with st.expander( label='Current File', icon='🧾', expanded=False, width='stretch' ):
 				file_rows = st.session_state.get( 'files_table', [ ] )
 				selection_options = build_file_selection_options( file_rows )
@@ -10851,7 +10854,7 @@ elif mode == 'Files':
 					st.session_state[ 'files_selected_label' ] = ''
 				selected_label = st.selectbox( label='Selected File', options=selection_labels,
 					key='files_selected_label',
-					help='Select a file from the latest file list. The displayed label maps to the file ID.',
+					help='Select a file from the latest file list.',
 					index=selection_labels.index( st.session_state.get( 'files_selected_label',
 						'' ) ) if st.session_state.get(
 						'files_selected_label' ) in selection_labels else None,
@@ -10870,9 +10873,13 @@ elif mode == 'Files':
 					disabled=True,
 					help='Resolved file ID used by Retrieve, Content, Delete, and Analyze actions.',
 					key='files_selected_id_display', width='stretch' )
+			
+			# ----- File Actions -----
 			with st.expander( label='File Actions', icon='⚙️', expanded=False, width='stretch' ):
 				action_c1, action_c2, action_c3, action_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
+				
+				# ------ List ------
 				with action_c1:
 					if st.button( 'List Files', key='list_openai_files', width='stretch' ):
 						with st.spinner( 'Listing files…' ):
@@ -10891,6 +10898,8 @@ elif mode == 'Files':
 								exception.method = 'module'
 								Logger( ).write( exception )
 								st.error( f'List files failed: {exc}' )
+				
+				# ------ Metadata ------
 				with action_c2:
 					if st.button( 'Retrieve Metadata', key='retrieve_openai_file',
 							width='stretch' ):
@@ -10907,6 +10916,8 @@ elif mode == 'Files':
 								exception.method = 'module'
 								Logger( ).write( exception )
 								st.error( f'Retrieve metadata failed: {exc}' )
+				
+				# ------ Content ------
 				with action_c3:
 					if st.button( 'Retrieve Content', key='retrieve_openai_file_content',
 							width='stretch' ):
@@ -10922,6 +10933,8 @@ elif mode == 'Files':
 								exception.method = 'module'
 								Logger( ).write( exception )
 								st.error( f'Retrieve content failed: {exc}' )
+				
+				# ------ Delete ------
 				with action_c4:
 					if st.button( 'Delete File', key='delete_openai_file', width='stretch' ):
 						with st.spinner( 'Deleting file…' ):
@@ -10948,32 +10961,23 @@ elif mode == 'Files':
 								exception.method = 'module'
 								Logger( ).write( exception )
 								st.error( f'Delete file failed: {exc}' )
+				
+				# ----- Clear -----
 				st.button( label='Clear Outputs', key='clear_files_outputs', width='stretch',
 					on_click=clear_files_outputs )
-		with st.expander( label='System Instructions', icon='🖥️', expanded=False, width='stretch' ):
-			in_left, in_right = st.columns( [ 0.8, 0.2 ] )
-			prompt_names = fetch_prompt_names( cfg.DB_PATH )
-			if not prompt_names:
-				prompt_names = [ '' ]
-			with in_left:
-				st.text_area( label='Enter Text', height=70, width='stretch',
-					help=getattr( cfg, 'SYSTEM_INSTRUCTIONS',
-						'Optional instructions used for selected-file analysis.' ),
-					key='files_system_instructions' )
-			with in_right:
-				st.selectbox( label='Use Template', options=prompt_names, index=None,
-					key='instructions', on_change=load_files_instruction_template )
-			btn_c1, btn_c2 = st.columns( [ 0.8, 0.2 ] )
-			with btn_c1:
-				st.button( label='Clear Instructions', width='stretch',
-					on_click=clear_files_instructions )
-			with btn_c2:
-				st.button( label='XML <-> Markdown', width='stretch',
-					on_click=convert_files_system_instructions )
+
+		# ------------------------------------------------------------------
+		# Expander - System Instructions
+		# ------------------------------------------------------------------
+		render_system_prompt_expander( state_prefix='files',
+			instruction_key='files_system_instructions',  llowed_categories=FILES_PROMPT_CATEGORIES,
+			label='System Instructions', height=135 )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
-		upload_col, table_col, detail_col = st.columns( [ 0.3, 0.4, 0.3 ], border=True,
-			gap='small' )
-		with upload_col:
+		
+		# ------ Upload ------
+		upload_c1, upload_c2, upload_c3 = st.columns( [ 0.3, 0.4, 0.3 ], border=True, gap='small' )
+		with upload_c1:
 			st.markdown( '#### Upload File' )
 			uploaded_file = st.file_uploader( label='Select File', accept_multiple_files=False,
 				key='files_upload_file',
@@ -11006,11 +11010,15 @@ elif mode == 'Files':
 						exception.method = 'module'
 						Logger( ).write( exception )
 						st.error( f'Upload failed: {exc}' )
-		with table_col:
+		
+		# ------  Table ------
+		with upload_c2:
 			st.markdown( '#### Files' )
 			rows = st.session_state.get( 'files_table', [ ] )
 			render_files_table( rows )
-		with detail_col:
+		
+		# ------ Details ------
+		with upload_c3:
 			st.markdown( '#### Selected File Details' )
 			metadata = st.session_state.get( 'files_metadata', { } )
 			if isinstance( metadata, dict ) and len( metadata ) > 0:
@@ -11028,7 +11036,12 @@ elif mode == 'Files':
 		elif isinstance( content_value, str ) and content_value.strip( ):
 			with st.expander( label='File Content', icon='📄', expanded=False, width='stretch' ):
 				render_file_content( content_value )
+		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# Messages
+		# ------------------------------------------------------------------
 		if st.session_state.get( 'files_messages' ) is not None:
 			for msg in st.session_state.files_messages:
 				if not isinstance( msg, dict ):
@@ -11036,10 +11049,12 @@ elif mode == 'Files':
 				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
 				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
 					st.markdown( msg.get( 'content', '' ) )
+				
 		prompt = st.chat_input( 'Ask a question about the selected file …' )
 		if prompt is not None and str( prompt ).strip( ):
 			prompt = str( prompt ).strip( )
 			st.session_state.files_messages.append( { 'role': 'user', 'content': prompt } )
+			
 			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
 				with st.spinner( 'Analyzing selected file…' ):
 					try:
@@ -11092,15 +11107,21 @@ elif mode == 'Files':
 			with st.expander( label='Last File Analysis', icon='🧠', expanded=False,
 					width='stretch' ):
 				st.markdown( last_answer )
+		
+		# ------ Clear Messages ------
 		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 		with reset_c1:
 			if st.button( 'Clear Messages', key='clear_files_messages', width='stretch',
 					on_click=clear_files_messages ):
 				st.rerun( )
+		
+		# ------ Clear Outputs ------
 		with reset_c2:
 			if st.button( 'Clear Outputs', key='clear_files_mode_outputs', width='stretch',
 					on_click=clear_files_outputs ):
 				st.rerun( )
+		
+		# ------ Reset All ------
 		with reset_c3:
 			if st.button( 'Reset All', key='reset_files_all', width='stretch',
 					on_click=reset_files_all ):
