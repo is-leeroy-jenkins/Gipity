@@ -1124,7 +1124,7 @@ def extract_response_text( response: object ) -> str:
 	output = getattr( response, 'output', None )
 	if not output or not isinstance( output, list ):
 		return ''
-	text_chunks: list[ str ] = [ ]
+	text_chunks: List[ str ] = [ ]
 	for item in output:
 		if not hasattr( item, 'type' ):
 			continue
@@ -1192,7 +1192,7 @@ def normalize_text( text: str ) -> str:
 		Logger( ).write( exception )
 		raise e
 
-def chunk_text( text: str, max_tokens: int = 400 ) -> list[ str ]:
+def chunk_text( text: str, max_tokens: int = 400 ) -> List[ str ]:
 	"""Chunk text.
     
         Purpose:
@@ -1457,7 +1457,7 @@ def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
 		return ''
 	try:
 		import fitz
-		pages: list[ str ] = [ ]
+		pages: List[ str ] = [ ]
 		with fitz.open( stream=file_bytes, filetype='pdf' ) as doc:
 			for page in doc:
 				pages.append( page.get_text( 'text' ) )
@@ -1527,9 +1527,9 @@ def extract_docqna_docx_text( file_bytes: bytes ) -> str:
 			xml_bytes = archive.read( 'word/document.xml' )
 		root = ET.fromstring( xml_bytes )
 		namespace = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-		paragraphs: list[ str ] = [ ]
+		paragraphs: List[ str ] = [ ]
 		for paragraph in root.iter( f'{namespace}p' ):
-			parts: list[ str ] = [ ]
+			parts: List[ str ] = [ ]
 			for node in paragraph.iter( f'{namespace}t' ):
 				if node.text:
 					parts.append( node.text )
@@ -1858,7 +1858,7 @@ def ensure_text_mode_state( ) -> None:
 	if 'text_background' not in st.session_state:
 		st.session_state[ 'text_background' ] = False
 
-def parse_text_vector_store_ids( value: str | list[ str ] | None ) -> list[ str ]:
+def parse_text_vector_store_ids( value: str | List[ str ] | None ) -> List[ str ]:
 	"""Parse text vector store ids.
     
         Purpose:
@@ -1867,7 +1867,7 @@ def parse_text_vector_store_ids( value: str | list[ str ] | None ) -> list[ str 
             normalization, or display behavior required by the surrounding workflow.
     
         Args:
-            value (str | list[str] | None): Value supplied to the helper.
+            value (str | List[str] | None): Value supplied to the helper.
     
         Returns:
             Value produced by the parse_text_vector_store_ids helper according to its function
@@ -1882,7 +1882,7 @@ def parse_text_vector_store_ids( value: str | list[ str ] | None ) -> list[ str 
 	return [ item.strip( ) for item in value.split( ',' ) if item.strip( ) ]
 
 def build_text_response_format( response_format: str | None, schema_name: str = None,
-		schema_text: str = None, strict: bool = True ) -> dict[ str, Any ] | None:
+		schema_text: str = None, strict: bool = True ) -> Dict[ str, Any ] | None:
 	"""Build text response format.
     
         Purpose:
@@ -1926,8 +1926,8 @@ def build_text_response_format( response_format: str | None, schema_name: str = 
 		                     'strict': bool( strict ) } }
 	return None
 
-def build_text_tools( selected_tools: list[ str ] | None, vector_store_ids: list[ str ] = None ) -> \
-list[ dict[ str, Any ] ]:
+def build_text_tools( selected_tools: List[ str ] | None,
+	vector_store_ids: List[ str ] = None ) ->  List[ Dict[ str, Any ] ]:
 	"""Build text tools.
     
         Purpose:
@@ -1935,14 +1935,14 @@ list[ dict[ str, Any ] ]:
             function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            selected_tools (list[str] | None): Value supplied to the helper.
-            vector_store_ids (list[str]): Value supplied to the helper.
+            selected_tools (List[str] | None): Value supplied to the helper.
+            vector_store_ids (List[str]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_text_tools helper according to its function annotation and
             return statements.
     """
-	tools: list[ dict[ str, Any ] ] = [ ]
+	tools: List[ Dict[ str, Any ] ] = [ ]
 	vector_ids = vector_store_ids if vector_store_ids is not None else [ ]
 	if selected_tools is None or len( selected_tools ) == 0:
 		return tools
@@ -1961,8 +1961,8 @@ list[ dict[ str, Any ] ]:
 			continue
 	return tools
 
-def build_text_include( selected_include: list[ str ] | None,
-		selected_tools: list[ dict[ str, Any ] ] = None ) -> list[ str ]:
+def build_text_include( selected_include: List[ str ] | None,
+		selected_tools: List[ Dict[ str, Any ] ] = None ) -> List[ str ]:
 	"""Build text include.
     
         Purpose:
@@ -1970,8 +1970,8 @@ def build_text_include( selected_include: list[ str ] | None,
             function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            selected_include (list[str] | None): Value supplied to the helper.
-            selected_tools (list[dict[str, Any]]): Value supplied to the helper.
+            selected_include (List[str] | None): Value supplied to the helper.
+            selected_tools (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_text_include helper according to its function annotation and
@@ -1979,12 +1979,12 @@ def build_text_include( selected_include: list[ str ] | None,
     """
 	if selected_include is None or len( selected_include ) == 0:
 		return [ ]
-	tool_types: list[ str ] = [ ]
+	tool_types: List[ str ] = [ ]
 	if isinstance( selected_tools, list ):
 		for tool in selected_tools:
 			if isinstance( tool, dict ) and tool.get( 'type' ):
 				tool_types.append( str( tool.get( 'type' ) ) )
-	include_values: list[ str ] = [ ]
+	include_values: List[ str ] = [ ]
 	for value in selected_include:
 		if not isinstance( value, str ) or not value.strip( ):
 			continue
@@ -2004,7 +2004,7 @@ def build_text_include( selected_include: list[ str ] | None,
 	return include_values
 
 def build_text_tool_choice( tool_choice: str | None,
-		selected_tools: list[ dict[ str, Any ] ] | None = None ) -> str | None:
+		selected_tools: List[ Dict[ str, Any ] ] | None = None ) -> str | None:
 	"""Build text tool choice.
     
         Purpose:
@@ -2013,7 +2013,7 @@ def build_text_tool_choice( tool_choice: str | None,
     
         Args:
             tool_choice (str | None): Value supplied to the helper.
-            selected_tools (list[dict[str, Any]] | None): Value supplied to the helper.
+            selected_tools (List[Dict[str, Any]] | None): Value supplied to the helper.
     
         Returns:
             Value produced by the build_text_tool_choice helper according to its function annotation
@@ -2030,8 +2030,8 @@ def build_text_tool_choice( tool_choice: str | None,
 		return None
 	return choice
 
-def build_text_context( messages: list[ dict[ str, Any ] ] | None,
-		include_last_message: bool = False ) -> list[ dict[ str, str ] ]:
+def build_text_context( messages: List[ Dict[ str, Any ] ] | None,
+		include_last_message: bool = False ) -> List[ Dict[ str, str ] ]:
 	"""Build text context.
     
         Purpose:
@@ -2039,7 +2039,7 @@ def build_text_context( messages: list[ dict[ str, Any ] ] | None,
             function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            messages (list[dict[str, Any]] | None): Value supplied to the helper.
+            messages (List[Dict[str, Any]] | None): Value supplied to the helper.
             include_last_message (bool): Value supplied to the helper.
     
         Returns:
@@ -2049,7 +2049,7 @@ def build_text_context( messages: list[ dict[ str, Any ] ] | None,
 	if messages is None or not isinstance( messages, list ):
 		return [ ]
 	items = messages if include_last_message else messages[ :-1 ]
-	context: list[ dict[ str, str ] ] = [ ]
+	context: List[ Dict[ str, str ] ] = [ ]
 	for item in items:
 		if not isinstance( item, dict ):
 			continue
@@ -2254,7 +2254,7 @@ def reset_image_visual_settings( ) -> None:
 		if key in st.session_state:
 			del st.session_state[ key ]
 
-def get_image_models( image: Images ) -> list[ str ]:
+def get_image_models( image: Images ) -> List[ str ]:
 	"""Get image models.
     
         Purpose:
@@ -2273,7 +2273,7 @@ def get_image_models( image: Images ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '', 'gpt-image-2', 'gpt-image-1.5', 'gpt-image-1', 'gpt-image-1-mini' ]
 
-def get_image_analysis_models( image: Images = None ) -> list[ str ]:
+def get_image_analysis_models( image: Images = None ) -> List[ str ]:
 	"""Get image analysis models.
     
         Purpose:
@@ -2293,7 +2293,7 @@ def get_image_analysis_models( image: Images = None ) -> list[ str ]:
 			return [ '' ] + options
 	return [ '', 'gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1', 'gpt-5-mini', 'gpt-5' ]
 
-def get_image_size_options( image: Images ) -> list[ str ]:
+def get_image_size_options( image: Images ) -> List[ str ]:
 	"""Get image size options.
     
         Purpose:
@@ -2312,7 +2312,7 @@ def get_image_size_options( image: Images ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '', 'auto', '1024x1024', '1024x1536', '1536x1024' ]
 
-def get_image_quality_options( image: Images ) -> list[ str ]:
+def get_image_quality_options( image: Images ) -> List[ str ]:
 	"""Get image quality options.
     
         Purpose:
@@ -2331,7 +2331,7 @@ def get_image_quality_options( image: Images ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '', 'auto', 'low', 'medium', 'high' ]
 
-def get_image_mime_options( image: Images ) -> list[ str ]:
+def get_image_mime_options( image: Images ) -> List[ str ]:
 	"""Get image mime options.
     
         Purpose:
@@ -2350,7 +2350,7 @@ def get_image_mime_options( image: Images ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '', 'png', 'jpeg', 'webp' ]
 
-def get_image_background_options( image: Images ) -> list[ str ]:
+def get_image_background_options( image: Images ) -> List[ str ]:
 	"""Get image background options.
     
         Purpose:
@@ -2369,7 +2369,7 @@ def get_image_background_options( image: Images ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '', 'auto', 'transparent', 'opaque' ]
 
-def get_image_detail_options( image: Images ) -> list[ str ]:
+def get_image_detail_options( image: Images ) -> List[ str ]:
 	"""Get image detail options.
     
         Purpose:
@@ -2388,8 +2388,8 @@ def get_image_detail_options( image: Images ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '', 'auto', 'low', 'high', 'original' ]
 
-def render_image_output( image_result: str | bytes | list[ str | bytes ] | None,
-		caption: str = 'Image output' ) -> bool:
+def render_image_output( image_result: str | bytes | List[ str | bytes ] | None,
+		caption: str='Image output' ) -> bool:
 	"""Render image output.
     
         Purpose:
@@ -2397,7 +2397,7 @@ def render_image_output( image_result: str | bytes | list[ str | bytes ] | None,
             preserving the application state expected by the surrounding workflow.
     
         Args:
-            image_result (str | bytes | list[str | bytes] | None): Value supplied to the helper.
+            image_result (str | bytes | List[str | bytes] | None): Value supplied to the helper.
             caption (str): Value supplied to the helper.
     
         Returns:
@@ -2406,7 +2406,7 @@ def render_image_output( image_result: str | bytes | list[ str | bytes ] | None,
     """
 	if image_result is None:
 		return False
-	outputs: list[ str | bytes ] = image_result if isinstance( image_result, list ) else [
+	outputs: List[ str | bytes ] = image_result if isinstance( image_result, list ) else [
 			image_result ]
 	rendered = False
 	for index, item in enumerate( outputs, start=1 ):
@@ -2463,7 +2463,7 @@ def ensure_embeddings_mode_state( ) -> None:
 	if 'embedding_usage' not in st.session_state:
 		st.session_state[ 'embedding_usage' ] = { }
 
-def get_embedding_model_options( embedding: Embeddings ) -> list[ str ]:
+def get_embedding_model_options( embedding: Embeddings ) -> List[ str ]:
 	"""Get embedding model options.
     
         Purpose:
@@ -2482,7 +2482,7 @@ def get_embedding_model_options( embedding: Embeddings ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '', 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002' ]
 
-def get_embedding_encoding_options( embedding: Embeddings ) -> list[ str ]:
+def get_embedding_encoding_options( embedding: Embeddings ) -> List[ str ]:
 	"""Get embedding encoding options.
     
         Purpose:
@@ -2637,7 +2637,7 @@ def normalize_embedding_chunk_settings( chunk_size: int | None,
 	return (chunk_value, overlap_value)
 
 def chunk_text_for_embeddings( text: str, chunk_size: int = 800, overlap_amount: int = 0,
-		encoding_name: str = 'cl100k_base' ) -> list[ str ]:
+		encoding_name: str = 'cl100k_base' ) -> List[ str ]:
 	"""Chunk text for embeddings.
     
         Purpose:
@@ -2663,7 +2663,7 @@ def chunk_text_for_embeddings( text: str, chunk_size: int = 800, overlap_amount:
 	tokens = encoding.encode( text )
 	if len( tokens ) == 0:
 		return [ ]
-	chunks: list[ str ] = [ ]
+	chunks: List[ str ] = [ ]
 	start = 0
 	step = max( 1, chunk_value - overlap_value )
 	while start < len( tokens ):
@@ -2677,7 +2677,7 @@ def chunk_text_for_embeddings( text: str, chunk_size: int = 800, overlap_amount:
 		start += step
 	return chunks
 
-def normalize_embedding_vectors( vectors: Any ) -> list[ Any ]:
+def normalize_embedding_vectors( vectors: Any ) -> List[ Any ]:
 	"""Normalize embedding vectors.
     
         Purpose:
@@ -2703,7 +2703,7 @@ def normalize_embedding_vectors( vectors: Any ) -> list[ Any ]:
 		return vectors
 	return [ vectors ]
 
-def build_embeddings_dataframe( chunks: list[ str ], vectors: Any,
+def build_embeddings_dataframe( chunks: List[ str ], vectors: Any,
 		encoding_format: str = 'float' ) -> pd.DataFrame:
 	"""Build embeddings dataframe.
     
@@ -2712,7 +2712,7 @@ def build_embeddings_dataframe( chunks: list[ str ], vectors: Any,
             The function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            chunks (list[str]): Value supplied to the helper.
+            chunks (List[str]): Value supplied to the helper.
             vectors (Any): Value supplied to the helper.
             encoding_format (str): Value supplied to the helper.
     
@@ -2723,7 +2723,7 @@ def build_embeddings_dataframe( chunks: list[ str ], vectors: Any,
 	outputs = normalize_embedding_vectors( vectors )
 	if len( outputs ) == 0:
 		return pd.DataFrame( )
-	rows: list[ dict[ str, Any ] ] = [ ]
+	rows: List[ Dict[ str, Any ] ] = [ ]
 	format_value = encoding_format if isinstance( encoding_format, str ) else 'float'
 	if format_value == 'base64':
 		for index, item in enumerate( outputs ):
@@ -2736,7 +2736,7 @@ def build_embeddings_dataframe( chunks: list[ str ], vectors: Any,
 		if not isinstance( vector, list ):
 			rows.append( { 'ChunkIndex': index + 1, 'Chunk': chunk, 'Embedding': str( vector ) } )
 			continue
-		row: dict[ str, Any ] = { 'ChunkIndex': index + 1, 'Chunk': chunk }
+		row: Dict[ str, Any ] = { 'ChunkIndex': index + 1, 'Chunk': chunk }
 		for dim_index, value in enumerate( vector ):
 			row[ f'dim_{dim_index}' ] = value
 		rows.append( row )
@@ -2764,7 +2764,7 @@ def get_embedding_vector_dimension( vectors: Any ) -> int:
 		return len( first )
 	return 0
 
-def extract_embedding_usage( response: Any ) -> dict[ str, Any ]:
+def extract_embedding_usage( response: Any ) -> Dict[ str, Any ]:
 	"""Extract embedding usage.
     
         Purpose:
@@ -2805,8 +2805,8 @@ def extract_embedding_usage( response: Any ) -> dict[ str, Any ]:
 			return { 'raw': str( raw ) }
 	return { 'raw': str( raw ) }
 
-def build_embedding_metrics( source_text: str, normalized_text: str, chunks: list[ str ],
-		vectors: Any, usage: dict[ str, Any ] | None = None ) -> dict[ str, Any ]:
+def build_embedding_metrics( source_text: str, normalized_text: str, chunks: List[ str ],
+		vectors: Any, usage: Dict[ str, Any ] | None = None ) -> Dict[ str, Any ]:
 	"""Build embedding metrics.
     
         Purpose:
@@ -2816,9 +2816,9 @@ def build_embedding_metrics( source_text: str, normalized_text: str, chunks: lis
         Args:
             source_text (str): Value supplied to the helper.
             normalized_text (str): Value supplied to the helper.
-            chunks (list[str]): Value supplied to the helper.
+            chunks (List[str]): Value supplied to the helper.
             vectors (Any): Value supplied to the helper.
-            usage (dict[str, Any] | None): Value supplied to the helper.
+            usage (Dict[str, Any] | None): Value supplied to the helper.
     
         Returns:
             Value produced by the build_embedding_metrics helper according to its function
@@ -2831,7 +2831,7 @@ def build_embedding_metrics( source_text: str, normalized_text: str, chunks: lis
 	unique_words = set( words )
 	token_total = count_tokens( normalized_value ) if normalized_value else 0
 	vector_dimension = get_embedding_vector_dimension( outputs )
-	metrics: dict[ str, Any ] = { 'characters': len( source_value ),
+	metrics: Dict[ str, Any ] = { 'characters': len( source_value ),
 	                              'normalized_characters': len( normalized_value ),
 	                              'words': len( words ), 'unique_words': len( unique_words ),
 	                              'type_token_ratio': round( len( unique_words ) / len( words ),
@@ -2843,7 +2843,7 @@ def build_embedding_metrics( source_text: str, normalized_text: str, chunks: lis
 	                              'usage': usage if isinstance( usage, dict ) else { } }
 	return metrics
 
-def render_embedding_metrics( metrics: dict[ str, Any ] | None ) -> None:
+def render_embedding_metrics( metrics: Dict[ str, Any ] | None ) -> None:
 	"""Render embedding metrics.
     
         Purpose:
@@ -2851,7 +2851,7 @@ def render_embedding_metrics( metrics: dict[ str, Any ] | None ) -> None:
             while preserving the application state expected by the surrounding workflow.
     
         Args:
-            metrics (dict[str, Any] | None): Value supplied to the helper.
+            metrics (Dict[str, Any] | None): Value supplied to the helper.
     """
 	if not isinstance( metrics, dict ) or len( metrics ) == 0:
 		return
@@ -3131,7 +3131,7 @@ def rebuild_index( embedder: SentenceTransformer ) -> None:
 	finally:
 		conn.close( )
 
-def retrieve_top_doc_chunks( query: str, k: int = 6 ) -> List[ Tuple[ str, str, float ] ]:
+def retrieve_top_doc_chunks( query: str, k: int=6 ) -> List[ Tuple[ str, str, float ] ]:
 	"""Retrieve top doc chunks.
     
         Purpose:
@@ -3390,7 +3390,7 @@ def convert_docqna_system_instructions( ) -> None:
 		converted = convert_markdown( source )
 	st.session_state[ 'docqna_system_instructions' ] = converted
 
-def get_docqna_source_options( ) -> list[ str ]:
+def get_docqna_source_options( ) -> List[ str ]:
 	"""Get docqna source options.
     
         Purpose:
@@ -3421,7 +3421,7 @@ def get_docqna_file_extension( filename: str | None ) -> str:
 		return ''
 	return Path( filename ).suffix.lower( )
 
-def compute_docqna_fingerprint( documents: list[ dict[ str, Any ] ] ) -> str:
+def compute_docqna_fingerprint( documents: List[ Dict[ str, Any ] ] ) -> str:
 	"""Compute docqna fingerprint.
     
         Purpose:
@@ -3430,7 +3430,7 @@ def compute_docqna_fingerprint( documents: list[ dict[ str, Any ] ] ) -> str:
             display behavior required by the surrounding workflow.
     
         Args:
-            documents (list[dict[str, Any]]): Value supplied to the helper.
+            documents (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the compute_docqna_fingerprint helper according to its function
@@ -3468,7 +3468,7 @@ def compute_fingerprint( file_bytes: bytes | None ) -> str:
 		return ''
 	return hashlib.sha256( file_bytes ).hexdigest( )
 
-def load_docqna_uploaded_files( uploaded: Any ) -> list[ dict[ str, Any ] ]:
+def load_docqna_uploaded_files( uploaded: Any ) -> List[ Dict[ str, Any ] ]:
 	"""Load docqna uploaded files.
     
         Purpose:
@@ -3485,8 +3485,8 @@ def load_docqna_uploaded_files( uploaded: Any ) -> list[ dict[ str, Any ] ]:
 	if uploaded is None:
 		return [ ]
 	files = uploaded if isinstance( uploaded, list ) else [ uploaded ]
-	active_docs: list[ dict[ str, Any ] ] = [ ]
-	texts: dict[ str, str ] = { }
+	active_docs: List[ Dict[ str, Any ] ] = [ ]
+	texts: Dict[ str, str ] = { }
 	for item in files:
 		if item is None:
 			continue
@@ -3524,7 +3524,7 @@ def load_docqna_uploaded_files( uploaded: Any ) -> list[ dict[ str, Any ] ]:
 		st.session_state[ 'docqna_index_status' ] = 'Loaded; not indexed'
 	return active_docs
 
-def get_docqna_active_document_names( ) -> list[ str ]:
+def get_docqna_active_document_names( ) -> List[ str ]:
 	"""Get docqna active document names.
     
         Purpose:
@@ -3623,7 +3623,7 @@ def normalize_docqna_text( text: str ) -> str:
 	value = re.sub( '\\n{3,}', '\n\n', value )
 	return value.strip( )
 
-def chunk_docqna_text( text: str, chunk_size: int = 900, chunk_overlap: int = 150 ) -> list[ str ]:
+def chunk_docqna_text( text: str, chunk_size: int=900, chunk_overlap: int=150 ) -> List[ str ]:
 	"""Chunk docqna text.
     
         Purpose:
@@ -3669,7 +3669,7 @@ def chunk_docqna_text( text: str, chunk_size: int = 900, chunk_overlap: int = 15
 	words = text.split( )
 	if len( words ) == 0:
 		return [ ]
-	chunks: list[ str ] = [ ]
+	chunks: List[ str ] = [ ]
 	step = max( 1, size - overlap )
 	start = 0
 	while start < len( words ):
@@ -3682,7 +3682,7 @@ def chunk_docqna_text( text: str, chunk_size: int = 900, chunk_overlap: int = 15
 		start += step
 	return chunks
 
-def rebuild_docqna_index( ) -> list[ dict[ str, Any ] ]:
+def rebuild_docqna_index( ) -> List[ Dict[ str, Any ] ]:
 	"""Rebuild docqna index.
     
         Purpose:
@@ -3701,7 +3701,7 @@ def rebuild_docqna_index( ) -> list[ dict[ str, Any ] ]:
 		st.session_state[ 'docqna_chunk_count' ] = 0
 		st.session_state[ 'docqna_index_status' ] = 'No documents loaded'
 		return [ ]
-	chunk_records: list[ dict[ str, Any ] ] = [ ]
+	chunk_records: List[ Dict[ str, Any ] ] = [ ]
 	chunk_size = st.session_state.get( 'docqna_chunk_size', 900 )
 	chunk_overlap = st.session_state.get( 'docqna_chunk_overlap', 150 )
 	for doc in docs:
@@ -3719,7 +3719,7 @@ def rebuild_docqna_index( ) -> list[ dict[ str, Any ] ]:
 		chunk_records ) > 0 else 'No text extracted'
 	return chunk_records
 
-def tokenize_docqna_query( text: str ) -> list[ str ]:
+def tokenize_docqna_query( text: str ) -> List[ str ]:
 	"""Tokenize docqna query.
     
         Purpose:
@@ -3738,7 +3738,7 @@ def tokenize_docqna_query( text: str ) -> list[ str ]:
 		return [ ]
 	return re.findall( '[A-Za-z0-9_]+', text.lower( ) )
 
-def score_docqna_chunk( query_tokens: list[ str ], chunk_text: str ) -> float:
+def score_docqna_chunk( query_tokens: List[ str ], chunk_text: str ) -> float:
 	"""Score docqna chunk.
     
         Purpose:
@@ -3747,7 +3747,7 @@ def score_docqna_chunk( query_tokens: list[ str ], chunk_text: str ) -> float:
             display behavior required by the surrounding workflow.
     
         Args:
-            query_tokens (list[str]): Value supplied to the helper.
+            query_tokens (List[str]): Value supplied to the helper.
             chunk_text (str): Value supplied to the helper.
     
         Returns:
@@ -3759,8 +3759,8 @@ def score_docqna_chunk( query_tokens: list[ str ], chunk_text: str ) -> float:
 	chunk_tokens = tokenize_docqna_query( chunk_text )
 	if len( chunk_tokens ) == 0:
 		return 0.0
-	query_counts: dict[ str, int ] = { }
-	chunk_counts: dict[ str, int ] = { }
+	query_counts: Dict[ str, int ] = { }
+	chunk_counts: Dict[ str, int ] = { }
 	for token in query_tokens:
 		query_counts[ token ] = query_counts.get( token, 0 ) + 1
 	for token in chunk_tokens:
@@ -3773,7 +3773,7 @@ def score_docqna_chunk( query_tokens: list[ str ], chunk_text: str ) -> float:
 		return 0.0
 	return dot / (query_norm * chunk_norm)
 
-def retrieve_docqna_chunks( query: str, top_k: int | None = None ) -> list[ dict[ str, Any ] ]:
+def retrieve_docqna_chunks( query: str, top_k: int | None=None ) -> List[ Dict[ str, Any ] ]:
 	"""Retrieve docqna chunks.
     
         Purpose:
@@ -3806,7 +3806,7 @@ def retrieve_docqna_chunks( query: str, top_k: int | None = None ) -> list[ dict
 	if k <= 0:
 		k = 6
 	query_tokens = tokenize_docqna_query( query )
-	hits: list[ dict[ str, Any ] ] = [ ]
+	hits: List[ Dict[ str, Any ] ] = [ ]
 	for chunk in chunks:
 		if not isinstance( chunk, dict ):
 			continue
@@ -3824,7 +3824,7 @@ def retrieve_docqna_chunks( query: str, top_k: int | None = None ) -> list[ dict
 	st.session_state[ 'last_sources' ] = st.session_state[ 'docqna_last_sources' ]
 	return hits
 
-def build_docqna_local_prompt( query: str, hits: list[ dict[ str, Any ] ] ) -> str:
+def build_docqna_local_prompt( query: str, hits: List[ Dict[ str, Any ] ] ) -> str:
 	"""Build docqna local prompt.
     
         Purpose:
@@ -3833,13 +3833,13 @@ def build_docqna_local_prompt( query: str, hits: list[ dict[ str, Any ] ] ) -> s
     
         Args:
             query (str): Value supplied to the helper.
-            hits (list[dict[str, Any]]): Value supplied to the helper.
+            hits (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_docqna_local_prompt helper according to its function
             annotation and return statements.
     """
-	context_blocks: list[ str ] = [ ]
+	context_blocks: List[ str ] = [ ]
 	for hit in hits:
 		if not isinstance( hit, dict ):
 			continue
@@ -4128,7 +4128,7 @@ def ensure_files_mode_state( ) -> None:
 	if not isinstance( st.session_state.get( 'files_messages' ), list ):
 		st.session_state.files_messages = [ ]
 
-def get_files_upload_purpose_options( files: Files ) -> list[ str ]:
+def get_files_upload_purpose_options( files: Files ) -> List[ str ]:
 	"""Get files upload purpose options.
     
         Purpose:
@@ -4150,7 +4150,7 @@ def get_files_upload_purpose_options( files: Files ) -> list[ str ]:
 		return options
 	return [ 'assistants', 'batch', 'fine-tune', 'vision', 'user_data', 'evals' ]
 
-def get_files_filter_purpose_options( files: Files ) -> list[ str ]:
+def get_files_filter_purpose_options( files: Files ) -> List[ str ]:
 	"""Get files filter purpose options.
     
         Purpose:
@@ -4170,7 +4170,7 @@ def get_files_filter_purpose_options( files: Files ) -> list[ str ]:
 	return [ '', 'assistants', 'assistants_output', 'batch', 'batch_output', 'fine-tune',
 	         'fine-tune-results', 'vision', 'user_data', 'evals' ]
 
-def get_files_model_options( files: Files ) -> list[ str ]:
+def get_files_model_options( files: Files ) -> List[ str ]:
 	"""Get files model options.
     
         Purpose:
@@ -4226,7 +4226,7 @@ def save_files_upload( uploaded_file: Any ) -> str | None:
 		Logger( ).write( exception )
 		return None
 
-def normalize_files_table( rows: Any ) -> list[ dict[ str, Any ] ]:
+def normalize_files_table( rows: Any ) -> List[ Dict[ str, Any ] ]:
 	"""Normalize files table.
     
         Purpose:
@@ -4248,7 +4248,7 @@ def normalize_files_table( rows: Any ) -> list[ dict[ str, Any ] ]:
 		items = rows
 	else:
 		items = getattr( rows, 'data', [ ] )
-	normalized: list[ dict[ str, Any ] ] = [ ]
+	normalized: List[ Dict[ str, Any ] ] = [ ]
 	for item in items:
 		if isinstance( item, dict ):
 			source = item
@@ -4283,7 +4283,7 @@ def normalize_files_table( rows: Any ) -> list[ dict[ str, Any ] ]:
 		                     'object': source.get( 'object', '' ) } )
 	return normalized
 
-def build_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
+def build_files_dataframe( rows: List[ Dict[ str, Any ] ] ) -> pd.DataFrame:
 	"""Build files dataframe.
     
         Purpose:
@@ -4291,7 +4291,7 @@ def build_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
             function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_files_dataframe helper according to its function annotation
@@ -4306,7 +4306,7 @@ def build_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
 	extras = [ column for column in df_files.columns if column not in columns ]
 	return df_files[ columns + extras ]
 
-def build_file_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
+def build_file_selection_options( rows: List[ Dict[ str, Any ] ] ) -> Dict[ str, str ]:
 	"""Build file selection options.
     
         Purpose:
@@ -4314,13 +4314,13 @@ def build_file_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str,
             wrapper. The function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_file_selection_options helper according to its function
             annotation and return statements.
     """
-	options: dict[ str, str ] = { }
+	options: Dict[ str, str ] = { }
 	if not isinstance( rows, list ):
 		return options
 	for row in rows:
@@ -4336,7 +4336,7 @@ def build_file_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str,
 	return options
 
 def get_selected_file_id( selected_label: str | None,
-		options: dict[ str, str ] | None = None ) -> str | None:
+		options: Dict[ str, str ] | None = None ) -> str | None:
 	"""Get selected file id.
     
         Purpose:
@@ -4345,7 +4345,7 @@ def get_selected_file_id( selected_label: str | None,
     
         Args:
             selected_label (str | None): Value supplied to the helper.
-            options (dict[str, str] | None): Value supplied to the helper.
+            options (Dict[str, str] | None): Value supplied to the helper.
     
         Returns:
             Value produced by the get_selected_file_id helper according to its function annotation
@@ -4360,7 +4360,7 @@ def get_selected_file_id( selected_label: str | None,
 		return value
 	return None
 
-def render_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
+def render_files_table( rows: List[ Dict[ str, Any ] ] ) -> None:
 	"""Render files table.
     
         Purpose:
@@ -4368,7 +4368,7 @@ def render_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
             preserving the application state expected by the surrounding workflow.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     """
 	df_files = build_files_dataframe( rows )
 	st.session_state[ 'files_df' ] = df_files
@@ -4377,7 +4377,7 @@ def render_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
 		return
 	st.data_editor( df_files, use_container_width=True, hide_index=True )
 
-def render_file_metadata( metadata: dict[ str, Any ] | None ) -> None:
+def render_file_metadata( metadata: Dict[ str, Any ] | None ) -> None:
 	"""Render file metadata.
     
         Purpose:
@@ -4385,7 +4385,7 @@ def render_file_metadata( metadata: dict[ str, Any ] | None ) -> None:
             preserving the application state expected by the surrounding workflow.
     
         Args:
-            metadata (dict[str, Any] | None): Value supplied to the helper.
+            metadata (Dict[str, Any] | None): Value supplied to the helper.
     """
 	if not isinstance( metadata, dict ) or len( metadata ) == 0:
 		st.info( 'No file metadata available.' )
@@ -4401,7 +4401,7 @@ def render_file_metadata( metadata: dict[ str, Any ] | None ) -> None:
 		st.metric( 'Object', metadata.get( 'object', '—' ) or '—' )
 	st.json( metadata )
 
-def render_file_content( content: str | bytes | dict[ str, Any ] | None ) -> None:
+def render_file_content( content: str | bytes | Dict[ str, Any ] | None ) -> None:
 	"""Render file content.
     
         Purpose:
@@ -4409,7 +4409,7 @@ def render_file_content( content: str | bytes | dict[ str, Any ] | None ) -> Non
             preserving the application state expected by the surrounding workflow.
     
         Args:
-            content (str | bytes | dict[str, Any] | None): Value supplied to the helper.
+            content (str | bytes | Dict[str, Any] | None): Value supplied to the helper.
     """
 	if content is None:
 		st.info( 'No file content available.' )
@@ -4430,7 +4430,7 @@ def render_file_content( content: str | bytes | dict[ str, Any ] | None ) -> Non
 		return
 	st.write( content )
 
-def render_file_delete_result( result: dict[ str, Any ] | None ) -> None:
+def render_file_delete_result( result: Dict[ str, Any ] | None ) -> None:
 	"""Render file delete result.
     
         Purpose:
@@ -4438,7 +4438,7 @@ def render_file_delete_result( result: dict[ str, Any ] | None ) -> None:
             while preserving the application state expected by the surrounding workflow.
     
         Args:
-            result (dict[str, Any] | None): Value supplied to the helper.
+            result (Dict[str, Any] | None): Value supplied to the helper.
     """
 	if not isinstance( result, dict ) or len( result ) == 0:
 		return
@@ -4537,7 +4537,7 @@ def convert_files_system_instructions( ) -> None:
 		converted = convert_markdown( source )
 	st.session_state[ 'files_system_instructions' ] = converted
 
-def run_files_upload( files: Files, uploaded_file: Any, purpose: str | None ) -> dict[ str, Any ]:
+def run_files_upload( files: Files, uploaded_file: Any, purpose: str | None ) -> Dict[ str, Any ]:
 	"""Run files upload.
     
         Purpose:
@@ -4579,7 +4579,7 @@ def run_files_upload( files: Files, uploaded_file: Any, purpose: str | None ) ->
 			Logger( ).write( exception )
 			pass
 
-def run_files_list( files: Files, purpose: str | None = None ) -> list[ dict[ str, Any ] ]:
+def run_files_list( files: Files, purpose: str | None = None ) -> List[ Dict[ str, Any ] ]:
 	"""Run files list.
     
         Purpose:
@@ -4601,7 +4601,7 @@ def run_files_list( files: Files, purpose: str | None = None ) -> list[ dict[ st
 	st.session_state[ 'files_df' ] = build_files_dataframe( rows )
 	return rows
 
-def run_files_retrieve( files: Files, file_id: str | None ) -> dict[ str, Any ]:
+def run_files_retrieve( files: Files, file_id: str | None ) -> Dict[ str, Any ]:
 	"""Run files retrieve.
     
         Purpose:
@@ -4624,7 +4624,7 @@ def run_files_retrieve( files: Files, file_id: str | None ) -> dict[ str, Any ]:
 	st.session_state[ 'files_metadata' ] = metadata
 	return metadata
 
-def run_files_extract( files: Files, file_id: str | None ) -> str | bytes | dict[ str, Any ] | None:
+def run_files_extract( files: Files, file_id: str | None ) -> str | bytes | Dict[ str, Any ] | None:
 	"""Run files extract.
     
         Purpose:
@@ -4657,7 +4657,7 @@ def run_files_extract( files: Files, file_id: str | None ) -> str | bytes | dict
 		st.session_state[ 'files_content_bytes' ] = None
 	return content
 
-def run_files_delete( files: Files, file_id: str | None ) -> dict[ str, Any ]:
+def run_files_delete( files: Files, file_id: str | None ) -> Dict[ str, Any ]:
 	"""Run files delete.
     
         Purpose:
@@ -4787,7 +4787,7 @@ def ensure_vectorstores_mode_state( ) -> None:
 	if not isinstance( st.session_state.get( 'stores_messages' ), list ):
 		st.session_state.stores_messages = [ ]
 
-def get_vector_store_model_options( vector: VectorStores ) -> list[ str ]:
+def get_vector_store_model_options( vector: VectorStores ) -> List[ str ]:
 	"""Get vector store model options.
     
         Purpose:
@@ -4806,7 +4806,7 @@ def get_vector_store_model_options( vector: VectorStores ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o-mini' ]
 
-def get_vector_store_ranker_options( vector: VectorStores ) -> list[ str ]:
+def get_vector_store_ranker_options( vector: VectorStores ) -> List[ str ]:
 	"""Get vector store ranker options.
     
         Purpose:
@@ -4825,7 +4825,7 @@ def get_vector_store_ranker_options( vector: VectorStores ) -> list[ str ]:
 		return options
 	return [ 'auto', 'default-2024-11-15' ]
 
-def get_vector_store_chunking_options( vector: VectorStores ) -> list[ str ]:
+def get_vector_store_chunking_options( vector: VectorStores ) -> List[ str ]:
 	"""Get vector store chunking options.
     
         Purpose:
@@ -4844,7 +4844,7 @@ def get_vector_store_chunking_options( vector: VectorStores ) -> list[ str ]:
 		return options
 	return [ 'auto', 'static' ]
 
-def parse_vector_store_file_ids( value: str | list[ str ] | None ) -> list[ str ]:
+def parse_vector_store_file_ids( value: str | List[ str ] | None ) -> List[ str ]:
 	"""Parse vector store file ids.
     
         Purpose:
@@ -4853,7 +4853,7 @@ def parse_vector_store_file_ids( value: str | list[ str ] | None ) -> list[ str 
             normalization, or display behavior required by the surrounding workflow.
     
         Args:
-            value (str | list[str] | None): Value supplied to the helper.
+            value (str | List[str] | None): Value supplied to the helper.
     
         Returns:
             Value produced by the parse_vector_store_file_ids helper according to its function
@@ -4867,7 +4867,7 @@ def parse_vector_store_file_ids( value: str | list[ str ] | None ) -> list[ str 
 		return [ ]
 	return [ item.strip( ) for item in value.split( ',' ) if item.strip( ) ]
 
-def parse_vector_store_json( value: str | None, label: str = 'JSON' ) -> dict[ str, Any ]:
+def parse_vector_store_json( value: str | None, label: str = 'JSON' ) -> Dict[ str, Any ]:
 	"""Parse vector store json.
     
         Purpose:
@@ -4900,7 +4900,7 @@ def parse_vector_store_json( value: str | None, label: str = 'JSON' ) -> dict[ s
 		return { }
 	return parsed
 
-def build_vector_store_expires_after_from_state( vector: VectorStores ) -> dict[ str, Any ] | None:
+def build_vector_store_expires_after_from_state( vector: VectorStores ) -> Dict[ str, Any ] | None:
 	"""Build vector store expires after from state.
     
         Purpose:
@@ -4954,7 +4954,7 @@ def build_vector_store_chunking_strategy_from_state( vector: VectorStores ) -> D
 		max_chunk_size_tokens=st.session_state.get( 'stores_chunk_size', 800 ),
 		chunk_overlap_tokens=st.session_state.get( 'stores_chunk_overlap', 400 ) )
 
-def build_vector_store_ranking_options_from_state( ) -> dict[ str, Any ]:
+def build_vector_store_ranking_options_from_state( ) -> Dict[ str, Any ]:
 	"""Build vector store ranking options from state.
     
         Purpose:
@@ -4968,7 +4968,7 @@ def build_vector_store_ranking_options_from_state( ) -> dict[ str, Any ]:
     """
 	ranker = st.session_state.get( 'stores_ranker', 'auto' )
 	score_threshold = st.session_state.get( 'stores_score_threshold', 0.0 )
-	options: dict[ str, Any ] = { }
+	options: Dict[ str, Any ] = { }
 	if isinstance( ranker, str ) and ranker.strip( ):
 		options[ 'ranker' ] = ranker.strip( )
 	try:
@@ -4984,7 +4984,7 @@ def build_vector_store_ranking_options_from_state( ) -> dict[ str, Any ]:
 		options[ 'score_threshold' ] = threshold
 	return options
 
-def normalize_vector_store_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
+def normalize_vector_store_rows( rows: Any ) -> List[ Dict[ str, Any ] ]:
 	"""Normalize vector store rows.
     
         Purpose:
@@ -5006,7 +5006,7 @@ def normalize_vector_store_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
 		items = rows
 	else:
 		items = getattr( rows, 'data', [ ] )
-	normalized: list[ dict[ str, Any ] ] = [ ]
+	normalized: List[ Dict[ str, Any ] ] = [ ]
 	for item in items:
 		if isinstance( item, dict ):
 			source = item
@@ -5045,7 +5045,7 @@ def normalize_vector_store_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
 		                     'metadata': source.get( 'metadata', { } ) } )
 	return normalized
 
-def normalize_vector_store_file_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
+def normalize_vector_store_file_rows( rows: Any ) -> List[ Dict[ str, Any ] ]:
 	"""Normalize vector store file rows.
     
         Purpose:
@@ -5067,7 +5067,7 @@ def normalize_vector_store_file_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
 		items = rows
 	else:
 		items = getattr( rows, 'data', [ ] )
-	normalized: list[ dict[ str, Any ] ] = [ ]
+	normalized: List[ Dict[ str, Any ] ] = [ ]
 	for item in items:
 		if isinstance( item, dict ):
 			source = item
@@ -5102,7 +5102,7 @@ def normalize_vector_store_file_rows( rows: Any ) -> list[ dict[ str, Any ] ]:
 		                     'chunking_strategy': source.get( 'chunking_strategy', { } ) } )
 	return normalized
 
-def build_vector_stores_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
+def build_vector_stores_dataframe( rows: List[ Dict[ str, Any ] ] ) -> pd.DataFrame:
 	"""Build vector stores dataframe.
     
         Purpose:
@@ -5110,7 +5110,7 @@ def build_vector_stores_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFr
             wrapper. The function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_vector_stores_dataframe helper according to its function
@@ -5125,7 +5125,7 @@ def build_vector_stores_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFr
 	extras = [ column for column in df_stores.columns if column not in columns ]
 	return df_stores[ columns + extras ]
 
-def build_vector_store_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.DataFrame:
+def build_vector_store_files_dataframe( rows: List[ Dict[ str, Any ] ] ) -> pd.DataFrame:
 	"""Build vector store files dataframe.
     
         Purpose:
@@ -5133,7 +5133,7 @@ def build_vector_store_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.D
             wrapper. The function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_vector_store_files_dataframe helper according to its
@@ -5148,7 +5148,7 @@ def build_vector_store_files_dataframe( rows: list[ dict[ str, Any ] ] ) -> pd.D
 	extras = [ column for column in df_files.columns if column not in columns ]
 	return df_files[ columns + extras ]
 
-def build_vector_store_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
+def build_vector_store_selection_options( rows: List[ Dict[ str, Any ] ] ) -> Dict[ str, str ]:
 	"""Build vector store selection options.
     
         Purpose:
@@ -5156,13 +5156,13 @@ def build_vector_store_selection_options( rows: list[ dict[ str, Any ] ] ) -> di
             wrapper. The function normalizes inputs and returns a stable object for downstream use.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_vector_store_selection_options helper according to its
             function annotation and return statements.
     """
-	options: dict[ str, str ] = { }
+	options: Dict[ str, str ] = { }
 	if not isinstance( rows, list ):
 		return options
 	for row in rows:
@@ -5178,7 +5178,7 @@ def build_vector_store_selection_options( rows: list[ dict[ str, Any ] ] ) -> di
 	return options
 
 def get_selected_vector_store_id( selected_label: str | None,
-		options: dict[ str, str ] | None = None ) -> str | None:
+		options: Dict[ str, str ] | None = None ) -> str | None:
 	"""Get selected vector store id.
     
         Purpose:
@@ -5187,7 +5187,7 @@ def get_selected_vector_store_id( selected_label: str | None,
     
         Args:
             selected_label (str | None): Value supplied to the helper.
-            options (dict[str, str] | None): Value supplied to the helper.
+            options (Dict[str, str] | None): Value supplied to the helper.
     
         Returns:
             Value produced by the get_selected_vector_store_id helper according to its function
@@ -5202,7 +5202,7 @@ def get_selected_vector_store_id( selected_label: str | None,
 		return value
 	return None
 
-def build_vector_store_file_selection_options( rows: list[ dict[ str, Any ] ] ) -> dict[ str, str ]:
+def build_vector_store_file_selection_options( rows: List[ Dict[ str, Any ] ] ) -> Dict[ str, str ]:
 	"""Build vector store file selection options.
     
         Purpose:
@@ -5211,13 +5211,13 @@ def build_vector_store_file_selection_options( rows: list[ dict[ str, Any ] ] ) 
             downstream use.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     
         Returns:
             Value produced by the build_vector_store_file_selection_options helper according to its
             function annotation and return statements.
     """
-	options: dict[ str, str ] = { }
+	options: Dict[ str, str ] = { }
 	if not isinstance( rows, list ):
 		return options
 	for row in rows:
@@ -5232,7 +5232,7 @@ def build_vector_store_file_selection_options( rows: list[ dict[ str, Any ] ] ) 
 	return options
 
 def get_selected_vector_store_file_id( selected_label: str | None,
-		options: dict[ str, str ] | None = None ) -> str | None:
+		options: Dict[ str, str ] | None = None ) -> str | None:
 	"""Get selected vector store file id.
     
         Purpose:
@@ -5241,7 +5241,7 @@ def get_selected_vector_store_file_id( selected_label: str | None,
     
         Args:
             selected_label (str | None): Value supplied to the helper.
-            options (dict[str, str] | None): Value supplied to the helper.
+            options (Dict[str, str] | None): Value supplied to the helper.
     
         Returns:
             Value produced by the get_selected_vector_store_file_id helper according to its function
@@ -5256,7 +5256,7 @@ def get_selected_vector_store_file_id( selected_label: str | None,
 		return value
 	return None
 
-def render_vector_stores_table( rows: list[ dict[ str, Any ] ] ) -> None:
+def render_vector_stores_table( rows: List[ Dict[ str, Any ] ] ) -> None:
 	"""Render vector stores table.
     
         Purpose:
@@ -5264,7 +5264,7 @@ def render_vector_stores_table( rows: list[ dict[ str, Any ] ] ) -> None:
             while preserving the application state expected by the surrounding workflow.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     """
 	df_stores = build_vector_stores_dataframe( rows )
 	st.session_state[ 'stores_df' ] = df_stores
@@ -5273,7 +5273,7 @@ def render_vector_stores_table( rows: list[ dict[ str, Any ] ] ) -> None:
 		return
 	st.data_editor( df_stores, use_container_width=True, hide_index=True )
 
-def render_vector_store_metadata( metadata: dict[ str, Any ] | None ) -> None:
+def render_vector_store_metadata( metadata: Dict[ str, Any ] | None ) -> None:
 	"""Render vector store metadata.
     
         Purpose:
@@ -5281,7 +5281,7 @@ def render_vector_store_metadata( metadata: dict[ str, Any ] | None ) -> None:
             while preserving the application state expected by the surrounding workflow.
     
         Args:
-            metadata (dict[str, Any] | None): Value supplied to the helper.
+            metadata (Dict[str, Any] | None): Value supplied to the helper.
     """
 	if not isinstance( metadata, dict ) or len( metadata ) == 0:
 		st.info( 'No vector store metadata available.' )
@@ -5301,7 +5301,7 @@ def render_vector_store_metadata( metadata: dict[ str, Any ] | None ) -> None:
 			st.metric( 'Files', '—' )
 	st.json( metadata )
 
-def render_vector_store_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
+def render_vector_store_files_table( rows: List[ Dict[ str, Any ] ] ) -> None:
 	"""Render vector store files table.
     
         Purpose:
@@ -5309,7 +5309,7 @@ def render_vector_store_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
             Streamlit while preserving the application state expected by the surrounding workflow.
     
         Args:
-            rows (list[dict[str, Any]]): Value supplied to the helper.
+            rows (List[Dict[str, Any]]): Value supplied to the helper.
     """
 	df_files = build_vector_store_files_dataframe( rows )
 	st.session_state[ 'stores_files_df' ] = df_files
@@ -5318,7 +5318,7 @@ def render_vector_store_files_table( rows: list[ dict[ str, Any ] ] ) -> None:
 		return
 	st.data_editor( df_files, use_container_width=True, hide_index=True )
 
-def render_vector_store_search_results( results: list[ dict[ str, Any ] ] ) -> None:
+def render_vector_store_search_results( results: List[ Dict[ str, Any ] ] ) -> None:
 	"""Render vector store search results.
     
         Purpose:
@@ -5326,7 +5326,7 @@ def render_vector_store_search_results( results: list[ dict[ str, Any ] ] ) -> N
             Streamlit while preserving the application state expected by the surrounding workflow.
     
         Args:
-            results (list[dict[str, Any]]): Value supplied to the helper.
+            results (List[Dict[str, Any]]): Value supplied to the helper.
     """
 	if not isinstance( results, list ) or len( results ) == 0:
 		st.info( 'No search results available.' )
@@ -5334,7 +5334,7 @@ def render_vector_store_search_results( results: list[ dict[ str, Any ] ] ) -> N
 	df_results = pd.DataFrame( results )
 	st.data_editor( df_results, use_container_width=True, hide_index=True )
 
-def render_vector_store_batch_result( result: dict[ str, Any ] | None ) -> None:
+def render_vector_store_batch_result( result: Dict[ str, Any ] | None ) -> None:
 	"""Render vector store batch result.
     
         Purpose:
@@ -5342,7 +5342,7 @@ def render_vector_store_batch_result( result: dict[ str, Any ] | None ) -> None:
             Streamlit while preserving the application state expected by the surrounding workflow.
     
         Args:
-            result (dict[str, Any] | None): Value supplied to the helper.
+            result (Dict[str, Any] | None): Value supplied to the helper.
     """
 	if not isinstance( result, dict ) or len( result ) == 0:
 		st.info( 'No batch result available.' )
@@ -5443,7 +5443,7 @@ def convert_vector_store_system_instructions( ) -> None:
 		converted = convert_markdown( source )
 	st.session_state[ 'stores_system_instructions' ] = converted
 
-def run_vector_store_create( vector: VectorStores ) -> dict[ str, Any ]:
+def run_vector_store_create( vector: VectorStores ) -> Dict[ str, Any ]:
 	"""Run vector store create.
     
         Purpose:
@@ -5474,7 +5474,7 @@ def run_vector_store_create( vector: VectorStores ) -> dict[ str, Any ]:
 		st.session_state[ 'stores_store_metadata' ] = result
 	return result
 
-def run_vector_store_list( vector: VectorStores ) -> list[ dict[ str, Any ] ]:
+def run_vector_store_list( vector: VectorStores ) -> List[ Dict[ str, Any ] ]:
 	"""Run vector store list.
     
         Purpose:
@@ -5494,7 +5494,7 @@ def run_vector_store_list( vector: VectorStores ) -> list[ dict[ str, Any ] ]:
 	st.session_state[ 'stores_df' ] = build_vector_stores_dataframe( rows )
 	return rows
 
-def run_vector_store_retrieve( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+def run_vector_store_retrieve( vector: VectorStores, store_id: str | None ) -> Dict[ str, Any ]:
 	"""Run vector store retrieve.
     
         Purpose:
@@ -5519,7 +5519,7 @@ def run_vector_store_retrieve( vector: VectorStores, store_id: str | None ) -> d
 	st.session_state[ 'stores_id' ] = store_id.strip( )
 	return result
 
-def run_vector_store_update( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+def run_vector_store_update( vector: VectorStores, store_id: str | None ) -> Dict[ str, Any ]:
 	"""Run vector store update.
     
         Purpose:
@@ -5547,7 +5547,7 @@ def run_vector_store_update( vector: VectorStores, store_id: str | None ) -> dic
 	st.session_state[ 'stores_store_metadata' ] = result
 	return result
 
-def run_vector_store_delete( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+def run_vector_store_delete( vector: VectorStores, store_id: str | None ) -> Dict[ str, Any ]:
 	"""Run vector store delete.
     
         Purpose:
@@ -5572,7 +5572,7 @@ def run_vector_store_delete( vector: VectorStores, store_id: str | None ) -> dic
 		st.session_state[ 'stores_store_metadata' ] = { }
 	return result
 
-def run_vector_store_attach_file( vector: VectorStores, store_id: str | None ) -> dict[ str, Any ]:
+def run_vector_store_attach_file( vector: VectorStores, store_id: str | None ) -> Dict[ str, Any ]:
 	"""Run vector store attach file.
     
         Purpose:
@@ -5629,7 +5629,7 @@ def run_vector_store_list_files( vector: VectorStores,
 	return rows
 
 def run_vector_store_delete_file( vector: VectorStores, store_id: str | None,
-		file_id: str | None ) -> dict[ str, Any ]:
+		file_id: str | None ) -> Dict[ str, Any ]:
 	"""Run vector store delete file.
     
         Purpose:
@@ -8192,7 +8192,7 @@ def ensure_audio_mode_state( ) -> None:
 	if 'audio_messages' not in st.session_state:
 		st.session_state.audio_messages = [ ]
 
-def get_audio_task_options( ) -> list[ str ]:
+def get_audio_task_options( ) -> List[ str ]:
 	"""Get audio task options.
     
         Purpose:
@@ -8206,7 +8206,7 @@ def get_audio_task_options( ) -> list[ str ]:
 	return [ '', 'Transcribe', 'Translate', 'Text-to-Speech' ]
 
 def get_audio_model_options( task: str | None, transcriber: Transcription,
-	translator: Translation, tts: TTS ) -> list[ str ]:
+	translator: Translation, tts: TTS ) -> List[ str ]:
 	"""Get audio model options.
     
         Purpose:
@@ -8235,7 +8235,7 @@ def get_audio_model_options( task: str | None, transcriber: Transcription,
 		return [ '' ] + options
 	return [ '' ]
 
-def get_audio_language_options( transcriber: Transcription ) -> list[ str ]:
+def get_audio_language_options( transcriber: Transcription ) -> List[ str ]:
 	"""Get audio language options.
     
         Purpose:
@@ -8254,7 +8254,7 @@ def get_audio_language_options( transcriber: Transcription ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '' ]
 
-def get_audio_voice_options( tts: TTS ) -> list[ str ]:
+def get_audio_voice_options( tts: TTS ) -> List[ str ]:
 	"""Get audio voice options.
     
         Purpose:
@@ -8273,7 +8273,7 @@ def get_audio_voice_options( tts: TTS ) -> list[ str ]:
 		return [ '' ] + options
 	return [ '' ]
 
-def get_audio_speed_options( tts: TTS ) -> list[ float ]:
+def get_audio_speed_options( tts: TTS ) -> List[ float ]:
 	"""Get audio speed options.
     
         Purpose:
@@ -8293,7 +8293,7 @@ def get_audio_speed_options( tts: TTS ) -> list[ float ]:
 	return [ 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0 ]
 
 def get_audio_response_format_options( task: str | None, model: str | None,
-		transcriber: Transcription, translator: Translation, tts: TTS ) -> list[ str ]:
+		transcriber: Transcription, translator: Translation, tts: TTS ) -> List[ str ]:
 	"""Get audio response format options.
     
         Purpose:
@@ -8330,7 +8330,7 @@ def get_audio_response_format_options( task: str | None, model: str | None,
 	return [ '' ]
 
 def get_audio_include_options( task: str | None, model: str | None,
-	transcriber: Transcription ) -> list[ str ]:
+	transcriber: Transcription ) -> List[ str ]:
 	"""Get audio include options.
     
         Purpose:
@@ -8441,7 +8441,7 @@ def save_audio_upload( upload: Any ) -> str | None:
 		Logger( ).write( exception )
 		return None
 
-def render_audio_segments( result: dict[ str, Any ] | None ) -> None:
+def render_audio_segments( result: Dict[ str, Any ] | None ) -> None:
 	"""Render audio segments.
     
         Purpose:
@@ -8449,14 +8449,14 @@ def render_audio_segments( result: dict[ str, Any ] | None ) -> None:
             preserving the application state expected by the surrounding workflow.
     
         Args:
-            result (dict[str, Any] | None): Value supplied to the helper.
+            result (Dict[str, Any] | None): Value supplied to the helper.
     """
 	if not isinstance( result, dict ):
 		return
 	segments = result.get( 'segments' )
 	if not isinstance( segments, list ) or len( segments ) == 0:
 		return
-	rows: list[ dict[ str, Any ] ] = [ ]
+	rows: List[ Dict[ str, Any ] ] = [ ]
 	for index, segment in enumerate( segments, start=1 ):
 		if not isinstance( segment, dict ):
 			continue
@@ -8472,7 +8472,7 @@ def render_audio_segments( result: dict[ str, Any ] | None ) -> None:
 	st.data_editor( df_segments, use_container_width=True, hide_index=True )
 
 def render_audio_text_result( title: str, result_text: str | None,
-		result: dict[ str, Any ] | None = None ) -> None:
+		result: Dict[ str, Any ] | None = None ) -> None:
 	"""Render audio text result.
     
         Purpose:
@@ -8482,7 +8482,7 @@ def render_audio_text_result( title: str, result_text: str | None,
         Args:
             title (str): Value supplied to the helper.
             result_text (str | None): Value supplied to the helper.
-            result (dict[str, Any] | None): Value supplied to the helper.
+            result (Dict[str, Any] | None): Value supplied to the helper.
     """
 	text_value = result_text if isinstance( result_text, str ) else ''
 	st.text_area( title, value=text_value, height=250, width='stretch' )
@@ -8497,7 +8497,7 @@ def render_audio_text_result( title: str, result_text: str | None,
 				st.metric( 'Duration', duration or '—' )
 		render_audio_segments( result )
 
-def extract_audio_usage( response: Any ) -> dict[ str, Any ]:
+def extract_audio_usage( response: Any ) -> Dict[ str, Any ]:
 	"""Extract audio usage.
     
         Purpose:
@@ -8511,7 +8511,7 @@ def extract_audio_usage( response: Any ) -> dict[ str, Any ]:
             Value produced by the extract_audio_usage helper according to its function annotation
             and return statements.
     """
-	usage: dict[ str, Any ] = { }
+	usage: Dict[ str, Any ] = { }
 	if response is None:
 		return usage
 	try:
@@ -10527,8 +10527,7 @@ elif mode == 'Embeddings':
 		# Expander - Configuration
 		# ------------------------------------------------------------------
 		with st.expander( label='Configuration', icon='🧊', expanded=False, width='stretch' ):
-			cfg_c1, cfg_c2, cfg_c3, cfg_c4, cfg_c5 = st.columns( [ 0.2, 0.2, 0.2, 0.2, 0.2 ],
-				border=True, gap='xxsmall' )
+			cfg_c1, cfg_c2, cfg_c3 = st.columns( [ 0.33, 0.33, 0.33 ],border=True, gap='xxsmall' )
 			
 			# ----- Model -----
 			with cfg_c1:
@@ -10579,6 +10578,8 @@ elif mode == 'Embeddings':
 				if not supports_dimensions:
 					st.caption( 'Dimensions are omitted for this model.' )
 			
+			cfg_c4, cfg_c5, cfg_c6 = st.columns( [ 0.33, 0.33, 0.33 ],border=True, gap='xxsmall' )
+			
 			# ----- Size -----
 			with cfg_c4:
 				try:
@@ -10599,7 +10600,7 @@ elif mode == 'Embeddings':
 					key='embeddings_chunk_size' )
 				embeddings_chunk_size = st.session_state.get( 'embeddings_chunk_size', 800 )
 			
-			# ----- User ID -----
+			# ----- Overlap -----
 			with cfg_c5:
 				try:
 					current_overlap = int( st.session_state.get( 'embeddings_overlap_amount', 0 ) or 0 )
@@ -10621,10 +10622,13 @@ elif mode == 'Embeddings':
 					help='Token overlap between adjacent embedding chunks.',
 					key='embeddings_overlap_amount' )
 				embeddings_overlap_amount = st.session_state.get( 'embeddings_overlap_amount', 0 )
-			st.text_input( label='User Identifier', key='embeddings_user',
-				value=st.session_state.get( 'embeddings_user', '' ),
-				help='Optional OpenAI user identifier for abuse monitoring.', width='stretch',
-				placeholder='Optional user identifier' )
+			
+			# ------ USER ID -----
+			with cfg_c6:
+				st.text_input( label='User Identifier', key='embeddings_user',
+					value=st.session_state.get( 'embeddings_user', '' ),
+					help='Optional OpenAI user identifier for abuse monitoring.', width='stretch',
+					placeholder='Optional user identifier' )
 			
 			# ----- Reset -----
 			btn_cfg1, btn_cfg2 = st.columns( [ 0.5, 0.5 ] )
@@ -10649,7 +10653,7 @@ elif mode == 'Embeddings':
 		# ----- Create Embeddings -----
 		action_c1, action_c2 = st.columns( [ 0.5, 0.5 ] )
 		with action_c1:
-			if st.button( 'Create Embeddings', key='create_embeddings', width='stretch' ):
+			if st.button( 'Create Embeddings', key='create_embeddings', width='stretch', icon='➕' ):
 				with st.spinner( 'Creating embeddings…' ):
 					try:
 						source_text = st.session_state.get( 'embeddings_input_text', '' )
@@ -10696,8 +10700,6 @@ elif mode == 'Embeddings':
 								except Exception as e:
 									exception = Error( e )
 									exception.module = 'app'
-									exception.cause = 'module'
-									exception.method = 'module'
 									Logger( ).write( exception )
 									pass
 								st.success( 'Embeddings created successfully.' )
@@ -10713,7 +10715,7 @@ elif mode == 'Embeddings':
 		# ----- Reset All -----
 		with action_c2:
 			if st.button( 'Reset All', key='reset_embeddings_all', width='stretch',
-					on_click=reset_embeddings_all ):
+					on_click=reset_embeddings_all, icon='🔄' ):
 				st.rerun( )
 				
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
@@ -10787,8 +10789,8 @@ elif mode == 'Files':
 			
 			# ----- File Management -----
 			with st.expander( label='File Management', icon='📂', expanded=False, width='stretch' ):
-				mgmt_c1, mgmt_c2, mgmt_c3, mgmt_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
-					border=True, gap='xxsmall' )
+				mgmt_c1, mgmt_c2, mgmt_c3, mgmt_c4, mgmt_c5 = st.columns(
+					[ 0.20, 0.20, 0.250, 0.20, 0.20 ], border=True, gap='xxsmall' )
 				
 				# ------ Upload ------
 				with mgmt_c1:
@@ -10834,10 +10836,11 @@ elif mode == 'Files':
 						index=None, placeholder='Options' )
 				
 				# ------ Manual ID ------
-				st.text_input( label='Manual File ID', key='files_manual_id',
-					value=st.session_state.get( 'files_manual_id', '' ),
-					help='Optional direct OpenAI file ID. Use this if the file is not in the current table.',
-					width='stretch', placeholder='file-...' )
+				with mgmt_c5:
+					st.text_input( label='Manual File ID', key='files_manual_id',
+						value=st.session_state.get( 'files_manual_id', '' ),
+						help='Optional direct OpenAI file ID. Use this if the file is not in the current table.',
+						width='stretch', placeholder='file-...' )
 				
 				# ------ Reset Controls ------
 				st.button( label='Reset Controls', key='reset_files_controls', width='stretch',
@@ -10845,35 +10848,36 @@ elif mode == 'Files':
 			
 			# ----- Current File -----
 			with st.expander( label='Current File', icon='🧾', expanded=False, width='stretch' ):
-				file_rows = st.session_state.get( 'files_table', [ ] )
-				selection_options = build_file_selection_options( file_rows )
-				selection_labels = [ '' ] + list( selection_options.keys( ) )
-				if st.session_state.get( 'files_selected_label' ) not in selection_labels:
-					st.session_state[ 'files_selected_label' ] = ''
+				cur_c1, cur_c2 = st.columns( [ 0.5, 0.5 ], border=True )
+				with cur_c1:
+					file_rows = st.session_state.get( 'files_table', [ ] )
+					selection_options = build_file_selection_options( file_rows )
+					selection_labels = [ '' ] + list( selection_options.keys( ) )
+					
+					if st.session_state.get( 'files_selected_label' ) not in selection_labels:
+						st.session_state[ 'files_selected_label' ] = ''
+					
+					selected_label = st.selectbox( label='Selected File', options=selection_labels,
+						key='files_selected_label', help='Select a file from the current list.',
+						index=selection_labels.index( st.session_state.get( 'files_selected_label',
+							'' ) ) if st.session_state.get(
+							'files_selected_label' ) in selection_labels else None,
+						placeholder='Options' )
 				
-				selected_label = st.selectbox( label='Selected File', options=selection_labels,
-					key='files_selected_label',
-					help='Select a file from the latest file list.',
-					index=selection_labels.index( st.session_state.get( 'files_selected_label',
-						'' ) ) if st.session_state.get(
-						'files_selected_label' ) in selection_labels else None,
-					placeholder='Options' )
-				selected_from_table = get_selected_file_id( selected_label=selected_label,
-					options=selection_options )
-				manual_id = st.session_state.get( 'files_manual_id', '' )
-				
-				selected_file_id = selected_from_table or (
-					manual_id.strip( ) if isinstance( manual_id,
-						str ) and manual_id.strip( ) else st.session_state.get( 'files_id', '' ))
-				if selected_file_id:
-					st.caption( f'Selected File ID: `{selected_file_id}`' )
-				else:
-					st.caption( 'No file selected.' )
-				
-				st.text_input( label='Selected File ID', value=selected_file_id or '',
-					disabled=True,
-					help='Resolved file ID used by Retrieve, Content, Delete, and Analyze actions.',
-					key='files_selected_id_display', width='stretch' )
+				with cur_c2:
+					selected_from_table = get_selected_file_id( selected_label=selected_label,
+						options=selection_options )
+					
+					manual_id = st.session_state.get( 'files_manual_id', '' )
+					selected_file_id = selected_from_table or (
+						manual_id.strip( ) if isinstance( manual_id,
+							str ) and manual_id.strip( ) else st.session_state.get( 'files_id', '' ))
+					if selected_file_id:
+						st.caption( f'Selected File ID: `{selected_file_id}`' )
+					
+					st.text_input( label='Selected File ID', value=selected_file_id or '',
+						disabled=True, help='Resolved file ID', key='files_selected_id_display',
+						width='stretch' )
 			
 			# ----- File Actions -----
 			with st.expander( label='File Actions', icon='⚙️', expanded=False, width='stretch' ):
@@ -10979,13 +10983,13 @@ elif mode == 'Files':
 		# ------ Upload ------
 		upload_c1, upload_c2, upload_c3 = st.columns( [ 0.3, 0.4, 0.3 ], border=True, gap='small' )
 		with upload_c1:
-			st.markdown( '#### Upload File' )
+			st.markdown( '##### Upload File' )
 			uploaded_file = st.file_uploader( label='Select File', accept_multiple_files=False,
-				key='files_upload_file',
-				help='Select a local file to upload to the OpenAI Files API.' )
+				key='files_upload_file', help='Select a local file to upload.' )
 			if uploaded_file is not None:
 				st.caption( f"Selected: {getattr( uploaded_file, 'name', 'uploaded file' )}" )
 				st.caption( f"Size: {getattr( uploaded_file, 'size', 0 )} bytes" )
+			
 			if st.button( 'Upload File', key='upload_openai_file', width='stretch', icon='📤' ):
 				with st.spinner( 'Uploading file…' ):
 					try:
@@ -11000,27 +11004,23 @@ elif mode == 'Files':
 							except Exception as e:
 								exception = Error( e )
 								exception.module = 'app'
-								exception.cause = 'module'
-								exception.method = 'module'
 								Logger( ).write( exception )
 								pass
 					except Exception as exc:
 						exception = Error( exc )
 						exception.module = 'app'
-						exception.cause = 'module'
-						exception.method = 'module'
 						Logger( ).write( exception )
 						st.error( f'Upload failed: {exc}' )
 		
 		# ------  Table ------
 		with upload_c2:
-			st.markdown( '#### Files' )
+			st.markdown( '##### Files' )
 			rows = st.session_state.get( 'files_table', [ ] )
 			render_files_table( rows )
 		
 		# ------ Details ------
 		with upload_c3:
-			st.markdown( '#### Selected File Details' )
+			st.markdown( '##### Selected File Details' )
 			metadata = st.session_state.get( 'files_metadata', { } )
 			if isinstance( metadata, dict ) and len( metadata ) > 0:
 				render_file_metadata( metadata )
@@ -11034,6 +11034,7 @@ elif mode == 'Files':
 		if isinstance( content_bytes, bytes ) and len( content_bytes ) > 0:
 			with st.expander( label='File Content', icon='📄', expanded=False, width='stretch' ):
 				render_file_content( content_bytes )
+				
 		elif isinstance( content_value, str ) and content_value.strip( ):
 			with st.expander( label='File Content', icon='📄', expanded=False, width='stretch' ):
 				render_file_content( content_value )
