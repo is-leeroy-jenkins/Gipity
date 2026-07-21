@@ -7849,8 +7849,8 @@ def convert_prompt_state( instruction_key: str ) -> None:
 		raise exception
 
 def render_system_prompt_expander( state_prefix: str, instruction_key: str,
-	allowed_categories: Tuple[ str, ... ], label: str = 'System Instructions',
-	height: int = 135 ) -> None:
+	allowed_categories: Tuple[ str, ... ], label: str='System Instructions',
+	height: int=135 ) -> None:
 	"""Render a category-driven system-instruction expander.
 
 	Purpose:
@@ -7877,7 +7877,6 @@ def render_system_prompt_expander( state_prefix: str, instruction_key: str,
 		throw_if( 'state_prefix', state_prefix )
 		throw_if( 'instruction_key', instruction_key )
 		throw_if( 'allowed_categories', allowed_categories )
-		
 		if not isinstance( allowed_categories, tuple ):
 			raise TypeError( 'allowed_categories must be a tuple of category names.' )
 		
@@ -7909,7 +7908,6 @@ def render_system_prompt_expander( state_prefix: str, instruction_key: str,
 		# Category Repository
 		# ------------------------------------------------------------------
 		database_categories = fetch_prompt_categories( cfg.DB_PATH )
-		
 		mode_categories = filter_prompt_categories( available_categories=database_categories,
 			allowed_categories=allowed_categories )
 		
@@ -7998,9 +7996,7 @@ def render_system_prompt_expander( state_prefix: str, instruction_key: str,
 					      'and filtered for the current mode.'), width='stretch' )
 				
 				active_category = st.session_state.get( category_key, None )
-				
 				prompt_records: List[ Dict[ str, Any ] ] = [ ]
-				
 				if active_category:
 					prompt_records = fetch_prompts_by_category( db_path=cfg.DB_PATH,
 						category=str( active_category ) )
@@ -8009,9 +8005,7 @@ def render_system_prompt_expander( state_prefix: str, instruction_key: str,
 					record in prompt_records if record.get( 'ID' ) is not None }
 				
 				prompt_ids = list( prompt_lookup.keys( ) )
-				
 				selected_prompt_id = st.session_state.get( prompt_id_key, None )
-				
 				if selected_prompt_id is not None:
 					try:
 						selected_prompt_id = int( selected_prompt_id )
@@ -8049,7 +8043,6 @@ def render_system_prompt_expander( state_prefix: str, instruction_key: str,
 			# Expander Actions
 			# --------------------------------------------------------------
 			clear_column, convert_column = st.columns( [ 0.80, 0.20 ] )
-			
 			with clear_column:
 				st.button( label='Clear Instructions', key=f'{state_prefix}_clear_instructions',
 					icon='🧹', width='stretch', on_click=on_clear )
@@ -9225,7 +9218,7 @@ if mode == 'Text':
 							pass
 		
 		# ------ Clear Messages -----
-		if st.button( 'Clear Messages', key='clear_text_messages' ):
+		if st.button( 'Clear Messages', key='clear_text_messages', icon='🧹' ):
 			st.session_state.text_messages = [ ]
 			st.session_state[ 'text_previous_response_id' ] = ''
 			st.session_state[ 'text_conversation_id' ] = ''
@@ -9310,7 +9303,7 @@ elif mode == 'Images':
 				
 				# ------ Reset Controls ------
 				st.button( label='Reset', key='reset_image_llm', width='stretch',
-					on_click=reset_image_llm_settings )
+					on_click=reset_image_llm_settings, icon='🔄' )
 			
 			# ------ Visual Settings ------
 			with st.expander( label='Visual Settings', icon='👁️', expanded=False, width='stretch' ):
@@ -9351,14 +9344,14 @@ elif mode == 'Images':
 				
 				# ------ Reset Controls ------
 				st.button( label='Reset', key='reset_image_visual', width='stretch',
-					on_click=reset_image_visual_settings )
+					on_click=reset_image_visual_settings, icon='🔄' )
 			
 			# ------ Analysis Settings ------
 			with st.expander( label='Analysis Settings', icon='🔎', expanded=False, width='stretch' ):
-				
-				# ------ Detail ------
 				ana_s1, ana_s2, ana_s3, ana_s4, ana_s5 = st.columns( [ 0.2, 0.2, 0.2, 0.2, 0.2 ],
 					border=True, gap='xxsmall' )
+				
+				# ------ Detail ------
 				with ana_s1:
 					image_analysis_detail = st.selectbox( label='Detail',
 						options=get_image_detail_options( image ), key='image_analysis_detail',
@@ -9386,7 +9379,7 @@ elif mode == 'Images':
 					image_store = st.toggle( label='Store', key='image_store', help=cfg.STORE )
 				
 				# ------ Reset Controls ------
-				if st.button( label='Reset', key='reset_image_analysis', width='stretch' ):
+				if st.button( label='Reset', key='reset_image_analysis', width='stretch', icon='🔄' ):
 					for key in [ 'image_analysis_detail', 'image_max_tokens', 'image_temperature',
 					             'image_include', 'image_store' ]:
 						if key in st.session_state:
@@ -9417,7 +9410,7 @@ elif mode == 'Images':
 				key='image_generate_message' )
 			gen_c1, gen_c2 = st.columns( [ 0.5, 0.5 ] )
 			with gen_c1:
-				if st.button( 'Generate Image', key='generate_image' ):
+				if st.button( 'Generate Image', key='generate_image', icon='🎨' ):
 					with st.spinner( 'Generating…' ):
 						try:
 							if not isinstance( prompt, str ) or not prompt.strip( ):
@@ -9461,7 +9454,7 @@ elif mode == 'Images':
 							st.error( f'Image generation failed: {exc}' )
 			with gen_c2:
 				if st.button( 'Clear Messages', key='clear_image_generation',
-						on_click=clear_image_messages ):
+						on_click=clear_image_messages, icon='🧹' ):
 					st.rerun( )
 		
 		# ------ Analysis Tab ------
@@ -9556,7 +9549,7 @@ elif mode == 'Images':
 			prompt = st.chat_input( 'Enter image editing prompt...', key='image_edit_message' )
 			edit_c1, edit_c2 = st.columns( [ 0.5, 0.5 ] )
 			with edit_c1:
-				if st.button( 'Edit Image', key='edit_image' ):
+				if st.button( 'Edit Image', key='edit_image', icon='✏️' ):
 					with st.spinner( 'Editing image…' ):
 						try:
 							if not tmp_path:
@@ -9579,11 +9572,9 @@ elif mode == 'Images':
 									rendered = render_image_output( edit_result,
 										caption='Edited image' )
 									if rendered:
-										append_image_message( 'assistant',
-											'Edited image returned successfully.' )
+										append_image_message( 'assistant', 'Edit Successful.' )
 									else:
-										st.warning(
-											'Edited image output was returned but could not be rendered.' )
+										st.warning( 'Image output could not be rendered.' )
 								try:
 									update_token_counters( getattr( image, 'response', None ) )
 								except Exception as e:
@@ -9603,7 +9594,7 @@ elif mode == 'Images':
 			
 			with edit_c2:
 				if st.button( 'Clear Messages', key='clear_image_edit',
-						on_click=clear_image_messages ):
+						on_click=clear_image_messages, icon='🧹' ):
 					st.rerun( )
 					
 # ==============================================================================
@@ -9729,8 +9720,10 @@ elif mode == 'Audio':
 						help='Task-aware response format or TTS audio output format.', index=None,
 						placeholder='Options' )
 					audio_response_format = st.session_state.get( 'audio_response_format', '' )
+				
+				# ----- Format -----
 				st.button( label='Reset', key='reset_audio_task', width='stretch',
-					on_click=reset_audio_task_controls )
+					on_click=reset_audio_task_controls, icon='🔄' )
 			
 			# ----- Inference Options -----
 			with st.expander( label='Inference Options', icon='🎛️', expanded=False,
@@ -9773,9 +9766,9 @@ elif mode == 'Audio':
 						st.caption( 'Background mode is not sent for these Audio API calls.' )
 				
 				# ----- Reset Controls -----
-				if st.button( label='Reset', key='reset_audio_inference', width='stretch' ):
-					for key in [ 'audio_temperature', 'audio_include', 'audio_stream',
-					             'audio_background' ]:
+				if st.button( label='Reset', key='reset_audio_inference', width='stretch', icon='🔄' ):
+					for key in [ 'audio_temperature', 'audio_include',
+						'audio_stream', 'audio_background' ]:
 						if key in st.session_state:
 							del st.session_state[ key ]
 					st.rerun( )
@@ -9828,14 +9821,13 @@ elif mode == 'Audio':
 				
 				# ----- Reset -----
 				st.button( label='Reset', key='reset_audio_tts', width='stretch',
-					on_click=reset_audio_tts_controls )
+					on_click=reset_audio_tts_controls, icon='🔄' )
 		
 		# ------------------------------------------------------------------
 		# Expander - System Instructions
 		# ------------------------------------------------------------------
 		render_system_prompt_expander( state_prefix='audio',
-			instruction_key='audio_system_instructions',
-			allowed_categories=AUDIO_PROMPT_CATEGORIES,
+			instruction_key='audio_system_instructions', allowed_categories=AUDIO_PROMPT_CATEGORIES,
 			label='System Instructions', height=135 )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
@@ -10003,15 +9995,14 @@ elif mode == 'Audio':
 						try:
 							audio_bytes = run_audio_tts_task( text=prompt, tts=tts )
 							if audio_bytes:
-								audio_format = get_audio_response_format_value(
-									task='Text-to-Speech',
+								audio_format = get_audio_response_format_value( task='Text-to-Speech',
 									selected_format=st.session_state.get( 'audio_response_format' ),
 									selected_mime_type=st.session_state.get( 'audio_mime_type' ) )
 								st.audio( audio_bytes, format=f"audio/{audio_format or 'mp3'}" )
 								message = 'Generated speech returned successfully.'
 								st.markdown( message )
-								st.session_state.audio_messages.append(
-									{ 'role': 'assistant', 'content': message } )
+								st.session_state.audio_messages.append( { 'role': 'assistant',
+									'content': message } )
 							try:
 								update_token_counters( getattr( tts, 'response', None ) )
 							except Exception as e:
@@ -10032,8 +10023,8 @@ elif mode == 'Audio':
 				with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
 					message = 'Use Upload Audio or Record Audio for transcription and translation.'
 					st.markdown( message )
-					st.session_state.audio_messages.append(
-						{ 'role': 'assistant', 'content': message } )
+					st.session_state.audio_messages.append( { 'role': 'assistant',
+						'content': message } )
 		audio_last_usage = st.session_state.get( 'audio_last_usage', { } )
 		if isinstance( audio_last_usage, dict ) and len( audio_last_usage ) > 0:
 			with st.expander( label='Audio Usage', icon='📊', expanded=False, width='stretch' ):
@@ -10043,13 +10034,13 @@ elif mode == 'Audio':
 		reset_c1, reset_c2 = st.columns( [ 0.5, 0.5 ] )
 		with reset_c1:
 			if st.button( 'Clear Messages', key='clear_audio_messages', width='stretch',
-					on_click=clear_audio_messages ):
+					on_click=clear_audio_messages, icon='🧹' ):
 				st.rerun( )
 		
 		# ----- Clear Options ------
 		with reset_c2:
 			if st.button( 'Clear Outputs', key='clear_audio_outputs', width='stretch',
-					on_click=clear_audio_outputs ):
+					on_click=clear_audio_outputs, icon='🔄' ):
 				st.rerun( )
 				
 # ==============================================================================
@@ -10255,13 +10246,13 @@ elif mode == 'Document Q&A':
 				# ----- Summarize -----
 				with action_c2:
 					if st.button( 'Summarize Active Source', key='docqna_summarize_source',
-							width='stretch' ):
+							width='stretch', icon='📝' ):
 						with st.spinner( 'Summarizing active source…' ):
 							try:
 								answer = summarize_active_document( )
 								if isinstance( answer, str ) and answer.strip( ):
-									st.session_state.docqna_messages.append(
-										{ 'role': 'assistant', 'content': answer.strip( ) } )
+									st.session_state.docqna_messages.append( { 'role': 'assistant',
+										'content': answer.strip( ) } )
 									st.success( 'Summary generated.' )
 							except Exception as exc:
 								exception = Error( exc )
@@ -10274,7 +10265,7 @@ elif mode == 'Document Q&A':
 				# ----- Clear Outputs -----
 				with action_c3:
 					st.button( label='Clear Outputs', key='docqna_clear_outputs', width='stretch',
-						on_click=clear_docqna_outputs )
+						on_click=clear_docqna_outputs, icon='🔄' )
 			
 			# ----- Generation -----
 			with st.expander( label='Generation Controls', icon='🎛️', expanded=False,
@@ -10317,12 +10308,12 @@ elif mode == 'Document Q&A':
 			reset_controls_c1, reset_controls_c2 = st.columns( [ 0.5, 0.5 ] )
 			with reset_controls_c1:
 				st.button( label='Reset Controls', key='docqna_reset_controls', width='stretch',
-					on_click=reset_docqna_controls )
+					on_click=reset_docqna_controls, icon='🔄' )
 			
 			# ----- Unload Documents -----
 			with reset_controls_c2:
 				st.button( label='Unload Documents', key='docqna_unload_documents', width='stretch',
-					on_click=unload_docqna_documents )
+					on_click=unload_docqna_documents, icon='🔽' )
 		
 		# ------------------------------------------------------------------
 		# Expander - System Instructions
@@ -10478,23 +10469,23 @@ elif mode == 'Document Q&A':
 				df_sources = pd.DataFrame( last_sources )
 				st.data_editor( df_sources, use_container_width=True, hide_index=True )
 		
-		# ----- -----
+		# ----- Clear Messages -----
 		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 		with reset_c1:
 			if st.button( 'Clear Messages', key='docqna_clear_messages', width='stretch',
-					on_click=clear_docqna_messages ):
+					on_click=clear_docqna_messages, icon='🧹' ):
 				st.rerun( )
 		
 		# ----- Clear Outputs -----
 		with reset_c2:
 			if st.button( 'Clear Outputs', key='docqna_clear_mode_outputs', width='stretch',
-					on_click=clear_docqna_outputs ):
+					on_click=clear_docqna_outputs, icon='↪️' ):
 				st.rerun( )
 		
 		# ----- Reset All -----
 		with reset_c3:
 			if st.button( 'Reset All', key='docqna_reset_all', width='stretch',
-					on_click=reset_docqna_all ):
+					on_click=reset_docqna_all, icon='🔄' ):
 				st.rerun( )
 
 # ==============================================================================
@@ -10804,6 +10795,7 @@ elif mode == 'Files':
 					upload_purposes = get_files_upload_purpose_options( files )
 					if st.session_state.get( 'files_purpose' ) not in upload_purposes:
 						st.session_state[ 'files_purpose' ] = 'user_data'
+					
 					files_purpose = st.selectbox( label='Upload Purpose', options=upload_purposes,
 						key='files_purpose', help='Required OpenAI Files API upload purpose.',
 						index=upload_purposes.index( st.session_state.get( 'files_purpose',
@@ -10815,6 +10807,7 @@ elif mode == 'Files':
 					filter_purposes = get_files_filter_purpose_options( files )
 					if st.session_state.get( 'files_filter_purpose' ) not in filter_purposes:
 						st.session_state[ 'files_filter_purpose' ] = ''
+					
 					files_filter_purpose = st.selectbox( label='List Purpose Filter',
 						options=filter_purposes, key='files_filter_purpose',
 						help='Optional purpose filter used when listing files.',
@@ -10828,6 +10821,7 @@ elif mode == 'Files':
 					model_options = get_files_model_options( files )
 					if st.session_state.get( 'files_model' ) not in model_options:
 						st.session_state[ 'files_model' ] = ''
+					
 					files_model = st.selectbox( label='Analysis Model', options=model_options,
 						key='files_model', help='Optional model used for selected-file analysis.',
 						index=None, placeholder='Options' )
@@ -10845,9 +10839,9 @@ elif mode == 'Files':
 					help='Optional direct OpenAI file ID. Use this if the file is not in the current table.',
 					width='stretch', placeholder='file-...' )
 				
-				# ------  ------
+				# ------ Reset Controls ------
 				st.button( label='Reset Controls', key='reset_files_controls', width='stretch',
-					on_click=reset_files_controls )
+					on_click=reset_files_controls, icon='🔄' )
 			
 			# ----- Current File -----
 			with st.expander( label='Current File', icon='🧾', expanded=False, width='stretch' ):
@@ -10856,6 +10850,7 @@ elif mode == 'Files':
 				selection_labels = [ '' ] + list( selection_options.keys( ) )
 				if st.session_state.get( 'files_selected_label' ) not in selection_labels:
 					st.session_state[ 'files_selected_label' ] = ''
+				
 				selected_label = st.selectbox( label='Selected File', options=selection_labels,
 					key='files_selected_label',
 					help='Select a file from the latest file list.',
@@ -10866,6 +10861,7 @@ elif mode == 'Files':
 				selected_from_table = get_selected_file_id( selected_label=selected_label,
 					options=selection_options )
 				manual_id = st.session_state.get( 'files_manual_id', '' )
+				
 				selected_file_id = selected_from_table or (
 					manual_id.strip( ) if isinstance( manual_id,
 						str ) and manual_id.strip( ) else st.session_state.get( 'files_id', '' ))
@@ -10873,6 +10869,7 @@ elif mode == 'Files':
 					st.caption( f'Selected File ID: `{selected_file_id}`' )
 				else:
 					st.caption( 'No file selected.' )
+				
 				st.text_input( label='Selected File ID', value=selected_file_id or '',
 					disabled=True,
 					help='Resolved file ID used by Retrieve, Content, Delete, and Analyze actions.',
@@ -10968,7 +10965,7 @@ elif mode == 'Files':
 				
 				# ----- Clear -----
 				st.button( label='Clear Outputs', key='clear_files_outputs', width='stretch',
-					on_click=clear_files_outputs )
+					on_click=clear_files_outputs, icon='🔄' )
 
 		# ------------------------------------------------------------------
 		# Expander - System Instructions
@@ -11128,7 +11125,7 @@ elif mode == 'Files':
 		# ------ Reset All ------
 		with reset_c3:
 			if st.button( 'Reset All', key='reset_files_all', width='stretch',
-					on_click=reset_files_all ):
+					on_click=reset_files_all, icon='🔄' ):
 				st.rerun( )
 
 # ==============================================================================
