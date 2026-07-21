@@ -10441,20 +10441,18 @@ elif mode == 'Document Q&A':
 						answer = route_document_query( prompt )
 						if isinstance( answer, str ) and answer.strip( ):
 							st.markdown( answer )
-							st.session_state.docqna_messages.append(
-								{ 'role': 'assistant', 'content': answer.strip( ) } )
+							st.session_state.docqna_messages.append( { 'role': 'assistant',
+								'content': answer.strip( ) } )
 							st.session_state[ 'docqna_last_answer' ] = answer.strip( )
 							st.session_state[ 'last_answer' ] = answer.strip( )
 						else:
 							message = 'No Document Q&A answer was returned.'
 							st.warning( message )
-							st.session_state.docqna_messages.append(
-								{ 'role': 'assistant', 'content': message } )
+							st.session_state.docqna_messages.append( { 'role': 'assistant',
+								'content': message } )
 					except Exception as exc:
 						exception = Error( exc )
 						exception.module = 'app'
-						exception.cause = 'module'
-						exception.method = 'module'
 						Logger( ).write( exception )
 						st.error( f'Document Q&A failed: {exc}' )
 		last_answer = st.session_state.get( 'docqna_last_answer', '' )
