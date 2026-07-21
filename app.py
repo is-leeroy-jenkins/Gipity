@@ -10352,8 +10352,6 @@ elif mode == 'Document Q&A':
 								exception.module = 'app'
 								Logger( ).write( exception )
 								pass
-					else:
-						st.warning( 'No readable document bytes were loaded.' )
 				except Exception as exc:
 					exception = Error( exc )
 					exception.module = 'app'
@@ -10366,13 +10364,12 @@ elif mode == 'Document Q&A':
 			# ----- Show -----
 			preview_c1, preview_c2 = st.columns( [ 0.5, 0.5 ] )
 			with preview_c1:
-				if st.button( 'Preview Documents', key='docqna_preview_documents',
-						width='stretch' ):
+				if st.button( 'Preview=', key='docqna_preview_documents', width='stretch' ):
 					st.session_state[ 'docqna_show_preview' ] = True
 			
 			# ----- Hide -----
 			with preview_c2:
-				if st.button( 'Hide Preview', key='docqna_hide_preview', width='stretch' ):
+				if st.button( 'Hide', key='docqna_hide_preview', width='stretch' ):
 					st.session_state[ 'docqna_show_preview' ] = False
 			if st.session_state.get( 'docqna_show_preview', True ):
 				render_docqna_document_preview( )
@@ -10457,8 +10454,7 @@ elif mode == 'Document Q&A':
 						st.error( f'Document Q&A failed: {exc}' )
 		last_answer = st.session_state.get( 'docqna_last_answer', '' )
 		if isinstance( last_answer, str ) and last_answer.strip( ):
-			with st.expander( label='Last Document Answer', icon='🧠', expanded=False,
-					width='stretch' ):
+			with st.expander( label='Last Document Answer', icon='🧠', expanded=False, width='stretch' ):
 				st.markdown( last_answer )
 		last_sources = st.session_state.get( 'docqna_last_sources', [ ] )
 		if isinstance( last_sources, list ) and len( last_sources ) > 0:
