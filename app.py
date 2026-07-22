@@ -12428,7 +12428,12 @@ elif mode == 'Data Management':
 st.markdown( '\n\t<style>\n\t.block-container {\n\t\tpadding-bottom: 3rem;\n\t}\n\t</style>\n\t',
 	unsafe_allow_html=True )
 st.markdown(
-	'\n\t<style>\n\t.boo-status-bar {\n\t\tposition: fixed;\n\t\tbottom: 0;\n\t\tleft: 0;\n\t\twidth: 100%;\n\t\tbackground-color: rgba(27, 27, 27, 0.95);\n\t\tborder-top: 1px solid #4d4d4d;\n\t\tpadding: 10px 16px;\n\t\tfont-size: 0.80rem;\n\t\tcolor: #4aa2f7;\n\t\tz-index: 1000;\n\t}\n\t.boo-status-inner {\n\t\tdisplay: flex;\n\t\tjustify-content: space-between;\n\t\talign-items: center;\n\t\tmax-width: 100%;\n\t}\n\t</style>\n\t',
+	'\n\t<style>\n\t.boo-status-bar {\n\t\tposition: fixed;\n\t\tbottom: 0;\n\t\tleft: '
+	'0;\n\t\twidth: 100%;\n\t\tbackground-color: rgba(27, 27, 27, 0.95);\n\t\tborder-top: 1px '
+	'solid #4d4d4d;\n\t\tpadding: 10px 16px;\n\t\tfont-size: 0.80rem;\n\t\tcolor: '
+	'#4aa2f7;\n\t\tz-index: 1000;\n\t}\n\t.boo-status-inner {\n\t\tdisplay: '
+	'flex;\n\t\tjustify-content: space-between;\n\t\talign-items: center;\n\t\tmax-width: '
+	'100%;\n\t}\n\t</style>\n\t',
 	unsafe_allow_html=True )
 _mode_to_model_key = { 'Text': 'text_model', 'Images': 'image_model', 'Audio': 'audio_model',
                        'Embeddings': 'embedding_model', 'Document Q&A': 'docqna_model',
@@ -12730,5 +12735,7 @@ elif mode == 'Vector Stores':
 		right_parts.append( 'Background: On' )
 right_text = ' ◽ '.join( right_parts ) if right_parts else '—'
 st.markdown(
-	f'\n    <div class="boo-status-bar">\n        <div class="boo-status-inner">\n            <span>{provider_val} — {mode_val}</span>\n            <span>{right_text}</span>\n        </div>\n    </div>\n    ',
+	f'\n<div class="boo-status-bar">\n <div class="boo-status-inner">\n '
+	f'<span>{provider_val} — {mode_val}</span>\n<span>{right_text}</span>\n'
+	f'</div>\n</div>\n ',
 	unsafe_allow_html=True )
