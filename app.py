@@ -49,6 +49,7 @@ import base64
 import hashlib
 import json
 import io
+import math
 import zipfile
 import xml.etree.ElementTree as ET
 from boogr import Error, Logger
@@ -10931,8 +10932,8 @@ elif mode == 'Files':
 	if 'files_manual_id' not in st.session_state:
 		st.session_state[ 'files_manual_id' ] = ''
 	
-	if 'files_selected_label' not in st.session_state:
-		st.session_state[ 'files_selected_label' ] = ''
+	if 'files_selected_row_id' not in st.session_state:
+		st.session_state[ 'files_selected_row_id' ] = ''
 	
 	if not isinstance( st.session_state.get( 'files_table' ), list ):
 		st.session_state[ 'files_table' ] = [ ]
@@ -10953,40 +10954,47 @@ elif mode == 'Files':
 		st.session_state[ 'files_system_instructions' ] = ''
 		st.session_state[ 'clear_instructions' ] = False
 	
-	def _reset_files_mode_controls( ) -> None:
-		"""Reset Files mode controls.
+	def clear_files_current_selection( ) -> None:
+		"""Clear the current Files API selection.
 
 		Purpose:
-			Restores the visible Files mode controls to their established defaults without clearing
-			the current Files API table, retrieved outputs, analysis history, or persisted current
-			file identifier.
+			Clears the selected file and its file-specific outputs without deleting the remote file
+			or clearing the current Files API listing.
 
 		Returns:
-			None: This function updates Files mode widget state.
+			None: This function updates Files mode selection and output state.
 		"""
-		st.session_state[ 'files_purpose' ] = 'user_data'
-		st.session_state[ 'files_filter_purpose' ] = ''
-		st.session_state[ 'files_selected_label' ] = ''
-		st.session_state[ 'files_manual_id' ] = ''
-		st.session_state[ 'files_model' ] = ''
-	
-	def _clear_files_current_file( ) -> None:
-		"""Clear current Files API file.
-
-		Purpose:
-			Clears all listed, manual, and persisted file-selection values without clearing file
-			list results, retrieved outputs, messages, or remote OpenAI files.
-
-		Returns:
-			None: This function updates current-file selection state.
-		"""
-		st.session_state[ 'files_selected_label' ] = ''
-		st.session_state[ 'files_manual_id' ] = ''
 		st.session_state[ 'files_id' ] = ''
+		st.session_state[ 'files_manual_id' ] = ''
+		st.session_state[ 'files_selected_label' ] = ''
+		st.session_state[ 'files_selected_row_id' ] = ''
+		st.session_state[ 'files_metadata' ] = { }
+		st.session_state[ 'files_content' ] = ''
+		st.session_state[ 'files_content_bytes' ] = None
+		st.session_state[ 'files_delete_result' ] = { }
+		
+		if 'files_table_selector' in st.session_state:
+			del st.session_state[ 'files_table_selector' ]
 	
-	# ------------------------------------------------------------------
-	# Main Files Mode UI
-	# ------------------------------------------------------------------
+	def reset_files_workspace( ) -> None:
+		"""Reset the complete Files API workspace.
+
+		Purpose:
+			Clears Files mode controls, file listings, current selection, outputs, and messages
+			while
+			leaving remote OpenAI files unchanged.
+
+		Returns:
+			None: This function resets Files mode session state.
+		"""
+		reset_files_all( )
+		st.session_state[ 'files_manual_id' ] = ''
+		st.session_state[ 'files_selected_label' ] = ''
+		st.session_state[ 'files_selected_row_id' ] = ''
+		
+		if 'files_table_selector' in st.session_state:
+			del st.session_state[ 'files_table_selector' ]
+	
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
 	
 	with center:
@@ -10996,222 +11004,30 @@ elif mode == 'Files':
 		st.divider( )
 		
 		# ------------------------------------------------------------------
-		# Mind Controls
+		# Collection Toolbar
 		# ------------------------------------------------------------------
-		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
-			# --------------------------------------------------------------
-			# Row 1 — Upload, Browse, and List
-			# --------------------------------------------------------------
-			management_c1, management_c2, management_c3 = st.columns( [ 0.38, 0.38, 0.24 ],
-				border=True, gap='xxsmall' )
+		toolbar_c1, toolbar_c2 = st.columns( [ 0.58, 0.42 ], border=True, gap='small' )
+		
+		with toolbar_c1:
+			st.markdown( '##### Upload New File' )
 			
-			with management_c1:
-				upload_purposes = get_files_upload_purpose_options( files )
-				
-				if st.session_state.get( 'files_purpose' ) not in upload_purposes:
-					st.session_state[ 'files_purpose' ] = 'user_data'
-				
+			upload_purposes = get_files_upload_purpose_options( files )
+			
+			if st.session_state.get( 'files_purpose' ) not in upload_purposes:
+				st.session_state[ 'files_purpose' ] = 'user_data'
+			
+			upload_setting_c1, upload_setting_c2 = st.columns( [ 0.38, 0.62 ], gap='small' )
+			
+			with upload_setting_c1:
 				st.selectbox( label='Upload Purpose', options=upload_purposes, key='files_purpose',
-					help='OpenAI Files API purpose assigned when uploading a file.',
+					help='OpenAI Files API purpose assigned to the upload.',
 					index=upload_purposes.index( st.session_state.get( 'files_purpose',
 						'user_data' ) ) if st.session_state.get(
 						'files_purpose' ) in upload_purposes else None, placeholder='Options' )
 			
-			with management_c2:
-				filter_purposes = get_files_filter_purpose_options( files )
-				
-				if st.session_state.get( 'files_filter_purpose' ) not in filter_purposes:
-					st.session_state[ 'files_filter_purpose' ] = ''
-				
-				st.selectbox( label='List Purpose Filter', options=filter_purposes,
-					key='files_filter_purpose',
-					help='Optional OpenAI file-purpose filter used when listing files.',
-					index=filter_purposes.index( st.session_state.get( 'files_filter_purpose',
-						'' ) ) if st.session_state.get(
-						'files_filter_purpose' ) in filter_purposes else None,
-					placeholder='Options' )
-			
-			with management_c3:
-				st.markdown( '<div style="height: 28px;"></div>', unsafe_allow_html=True )
-				
-				if st.button( label='List Files', key='list_openai_files', width='stretch',
-						icon='📋' ):
-					with st.spinner( 'Listing files…' ):
-						try:
-							filter_value = st.session_state.get( 'files_filter_purpose', '' )
-							
-							rows = run_files_list( files=files,
-								purpose=filter_value if filter_value else None )
-							
-							if len( rows ) > 0:
-								st.success( f'Listed {len( rows )} file(s).' )
-							else:
-								st.info( 'No files were returned.' )
-						
-						except Exception as exc:
-							exception = Error( exc )
-							exception.module = 'app'
-							exception.cause = 'Files mode'
-							exception.method = ("elif mode == 'Files': List Files")
-							Logger( ).write( exception )
-							st.error( f'List files failed: {exc}' )
-			
-			# --------------------------------------------------------------
-			# Row 2 — Current File
-			# --------------------------------------------------------------
-			current_c1, current_c2, current_c3 = st.columns( [ 0.46, 0.34, 0.20 ], border=True,
-				gap='xxsmall' )
-			
-			file_rows = st.session_state.get( 'files_table', [ ] )
-			selection_options = build_file_selection_options( file_rows )
-			selection_labels = [ '' ] + list( selection_options.keys( ) )
-			
-			if st.session_state.get( 'files_selected_label' ) not in selection_labels:
-				st.session_state[ 'files_selected_label' ] = ''
-			
-			with current_c1:
-				st.selectbox( label='Selected File', options=selection_labels,
-					key='files_selected_label',
-					help='Select a file returned by the most recent Files API list operation.',
-					index=selection_labels.index( st.session_state.get( 'files_selected_label',
-						'' ) ) if st.session_state.get(
-						'files_selected_label' ) in selection_labels else None,
-					placeholder='Options' )
-			
-			with current_c2:
-				st.text_input( label='Manual File ID', key='files_manual_id',
-					help='Optional OpenAI file ID used when the file is not present in the current '
-					     'list.',
-					width='stretch', placeholder='file-...' )
-			
-			with current_c3:
-				st.markdown( '<div style="height: 28px;"></div>', unsafe_allow_html=True )
-				
-				st.button( label='Clear Current File', key='clear_files_current_file',
-					width='stretch', on_click=_clear_files_current_file, icon='🧹' )
-			
-			selected_file_id = resolve_files_current_id( )
-			
-			if selected_file_id:
-				st.caption( f'Current File ID: `{selected_file_id}`' )
-			else:
-				st.caption( 'Current File ID: none selected' )
-			
-			# --------------------------------------------------------------
-			# Row 3 — File Actions
-			# --------------------------------------------------------------
-			action_c1, action_c2, action_c3, action_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
-				border=True, gap='xxsmall' )
-			
-			with action_c1:
-				if st.button( label='Retrieve Metadata', key='retrieve_openai_file',
-						width='stretch' ):
-					with st.spinner( 'Retrieving file metadata…' ):
-						try:
-							metadata = run_files_retrieve( files=files,
-								file_id=resolve_files_current_id( ) )
-							
-							if metadata:
-								st.success( 'File metadata retrieved.' )
-						
-						except Exception as exc:
-							exception = Error( exc )
-							exception.module = 'app'
-							exception.cause = 'Files mode'
-							exception.method = ("elif mode == 'Files': Retrieve Metadata")
-							Logger( ).write( exception )
-							st.error( f'Retrieve metadata failed: {exc}' )
-			
-			with action_c2:
-				if st.button( label='Retrieve Content', key='retrieve_openai_file_content',
-						width='stretch' ):
-					with st.spinner( 'Retrieving file content…' ):
-						try:
-							content = run_files_extract( files=files,
-								file_id=resolve_files_current_id( ) )
-							
-							if content is not None:
-								st.success( 'File content retrieved.' )
-						
-						except Exception as exc:
-							exception = Error( exc )
-							exception.module = 'app'
-							exception.cause = 'Files mode'
-							exception.method = ("elif mode == 'Files': Retrieve Content")
-							Logger( ).write( exception )
-							st.error( f'Retrieve content failed: {exc}' )
-			
-			with action_c3:
-				if st.button( label='Delete File', key='delete_openai_file', width='stretch' ):
-					with st.spinner( 'Deleting file…' ):
-						try:
-							result = run_files_delete( files=files,
-								file_id=resolve_files_current_id( ) )
-							
-							if result.get( 'deleted' ) is True:
-								st.session_state[ 'files_selected_label' ] = ''
-								st.session_state[ 'files_manual_id' ] = ''
-								st.success( 'File deleted.' )
-								
-								try:
-									rows = run_files_list( files=files,
-										purpose=st.session_state.get(
-											'files_filter_purpose' ) or None )
-									
-									st.session_state[ 'files_table' ] = rows
-								
-								except Exception as e:
-									exception = Error( e )
-									exception.module = 'app'
-									exception.cause = 'Files mode'
-									exception.method = (
-										"elif mode == 'Files': Refresh After Delete")
-									Logger( ).write( exception )
-						
-						except Exception as exc:
-							exception = Error( exc )
-							exception.module = 'app'
-							exception.cause = 'Files mode'
-							exception.method = ("elif mode == 'Files': Delete File")
-							Logger( ).write( exception )
-							st.error( f'Delete file failed: {exc}' )
-			
-			with action_c4:
-				st.button( label='Clear Outputs', key='clear_files_outputs', width='stretch',
-					on_click=clear_files_outputs, icon='🧹' )
-			
-			# --------------------------------------------------------------
-			# Reset Controls
-			# --------------------------------------------------------------
-			st.button( label='Reset Controls', key='reset_files_controls_flat', width='stretch',
-				on_click=_reset_files_mode_controls, icon='🔄' )
-		
-		# ------------------------------------------------------------------
-		# System Instructions
-		# ------------------------------------------------------------------
-		render_system_prompt_expander( state_prefix='files',
-			instruction_key='files_system_instructions',
-			allowed_categories=FILES_PROMPT_CATEGORIES,
-			label='System Instructions', height=135 )
-		
-		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
-		
-		# ------------------------------------------------------------------
-		# Upload, Files Table, and Selected File Details
-		# ------------------------------------------------------------------
-		upload_c1, upload_c2, upload_c3 = st.columns( [ 0.30, 0.40, 0.30 ], border=True,
-			gap='small' )
-		
-		with upload_c1:
-			st.markdown( '##### Upload File' )
-			
-			uploaded_file = st.file_uploader( label='Select File', accept_multiple_files=False,
-				key='files_upload_file', help='Select a local file to upload.' )
-			
-			if uploaded_file is not None:
-				st.caption( f"Selected: {getattr( uploaded_file, 'name', 'uploaded file' )}" )
-				
-				st.caption( f"Size: {getattr( uploaded_file, 'size', 0 )} bytes" )
+			with upload_setting_c2:
+				uploaded_file = st.file_uploader( label='Select File', accept_multiple_files=False,
+					key='files_upload_file', help='Select a local file to upload.' )
 			
 			if st.button( label='Upload File', key='upload_openai_file', width='stretch',
 					icon='📤' ):
@@ -11221,6 +11037,8 @@ elif mode == 'Files':
 							purpose=st.session_state.get( 'files_purpose', 'user_data' ) )
 						
 						if metadata.get( 'id' ):
+							st.session_state[ 'files_selected_row_id' ] = metadata.get( 'id' )
+							
 							st.success( f"Uploaded file: {metadata.get( 'id' )}" )
 							
 							try:
@@ -11243,33 +11061,288 @@ elif mode == 'Files':
 						exception.cause = 'Files mode'
 						exception.method = ("elif mode == 'Files': Upload File")
 						Logger( ).write( exception )
+						
 						st.error( f'Upload failed: {exc}' )
 		
-		with upload_c2:
-			st.markdown( '##### Files' )
+		with toolbar_c2:
+			st.markdown( '##### Browse Files' )
 			
-			rows = st.session_state.get( 'files_table', [ ] )
-			render_files_table( rows )
+			filter_purposes = get_files_filter_purpose_options( files )
+			
+			if st.session_state.get( 'files_filter_purpose' ) not in filter_purposes:
+				st.session_state[ 'files_filter_purpose' ] = ''
+			
+			st.selectbox( label='Purpose Filter', options=filter_purposes,
+				key='files_filter_purpose',
+				help='Optional purpose filter applied when refreshing files.',
+				index=filter_purposes.index(
+					st.session_state.get( 'files_filter_purpose', '' ) ) if st.session_state.get(
+					'files_filter_purpose' ) in filter_purposes else None,
+				placeholder='All purposes' )
+			
+			if st.button( label='Refresh Files', key='list_openai_files', width='stretch',
+					icon='🔄' ):
+				with st.spinner( 'Refreshing files…' ):
+					try:
+						filter_value = st.session_state.get( 'files_filter_purpose', '' )
+						
+						rows = run_files_list( files=files,
+							purpose=filter_value if filter_value else None )
+						
+						if len( rows ) > 0:
+							st.success( f'Loaded {len( rows )} file(s).' )
+						else:
+							st.info( 'No files were returned.' )
+					
+					except Exception as exc:
+						exception = Error( exc )
+						exception.module = 'app'
+						exception.cause = 'Files mode'
+						exception.method = ("elif mode == 'Files': Refresh Files")
+						Logger( ).write( exception )
+						
+						st.error( f'Refresh files failed: {exc}' )
 		
-		with upload_c3:
-			st.markdown( '##### Selected File Details' )
-			
-			metadata = st.session_state.get( 'files_metadata', { } )
-			
-			if isinstance( metadata, dict ) and len( metadata ) > 0:
-				render_file_metadata( metadata )
-			else:
-				st.info( 'Retrieve metadata to inspect a selected file.' )
-			
-			delete_result = st.session_state.get( 'files_delete_result', { } )
-			
-			if isinstance( delete_result, dict ) and len( delete_result ) > 0:
-				render_file_delete_result( delete_result )
+		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ------------------------------------------------------------------
-		# Retrieved File Content
+		# Master-Detail Workspace
+		# ------------------------------------------------------------------
+		workspace_c1, workspace_c2 = st.columns( [ 0.68, 0.32 ], gap='small' )
+		
+		with workspace_c1:
+			with st.container( border=True ):
+				st.markdown( '##### Files' )
+				
+				rows = st.session_state.get( 'files_table', [ ] )
+				
+				df_files = build_files_dataframe( rows )
+				
+				st.session_state[ 'files_df' ] = df_files
+				
+				if df_files.empty:
+					st.info( 'Refresh Files to load the OpenAI file collection.' )
+				
+				else:
+					display_columns = [ column for column in
+						[ 'filename', 'purpose', 'status', 'bytes', 'id', ] if
+						column in df_files.columns ]
+					
+					table_event = st.dataframe( df_files, use_container_width=True, height=520,
+						hide_index=True, column_order=display_columns, on_select='rerun',
+						selection_mode='single-row', key='files_table_selector' )
+					
+					selection = getattr( table_event, 'selection', None )
+					
+					selected_rows = (
+						getattr( selection, 'rows', [ ] ) if selection is not None else [ ])
+					
+					if isinstance( selection, dict ):
+						selected_rows = selection.get( 'rows', [ ] )
+					
+					elif isinstance( table_event, dict ):
+						selected_rows = table_event.get( 'selection', { } ).get( 'rows', [ ] )
+					
+					if isinstance( selected_rows, list ) and len( selected_rows ) > 0:
+						selected_index = selected_rows[ 0 ]
+						
+						if (isinstance( selected_index, int ) and 0 <= selected_index < len(
+							df_files )):
+							selected_row = df_files.iloc[ selected_index ].to_dict( )
+							
+							selected_id = str( selected_row.get( 'id', '' ) or '' ).strip( )
+							
+							if (selected_id and selected_id != st.session_state.get(
+								'files_selected_row_id', '' )):
+								st.session_state[ 'files_id' ] = selected_id
+								st.session_state[ 'files_selected_row_id' ] = selected_id
+								st.session_state[ 'files_metadata' ] = selected_row
+								st.session_state[ 'files_content' ] = ''
+								st.session_state[ 'files_content_bytes' ] = None
+								st.session_state[ 'files_delete_result' ] = { }
+		
+		with workspace_c2:
+			with st.container( border=True ):
+				st.markdown( '##### Selected File' )
+				
+				current_file_id = str( st.session_state.get( 'files_id', '' ) or '' ).strip( )
+				
+				metadata = st.session_state.get( 'files_metadata', { } )
+				
+				if current_file_id and (not isinstance( metadata, dict ) or metadata.get(
+					'id' ) != current_file_id):
+					metadata = next( (row for row in rows if
+					(isinstance( row, dict ) and row.get( 'id' ) == current_file_id)), { } )
+				
+				if current_file_id:
+					filename = (
+						metadata.get( 'filename', '—' ) if isinstance( metadata, dict ) else '—')
+					
+					purpose = (
+						metadata.get( 'purpose', '—' ) if isinstance( metadata, dict ) else '—')
+					
+					status = (
+						metadata.get( 'status', '—' ) if isinstance( metadata, dict ) else '—')
+					
+					byte_count = (metadata.get( 'bytes', 0 ) if isinstance( metadata,
+						dict ) else 0)
+					
+					created_at = (
+						metadata.get( 'created_at', '—' ) if isinstance( metadata, dict ) else '—')
+					
+					object_type = (
+						metadata.get( 'object', '—' ) if isinstance( metadata, dict ) else '—')
+					
+					st.markdown( f'**Filename:** {filename or "—"}' )
+					
+					st.markdown( f'**File ID:** `{current_file_id}`' )
+					
+					st.markdown( f'**Purpose:** {purpose or "—"}' )
+					
+					st.markdown( f'**Status:** {status or "—"}' )
+					
+					st.markdown( f'**Bytes:** {int( byte_count or 0 ):,}' )
+					
+					st.markdown( f'**Created:** {created_at or "—"}' )
+					
+					st.markdown( f'**Object:** {object_type or "—"}' )
+				
+				else:
+					st.info( 'Select a row in the Files table.' )
+				
+				action_c1, action_c2 = st.columns( 2, gap='small' )
+				
+				with action_c1:
+					if st.button( label='Refresh Metadata', key='retrieve_openai_file',
+							width='stretch', disabled=not bool( current_file_id ) ):
+						with st.spinner( 'Refreshing metadata…' ):
+							try:
+								metadata = run_files_retrieve( files=files,
+									file_id=current_file_id )
+								
+								if metadata:
+									st.success( 'Metadata refreshed.' )
+							
+							except Exception as exc:
+								exception = Error( exc )
+								exception.module = 'app'
+								exception.cause = 'Files mode'
+								exception.method = ("elif mode == 'Files': Refresh Metadata")
+								Logger( ).write( exception )
+								
+								st.error( f'Refresh metadata failed: {exc}' )
+				
+				with action_c2:
+					if st.button( label='Retrieve Content', key='retrieve_openai_file_content',
+							width='stretch', disabled=not bool( current_file_id ) ):
+						with st.spinner( 'Retrieving file content…' ):
+							try:
+								content = run_files_extract( files=files, file_id=current_file_id )
+								
+								if content is not None:
+									st.success( 'File content retrieved.' )
+							
+							except Exception as exc:
+								exception = Error( exc )
+								exception.module = 'app'
+								exception.cause = 'Files mode'
+								exception.method = ("elif mode == 'Files': Retrieve Content")
+								Logger( ).write( exception )
+								
+								st.error( f'Retrieve content failed: {exc}' )
+				
+				action_c3, action_c4 = st.columns( 2, gap='small' )
+				
+				with action_c3:
+					if st.button( label='Delete File', key='delete_openai_file', width='stretch',
+							disabled=not bool( current_file_id ) ):
+						with st.spinner( 'Deleting file…' ):
+							try:
+								result = run_files_delete( files=files, file_id=current_file_id )
+								
+								if result.get( 'deleted' ) is True:
+									st.success( 'File deleted.' )
+									
+									st.session_state[ 'files_selected_row_id' ] = ''
+									st.session_state[ 'files_metadata' ] = { }
+									st.session_state[ 'files_content' ] = ''
+									st.session_state[ 'files_content_bytes' ] = None
+									
+									rows = run_files_list( files=files,
+										purpose=st.session_state.get(
+											'files_filter_purpose' ) or None )
+									
+									st.session_state[ 'files_table' ] = rows
+							
+							except Exception as exc:
+								exception = Error( exc )
+								exception.module = 'app'
+								exception.cause = 'Files mode'
+								exception.method = ("elif mode == 'Files': Delete File")
+								Logger( ).write( exception )
+								
+								st.error( f'Delete file failed: {exc}' )
+				
+				with action_c4:
+					st.button( label='Clear Selection', key='clear_files_current_file',
+						width='stretch', on_click=clear_files_current_selection, icon='🧹',
+						disabled=not bool( current_file_id ) )
+				
+				delete_result = st.session_state.get( 'files_delete_result', { } )
+				
+				if isinstance( delete_result, dict ) and len( delete_result ) > 0:
+					render_file_delete_result( delete_result )
+		
+		# ------------------------------------------------------------------
+		# Manual File ID
+		# ------------------------------------------------------------------
+		with st.expander( label='Advanced: Open File by ID', icon='🔑', expanded=False,
+				width='stretch' ):
+			manual_c1, manual_c2 = st.columns( [ 0.8, 0.2 ], gap='small' )
+			
+			with manual_c1:
+				st.text_input( label='Manual File ID', key='files_manual_id', width='stretch',
+					help='Enter an OpenAI file ID that is not available in the current table.',
+					placeholder='file-...' )
+			
+			with manual_c2:
+				st.markdown( '<div style="height: 28px;"></div>', unsafe_allow_html=True )
+				
+				if st.button( label='Open File', key='open_manual_file', width='stretch' ):
+					manual_id = st.session_state.get( 'files_manual_id', '' )
+					
+					if not isinstance( manual_id, str ) or not manual_id.strip( ):
+						st.warning( 'Enter a file ID before opening a file.' )
+					
+					else:
+						manual_value = manual_id.strip( )
+						
+						try:
+							metadata = run_files_retrieve( files=files, file_id=manual_value )
+							
+							st.session_state[ 'files_id' ] = manual_value
+							st.session_state[ 'files_selected_row_id' ] = manual_value
+							st.session_state[ 'files_metadata' ] = metadata
+							st.session_state[ 'files_content' ] = ''
+							st.session_state[ 'files_content_bytes' ] = None
+							st.session_state[ 'files_delete_result' ] = { }
+							
+							st.success( 'File opened.' )
+						
+						except Exception as exc:
+							exception = Error( exc )
+							exception.module = 'app'
+							exception.cause = 'Files mode'
+							exception.method = ("elif mode == 'Files': Open Manual File")
+							Logger( ).write( exception )
+							
+							st.error( f'Open file failed: {exc}' )
+		
+		# ------------------------------------------------------------------
+		# Retrieved Content
 		# ------------------------------------------------------------------
 		content_value = st.session_state.get( 'files_content', '' )
+		
 		content_bytes = st.session_state.get( 'files_content_bytes', None )
 		
 		if isinstance( content_bytes, bytes ) and len( content_bytes ) > 0:
@@ -11283,38 +11356,40 @@ elif mode == 'Files':
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
 		# ------------------------------------------------------------------
-		# File Analysis
+		# System Instructions and Analysis
 		# ------------------------------------------------------------------
-		st.markdown( '##### Analyze Current File' )
+		render_system_prompt_expander( state_prefix='files',
+			instruction_key='files_system_instructions',
+			allowed_categories=FILES_PROMPT_CATEGORIES,
+			label='System Instructions', height=135 )
+		
+		st.markdown( '##### Analyze Selected File' )
 		
 		model_options = get_files_model_options( files )
 		
 		if st.session_state.get( 'files_model' ) not in model_options:
 			st.session_state[ 'files_model' ] = ''
 		
-		analysis_model_c1, analysis_model_c2 = st.columns( [ 0.80, 0.20 ], border=True,
-			gap='xxsmall' )
+		analysis_c1, analysis_c2 = st.columns( [ 0.72, 0.28 ], border=True, gap='small' )
 		
-		with analysis_model_c1:
+		with analysis_c1:
 			st.selectbox( label='Analysis Model', options=model_options, key='files_model',
-				help='Model used to answer questions about the current OpenAI file.',
+				help='Model used to answer questions about the selected OpenAI file.',
 				index=model_options.index(
 					st.session_state.get( 'files_model', '' ) ) if st.session_state.get(
 					'files_model' ) in model_options else None, placeholder='Options' )
 		
-		with analysis_model_c2:
-			current_analysis_file_id = resolve_files_current_id( )
+		with analysis_c2:
+			analysis_file_id = str( st.session_state.get( 'files_id', '' ) or '' ).strip( )
 			
-			if current_analysis_file_id:
-				st.caption( 'Current analysis file' )
-				st.code( current_analysis_file_id, language=None )
+			if analysis_file_id:
+				st.caption( 'Analysis target' )
+				
+				st.code( analysis_file_id, language=None )
+			
 			else:
-				st.caption( 'Current analysis file' )
-				st.info( 'No file selected.' )
+				st.info( 'Select a file before analysis.' )
 		
-		# ------------------------------------------------------------------
-		# Messages
-		# ------------------------------------------------------------------
 		if st.session_state.get( 'files_messages' ) is not None:
 			for msg in st.session_state.files_messages:
 				if not isinstance( msg, dict ):
@@ -11335,11 +11410,12 @@ elif mode == 'Files':
 			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
 				with st.spinner( 'Analyzing selected file…' ):
 					try:
-						current_file_id = resolve_files_current_id( )
+						current_file_id = str(
+							st.session_state.get( 'files_id', '' ) or '' ).strip( )
 						
 						instruction_text = st.session_state.get( 'files_system_instructions', '' )
 						
-						if isinstance( instruction_text, str ) and instruction_text.strip( ):
+						if (isinstance( instruction_text, str ) and instruction_text.strip( )):
 							analysis_prompt = (f'{instruction_text.strip( )}\n\n'
 							                   f'User Question: {prompt}')
 						else:
@@ -11381,11 +11457,9 @@ elif mode == 'Files':
 						exception.cause = 'Files mode'
 						exception.method = ("elif mode == 'Files': Analyze File")
 						Logger( ).write( exception )
+						
 						st.error( f'File analysis failed: {exc}' )
 		
-		# ------------------------------------------------------------------
-		# Last File Analysis
-		# ------------------------------------------------------------------
 		last_answer = st.session_state.get( 'files_last_answer', '' )
 		
 		if isinstance( last_answer, str ) and last_answer.strip( ):
@@ -11394,24 +11468,21 @@ elif mode == 'Files':
 				st.markdown( last_answer )
 		
 		# ------------------------------------------------------------------
-		# Bottom Clear and Reset Actions
+		# Workspace Actions
 		# ------------------------------------------------------------------
 		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
 		
 		with reset_c1:
-			if st.button( label='Clear Messages', key='clear_files_messages', width='stretch',
-					on_click=clear_files_messages, icon='🧹' ):
-				st.rerun( )
+			st.button( label='Clear Messages', key='clear_files_messages', width='stretch',
+				on_click=clear_files_messages, icon='🧹' )
 		
 		with reset_c2:
-			if st.button( label='Clear Outputs', key='clear_files_mode_outputs', width='stretch',
-					on_click=clear_files_outputs, icon='↪️' ):
-				st.rerun( )
+			st.button( label='Clear Outputs', key='clear_files_mode_outputs', width='stretch',
+				on_click=clear_files_outputs, icon='↪️' )
 		
 		with reset_c3:
-			if st.button( label='Reset All', key='reset_files_all', width='stretch',
-					on_click=reset_files_all, icon='🔄' ):
-				st.rerun( )
+			st.button( label='Reset Workspace', key='reset_files_all', width='stretch',
+				on_click=reset_files_workspace, icon='🔄' )
 				
 # ==============================================================================
 # VECTOR STORE MODE

@@ -7,7 +7,6 @@
     <list default="true" id="8e57c923-6b4e-425a-893b-39775ed7a32c" name="Changes" comment="updates">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gpt.py" beforeDir="false" afterPath="$PROJECT_DIR$/gpt.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -108,15 +107,7 @@
       <workItem from="1784511494364" duration="1728000" />
       <workItem from="1784532260567" duration="20453000" />
       <workItem from="1784646240792" duration="19688000" />
-      <workItem from="1784678728788" duration="13188000" />
-    </task>
-    <task id="LOCAL-00016" summary="updates">
-      <option name="closed" value="true" />
-      <created>1779105887531</created>
-      <option name="number" value="00016" />
-      <option name="presentableId" value="LOCAL-00016" />
-      <option name="project" value="LOCAL" />
-      <updated>1779105887531</updated>
+      <workItem from="1784678728788" duration="14984000" />
     </task>
     <task id="LOCAL-00017" summary="updates">
       <option name="closed" value="true" />
@@ -502,7 +493,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784679767908</updated>
     </task>
-    <option name="localTasksCounter" value="65" />
+    <task id="LOCAL-00065" summary="updates">
+      <option name="closed" value="true" />
+      <created>1784817052309</created>
+      <option name="number" value="00065" />
+      <option name="presentableId" value="LOCAL-00065" />
+      <option name="project" value="LOCAL" />
+      <updated>1784817052309</updated>
+    </task>
+    <option name="localTasksCounter" value="66" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
