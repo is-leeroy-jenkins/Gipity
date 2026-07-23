@@ -1006,58 +1006,71 @@ def throw_if( name: str, value: object ) -> None:
 	if isinstance( value, (list, tuple, dict, set) ) and len( value ) == 0:
 		raise ValueError( f'Argument "{name}" cannot be empty!' )
 
+# ----- Text Utilities -----
+
 def extract_usage( resp: Any ) -> Dict[ str, int ]:
 	"""Extract usage.
-    
-        Purpose:
-            Extracts the usage value from the supplied object or payload while handling missing or
-            unsupported content safely.
-    
-        Args:
-            resp (Any): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_usage helper according to its function annotation and
-            return statements.
-    """
+
+	Purpose:
+		Extracts token usage from OpenAI Responses API and legacy completion response objects.
+		The function normalizes current input and output token fields into the application-facing
+		prompt, completion, and total token schema used by existing Streamlit metrics.
+
+	Args:
+		resp (Any): OpenAI response object or dictionary containing a usage payload.
+
+	Returns:
+		Dict[ str, int ]: Normalized prompt, completion, and total token counts.
+	"""
 	throw_if( 'resp', resp )
-	usage = { 'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0 }
-	if not resp:
-		return usage
+	usage = {
+			'prompt_tokens': 0,
+			'completion_tokens': 0,
+			'total_tokens': 0, }
+
 	raw = None
+
 	try:
 		raw = getattr( resp, 'usage', None )
 	except Exception as e:
 		exception = Error( e )
 		exception.module = 'app'
 		exception.cause = 'extract_usage'
-		exception.method = 'extract_usage( ... )'
+		exception.method = 'extract_usage( resp: Any ) -> Dict[ str, int ]'
 		Logger( ).write( exception )
 		raw = None
-	if not raw and isinstance( resp, dict ):
+
+	if raw is None and isinstance( resp, dict ):
 		raw = resp.get( 'usage' )
-	if not raw:
+
+	if raw is None:
 		return usage
+	
 	try:
 		if isinstance( raw, dict ):
-			usage[ 'prompt_tokens' ] = int( raw.get( 'prompt_tokens', 0 ) )
+			usage[ 'prompt_tokens' ] = raw.get( 'input_tokens', raw.get( 'prompt_tokens', 0 ) )
 			usage[ 'completion_tokens' ] = int(
-				raw.get( 'completion_tokens', raw.get( 'output_tokens', 0 ) ) )
-			usage[ 'total_tokens' ] = int(
-				raw.get( 'total_tokens', usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] ) )
+				raw.get( 'output_tokens', raw.get( 'completion_tokens', 0 ) ) or 0 )
+			
+			usage[ 'total_tokens' ] = int( raw.get( 'total_tokens',
+				usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ], ) or 0 )
 		else:
-			usage[ 'prompt_tokens' ] = int( getattr( raw, 'prompt_tokens', 0 ) )
+			usage[ 'prompt_tokens' ] = int(
+				getattr( raw, 'input_tokens', getattr( raw, 'prompt_tokens', 0 ), ) or 0 )
+			
 			usage[ 'completion_tokens' ] = int(
-				getattr( raw, 'completion_tokens', getattr( raw, 'output_tokens', 0 ) ) )
+				getattr( raw, 'output_tokens', getattr( raw, 'completion_tokens', 0 ), ) or 0 )
+			
 			usage[ 'total_tokens' ] = int( getattr( raw, 'total_tokens',
-				usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ] ) )
+				usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ], ) or 0 )
 	except Exception as e:
 		exception = Error( e )
 		exception.module = 'app'
 		exception.cause = 'extract_usage'
-		exception.method = 'extract_usage( ... )'
+		exception.method = 'extract_usage( resp: Any ) -> Dict[ str, int ]'
 		Logger( ).write( exception )
 		usage[ 'total_tokens' ] = usage[ 'prompt_tokens' ] + usage[ 'completion_tokens' ]
+
 	return usage
 
 def update_token_counters( resp: Any ) -> None:
@@ -1348,228 +1361,6 @@ def normalize( obj ) -> Any:
 		Logger( ).write( exception )
 		raise e
 
-def extract_sources( response: Any ) -> List[ Dict[ str, Any ] ]:
-	"""Extract sources.
-    
-        Purpose:
-            Extracts the sources value from the supplied object or payload while handling missing or
-            unsupported content safely.
-    
-        Args:
-            response (Any): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_sources helper according to its function annotation and
-            return statements.
-    """
-	sources: List[ Dict[ str, Any ] ] = [ ]
-	if response is None:
-		return sources
-	output = getattr( response, 'output', None )
-	if not isinstance( output, list ):
-		return sources
-	for item in output:
-		if item is None:
-			continue
-		t = getattr( item, 'type', None )
-		if t == 'web_search_call':
-			action = getattr( item, 'action', None )
-			raw = getattr( action, 'sources', None ) if action else None
-			if not isinstance( raw, (list, tuple) ):
-				continue
-			for src in raw:
-				s = normalize( src )
-				if not isinstance( s, dict ):
-					continue
-				sources.append( { 'title': s.get( 'title' ), 'snippet': s.get( 'snippet' ),
-				                  'url': s.get( 'url' ), 'files_id': None } )
-		elif t == 'file_search_call':
-			raw = getattr( item, 'results', None )
-			if not isinstance( raw, (list, tuple) ):
-				continue
-			for r in raw:
-				s = normalize( r )
-				if not isinstance( s, dict ):
-					continue
-				sources.append( { 'title': s.get( 'file_name' ) or s.get( 'title' ), 'snippet': s.get( 'text' ),
-					  'url': None, 'files_id': s.get( 'files_id' ) } )
-	return sources
-
-def extract_text_from_bytes( file_bytes: bytes ) -> str:
-	"""Extract text from bytes.
-    
-    Purpose:
-        Extracts text from bytes for downstream application use. The function normalizes
-        provider or file-system data into a stable shape that the Streamlit interface and helper
-        workflows can consume safely.
-    
-    Args:
-        file_bytes (bytes): File bytes value used by this workflow.
-    
-    Returns:
-        Value produced by the operation for display or downstream processing.
-    """
-	try:
-		import fitz  # PyMuPDF
-		doc = fitz.open( stream=file_bytes, filetype="pdf" )
-		text = ""
-		for page in doc:
-			text += page.get_text( )
-		return text.strip( )
-	
-	except Exception as _logged_exception:
-		try:
-			error = Error( _logged_exception )
-			error.module = 'app'
-			error.cause = 'extract_text_from_bytes'
-			error.method = 'extract_text_from_bytes( file_bytes: bytes )'
-			Logger( ).write( error )
-		except Exception:
-			pass
-		try:
-			return file_bytes.decode( errors="ignore" )
-		except Exception as _logged_exception:
-			try:
-				error = Error( _logged_exception )
-				error.module = 'app'
-				error.cause = 'extract_text_from_bytes'
-				error.method = 'extract_text_from_bytes( file_bytes: bytes )'
-				Logger( ).write( error )
-			except Exception:
-				pass
-			return ""
-
-def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
-	"""Extract docqna pdf text.
-    
-        Purpose:
-            Extracts the docqna pdf text value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_docqna_pdf_text helper according to its function
-            annotation and return statements.
-    """
-	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
-		return ''
-	try:
-		import fitz
-		pages: List[ str ] = [ ]
-		with fitz.open( stream=file_bytes, filetype='pdf' ) as doc:
-			for page in doc:
-				pages.append( page.get_text( 'text' ) )
-		return '\n\n'.join( pages ).strip( )
-	except Exception as e:
-		exception = Error( e )
-		exception.module = 'app'
-		exception.cause = 'extract_docqna_pdf_text'
-		exception.method = 'extract_docqna_pdf_text( ... )'
-		Logger( ).write( exception )
-		try:
-			return extract_text_from_bytes( file_bytes )
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'app'
-			exception.cause = 'extract_docqna_pdf_text'
-			exception.method = 'extract_docqna_pdf_text( ... )'
-			Logger( ).write( exception )
-			return ''
-
-def extract_docqna_text_file( file_bytes: bytes ) -> str:
-	"""Extract docqna text file.
-    
-        Purpose:
-            Extracts the docqna text file value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_docqna_text_file helper according to its function
-            annotation and return statements.
-    """
-	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
-		return ''
-	for encoding in [ 'utf-8', 'utf-8-sig', 'cp1252', 'latin-1' ]:
-		try:
-			return file_bytes.decode( encoding ).strip( )
-		except Exception as e:
-			exception = Error( e )
-			exception.module = 'app'
-			exception.cause = 'extract_docqna_text_file'
-			exception.method = 'extract_docqna_text_file( ... )'
-			Logger( ).write( exception )
-			continue
-	return ''
-
-def extract_docqna_docx_text( file_bytes: bytes ) -> str:
-	"""Extract docqna docx text.
-    
-        Purpose:
-            Extracts the docqna docx text value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_docqna_docx_text helper according to its function
-            annotation and return statements.
-    """
-	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
-		return ''
-	try:
-		with zipfile.ZipFile( io.BytesIO( file_bytes ) ) as archive:
-			xml_bytes = archive.read( 'word/document.xml' )
-		root = ET.fromstring( xml_bytes )
-		namespace = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-		paragraphs: List[ str ] = [ ]
-		for paragraph in root.iter( f'{namespace}p' ):
-			parts: List[ str ] = [ ]
-			for node in paragraph.iter( f'{namespace}t' ):
-				if node.text:
-					parts.append( node.text )
-			text = ''.join( parts ).strip( )
-			if text:
-				paragraphs.append( text )
-		return '\n\n'.join( paragraphs ).strip( )
-	except Exception as e:
-		exception = Error( e )
-		exception.module = 'app'
-		exception.cause = 'extract_docqna_docx_text'
-		exception.method = 'extract_docqna_docx_text( ... )'
-		Logger( ).write( exception )
-		return ''
-
-def extract_docqna_text( filename: str, file_bytes: bytes ) -> str:
-	"""Extract docqna text.
-    
-        Purpose:
-            Extracts the docqna text value from the supplied object or payload while handling
-            missing or unsupported content safely.
-    
-        Args:
-            filename (str): Value supplied to the helper.
-            file_bytes (bytes): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the extract_docqna_text helper according to its function annotation
-            and return statements.
-    """
-	extension = get_docqna_file_extension( filename )
-	if extension == '.pdf':
-		return extract_docqna_pdf_text( file_bytes )
-	if extension == '.docx':
-		return extract_docqna_docx_text( file_bytes )
-	if extension in [ '.txt', '.md', '.csv', '.json', '.xml', '.py', '.cs', '.sql', '.yaml', '.yml',
-	                  '.html', '.css', '.js', '.ts' ]:
-		return extract_docqna_text_file( file_bytes )
-	return extract_docqna_text_file( file_bytes )
-
 def save_temp( upload ) -> str | None:
 	"""Save temp.
     
@@ -1835,6 +1626,68 @@ def clear_history( ) -> None:
     """
 	with sqlite3.connect( cfg.DB_PATH ) as conn:
 		conn.execute( 'DELETE FROM chat_history' )
+
+def extract_sources( response: Any ) -> List[ Dict[ str, Any ] ]:
+	"""Extract sources.
+
+	Purpose:
+		Extracts web-search and file-search source metadata from an OpenAI Responses API response.
+		The function preserves the application-facing source schema while mapping provider file
+		search results to the correct singular file identifier field.
+
+	Args:
+		response (Any): OpenAI Responses API response object.
+
+	Returns:
+		List[ Dict[ str, Any ] ]: Normalized source metadata used by the application.
+	"""
+	sources: List[ Dict[ str, Any ] ] = [ ]
+	
+	if response is None:
+		return sources
+	
+	output = getattr( response, 'output', None )
+	
+	if not isinstance( output, list ):
+		return sources
+	
+	for item in output:
+		if item is None:
+			continue
+		
+		item_type = getattr( item, 'type', None )
+		if item_type == 'web_search_call':
+			action = getattr( item, 'action', None )
+			raw_sources = getattr( action, 'sources', None ) if action else None
+			if not isinstance( raw_sources, (list, tuple) ):
+				continue
+			
+			for raw_source in raw_sources:
+				source = normalize( raw_source )
+				
+				if not isinstance( source, dict ):
+					continue
+				
+				sources.append( { 'title': source.get( 'title' ), 'snippet': source.get( 'snippet' ),
+						'url': source.get( 'url' ), 'files_id': None, } )
+		
+		elif item_type == 'file_search_call':
+			raw_results = getattr( item, 'results', None )
+			
+			if not isinstance( raw_results, (list, tuple) ):
+				continue
+			
+			for raw_result in raw_results:
+				result = normalize( raw_result )
+				
+				if not isinstance( result, dict ):
+					continue
+				
+				sources.append( { 'title': result.get( 'file_name' ) or result.get( 'title' ),
+					'snippet': result.get( 'text' ), 'url': None,
+					'files_id': result.get( 'file_id' ), } )
+	
+	return sources
 
 def ensure_text_mode_state( ) -> None:
 	"""Ensure text mode state.
@@ -2157,6 +2010,8 @@ def reset_text_api_state_controls( ) -> None:
 		if key in st.session_state:
 			del st.session_state[ key ]
 
+# ----- Images Utilities -----
+
 def clear_image_messages( ) -> None:
 	"""Clear image messages.
     
@@ -2430,6 +2285,8 @@ def render_image_output( image_result: str | bytes | List[ str | bytes ] | None,
 				st.markdown( item.strip( ) )
 				rendered = True
 	return rendered
+
+# ----- Embeddings Utilities -----
 
 def ensure_embeddings_mode_state( ) -> None:
 	"""Ensure embeddings mode state.
@@ -3215,6 +3072,183 @@ def build_document_user_input( user_query: str, k: int = 6 ) -> str:
 			f'Use the following document excerpts to answer the question. If the excerpts do not contain the answer, say you do not have enough information.\n\n{context}' )
 	prompt_parts.append( f'Question:\n{user_query}\n\nAnswer:' )
 	return '\n\n'.join( prompt_parts ).strip( )
+
+# ----- DocQ&A Utlitites -----
+
+def extract_text_from_bytes( file_bytes: bytes ) -> str:
+	"""Extract text from bytes.
+    
+    Purpose:
+        Extracts text from bytes for downstream application use. The function normalizes
+        provider or file-system data into a stable shape that the Streamlit interface and helper
+        workflows can consume safely.
+    
+    Args:
+        file_bytes (bytes): File bytes value used by this workflow.
+    
+    Returns:
+        Value produced by the operation for display or downstream processing.
+    """
+	try:
+		import fitz  # PyMuPDF
+		doc = fitz.open( stream=file_bytes, filetype="pdf" )
+		text = ""
+		for page in doc:
+			text += page.get_text( )
+		return text.strip( )
+	
+	except Exception as _logged_exception:
+		try:
+			error = Error( _logged_exception )
+			error.module = 'app'
+			error.cause = 'extract_text_from_bytes'
+			error.method = 'extract_text_from_bytes( file_bytes: bytes )'
+			Logger( ).write( error )
+		except Exception:
+			pass
+		try:
+			return file_bytes.decode( errors="ignore" )
+		except Exception as _logged_exception:
+			try:
+				error = Error( _logged_exception )
+				error.module = 'app'
+				error.cause = 'extract_text_from_bytes'
+				error.method = 'extract_text_from_bytes( file_bytes: bytes )'
+				Logger( ).write( error )
+			except Exception:
+				pass
+			return ""
+
+def extract_docqna_pdf_text( file_bytes: bytes ) -> str:
+	"""Extract docqna pdf text.
+    
+        Purpose:
+            Extracts the docqna pdf text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_pdf_text helper according to its function
+            annotation and return statements.
+    """
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	try:
+		import fitz
+		pages: List[ str ] = [ ]
+		with fitz.open( stream=file_bytes, filetype='pdf' ) as doc:
+			for page in doc:
+				pages.append( page.get_text( 'text' ) )
+		return '\n\n'.join( pages ).strip( )
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'extract_docqna_pdf_text'
+		exception.method = 'extract_docqna_pdf_text( ... )'
+		Logger( ).write( exception )
+		try:
+			return extract_text_from_bytes( file_bytes )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'app'
+			exception.cause = 'extract_docqna_pdf_text'
+			exception.method = 'extract_docqna_pdf_text( ... )'
+			Logger( ).write( exception )
+			return ''
+
+def extract_docqna_text_file( file_bytes: bytes ) -> str:
+	"""Extract docqna text file.
+    
+        Purpose:
+            Extracts the docqna text file value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_text_file helper according to its function
+            annotation and return statements.
+    """
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	for encoding in [ 'utf-8', 'utf-8-sig', 'cp1252', 'latin-1' ]:
+		try:
+			return file_bytes.decode( encoding ).strip( )
+		except Exception as e:
+			exception = Error( e )
+			exception.module = 'app'
+			exception.cause = 'extract_docqna_text_file'
+			exception.method = 'extract_docqna_text_file( ... )'
+			Logger( ).write( exception )
+			continue
+	return ''
+
+def extract_docqna_docx_text( file_bytes: bytes ) -> str:
+	"""Extract docqna docx text.
+    
+        Purpose:
+            Extracts the docqna docx text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_docx_text helper according to its function
+            annotation and return statements.
+    """
+	if not isinstance( file_bytes, bytes ) or len( file_bytes ) == 0:
+		return ''
+	try:
+		with zipfile.ZipFile( io.BytesIO( file_bytes ) ) as archive:
+			xml_bytes = archive.read( 'word/document.xml' )
+		root = ET.fromstring( xml_bytes )
+		namespace = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+		paragraphs: List[ str ] = [ ]
+		for paragraph in root.iter( f'{namespace}p' ):
+			parts: List[ str ] = [ ]
+			for node in paragraph.iter( f'{namespace}t' ):
+				if node.text:
+					parts.append( node.text )
+			text = ''.join( parts ).strip( )
+			if text:
+				paragraphs.append( text )
+		return '\n\n'.join( paragraphs ).strip( )
+	except Exception as e:
+		exception = Error( e )
+		exception.module = 'app'
+		exception.cause = 'extract_docqna_docx_text'
+		exception.method = 'extract_docqna_docx_text( ... )'
+		Logger( ).write( exception )
+		return ''
+
+def extract_docqna_text( filename: str, file_bytes: bytes ) -> str:
+	"""Extract docqna text.
+    
+        Purpose:
+            Extracts the docqna text value from the supplied object or payload while handling
+            missing or unsupported content safely.
+    
+        Args:
+            filename (str): Value supplied to the helper.
+            file_bytes (bytes): Value supplied to the helper.
+    
+        Returns:
+            Value produced by the extract_docqna_text helper according to its function annotation
+            and return statements.
+    """
+	extension = get_docqna_file_extension( filename )
+	if extension == '.pdf':
+		return extract_docqna_pdf_text( file_bytes )
+	if extension == '.docx':
+		return extract_docqna_docx_text( file_bytes )
+	if extension in [ '.txt', '.md', '.csv', '.json', '.xml', '.py', '.cs', '.sql', '.yaml', '.yml',
+	                  '.html', '.css', '.js', '.ts' ]:
+		return extract_docqna_text_file( file_bytes )
+	return extract_docqna_text_file( file_bytes )
 
 def ensure_docqna_mode_state( ) -> None:
 	"""Ensure docqna mode state.
@@ -4085,6 +4119,8 @@ def render_docqna_status( ) -> None:
 	with c4:
 		st.metric( 'Index', st.session_state.get( 'docqna_index_status', 'Not indexed' ) )
 
+# ----- Files API Utilities -----
+
 def ensure_files_mode_state( ) -> None:
 	"""Ensure files mode state.
     
@@ -4623,23 +4659,46 @@ def run_files_retrieve( files: Files, file_id: str | None ) -> Dict[ str, Any ]:
 
 def run_files_extract( files: Files, file_id: str | None ) -> str | bytes | Dict[ str, Any ] | None:
 	"""Run files extract.
-    
-        Purpose:
-            Runs the files extract workflow from the Streamlit interface by validating current
-            inputs, calling the appropriate wrapper or helper, and storing relevant output state.
-    
-        Args:
-            files (Files): Value supplied to the helper.
-            file_id (str | None): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the run_files_extract helper according to its function annotation and
-            return statements.
-    """
+
+	Purpose:
+		Retrieves downloadable content for a selected OpenAI file when the file purpose supports
+		content retrieval. Input files intended for model or Vector Store use are identified before
+		the content endpoint is called so unsupported requests do not reach the provider.
+
+	Args:
+		files (Files): OpenAI Files API wrapper.
+		file_id (str | None): Selected OpenAI file identifier.
+
+	Returns:
+		str | bytes | Dict[ str, Any ] | None: Retrieved file content when supported, otherwise no
+		value.
+	"""
 	if not isinstance( file_id, str ) or not file_id.strip( ):
 		st.warning( 'Select or enter a file ID before retrieving content.' )
 		return None
-	content = files.extract( id=file_id.strip( ) )
+	
+	selected_id = file_id.strip( )
+	metadata = files.retrieve( id=selected_id )
+	metadata = metadata if isinstance( metadata, dict ) else { }
+	
+	purpose = str( metadata.get( 'purpose', '' ) or '' ).strip( )
+	
+	downloadable_purposes = { 'assistants_output', 'batch_output', 'fine-tune-results', }
+	
+	if purpose not in downloadable_purposes:
+		st.session_state[ 'files_content' ] = ''
+		st.session_state[ 'files_content_bytes' ] = None
+		
+		st.info( f'The selected file has purpose "{purpose or "unknown"}". '
+		         'OpenAI does not expose this input file through the Files content-download '
+		         'operation. '
+		         'Use the file ID in a model request or attach the file to a Vector Store '
+		         'instead.' )
+		
+		return None
+	
+	content = files.extract( id=selected_id )
+	
 	if isinstance( content, bytes ):
 		st.session_state[ 'files_content_bytes' ] = content
 		st.session_state[ 'files_content' ] = ''
@@ -4652,6 +4711,7 @@ def run_files_extract( files: Files, file_id: str | None ) -> str | bytes | Dict
 	else:
 		st.session_state[ 'files_content' ] = ''
 		st.session_state[ 'files_content_bytes' ] = None
+	
 	return content
 
 def run_files_delete( files: Files, file_id: str | None ) -> Dict[ str, Any ]:
@@ -4709,6 +4769,90 @@ def run_files_analysis( files: Files, file_id: str | None, prompt: str | None,
 		st.session_state[ 'files_last_answer' ] = response.strip( )
 		return response.strip( )
 	return response
+
+def resolve_files_current_id( ) -> str:
+	"""Resolve current Files API file identifier.
+
+	Purpose:
+		Resolves the active OpenAI file identifier using the Files mode's established precedence:
+		a selected listed file, a manually entered file identifier, and finally the persisted file
+		identifier created by upload or prior selection.
+
+	Returns:
+		str: Resolved OpenAI file identifier or an empty string when no file is available.
+	"""
+	rows = st.session_state.get( 'files_table', [ ] )
+	options = build_file_selection_options( rows if isinstance( rows, list ) else [ ] )
+	selected_label = st.session_state.get( 'files_selected_label', '' )
+	selected_id = get_selected_file_id( selected_label=selected_label,
+		options=options )
+
+	if isinstance( selected_id, str ) and selected_id.strip( ):
+		return selected_id.strip( )
+
+	manual_id = st.session_state.get( 'files_manual_id', '' )
+	if isinstance( manual_id, str ) and manual_id.strip( ):
+		return manual_id.strip( )
+
+	persisted_id = st.session_state.get( 'files_id', '' )
+	if isinstance( persisted_id, str ) and persisted_id.strip( ):
+		return persisted_id.strip( )
+
+	return ''
+
+# ----- Vector Store API Utilities
+
+def get_configured_vector_store_names( ) -> List[ str ]:
+	"""Get configured vector store names.
+
+	Purpose:
+		Returns the configured OpenAI Vector Store display names in their declared order.
+
+	Returns:
+		List[ str ]: Configured Vector Store display names.
+	"""
+	stores = getattr( cfg, 'GPT_VECTOR_STORES', { } )
+	return list( stores.keys( ) ) if isinstance( stores, dict ) else [ ]
+
+def get_vector_store_ids( names: List[ str ] | None ) -> List[ str ]:
+	"""Get vector store IDs.
+
+	Purpose:
+		Resolves configured Vector Store display names into OpenAI Vector Store identifiers.
+
+	Args:
+		names (List[ str ] | None): Selected configured Vector Store names.
+
+	Returns:
+		List[ str ]: Resolved OpenAI Vector Store identifiers.
+	"""
+	stores = getattr( cfg, 'GPT_VECTOR_STORES', { } )
+	if not isinstance( stores, dict ) or not isinstance( names, list ):
+		return [ ]
+	
+	return [ str( stores[ name ] ).strip( ) for name in names if
+		name in stores and str( stores[ name ] ).strip( ) ]
+
+def get_vector_store_id( name: str | None ) -> str:
+	"""Get vector store ID.
+
+	Purpose:
+		Resolves one configured Vector Store display name into its OpenAI Vector Store identifier.
+
+	Args:
+		name (str | None): Selected configured Vector Store name.
+
+	Returns:
+		str: Resolved OpenAI Vector Store identifier or an empty string.
+	"""
+	stores = getattr( cfg, 'GPT_VECTOR_STORES', { } )
+	if not isinstance( stores, dict ):
+		return ''
+
+	if not isinstance( name, str ) or not name.strip( ):
+		return ''
+
+	return str( stores.get( name.strip( ), '' ) or '' ).strip( )
 
 def ensure_vectorstores_mode_state( ) -> None:
 	"""Ensure vectorstores mode state.
@@ -5807,6 +5951,8 @@ def run_vector_store_answer( vector: VectorStores, store_id: str | None,
 		return answer.strip( )
 	return answer
 
+# ------ Data Management Utilities ------
+
 def initialize_database( ) -> None:
 	"""Initialize the application database.
 
@@ -6868,7 +7014,7 @@ def rename_table( old_name: str, new_name: str ) -> None:
 				conn.execute( idx_sql )
 		conn.commit( )
 
-# ----- PROMPT REPOSITORY -----
+# ----- Prompt Utilities -----
 
 def fetch_prompt_records( db_path: str,
 	categories: Optional[ List[ str ] ] = None ) -> List[ Dict[ str, Any ] ]:
@@ -7519,8 +7665,6 @@ def format_prompt_option( prompt_id: int, prompt_lookup: Dict[ int, Dict[ str, A
 	
 	return f'Prompt {prompt_id}'
 
-# ----- PROMPT CATEGORY NORMALIZATION ------
-
 def normalize_prompt_category( category: str ) -> str:
 	"""Normalize a prompt category.
 
@@ -7703,8 +7847,6 @@ def filter_prompt_categories( available_categories: List[ str ],
 			filtered_categories.append( category_value )
 	
 	return filtered_categories
-
-# ------ SYSTEM PROMPT STATE OPERATIONs ------
 
 def load_prompt_into_state( prompt_id_key: str, instruction_key: str ) -> None:
 	"""Load a selected prompt into session state.
@@ -8108,6 +8250,8 @@ def build_prompt( user_input: str ) -> str:
 	prompt += f'<|user|>\n{user_input}\n</s>\n<|assistant|>\n'
 	return prompt
 
+# ------ Audio Mode Utilities -----
+
 def reset_audio_model_controls( ) -> None:
 	"""Reset audio model controls.
     
@@ -8251,24 +8395,52 @@ def get_audio_language_options( transcriber: Transcription ) -> List[ str ]:
 		return [ '' ] + options
 	return [ '' ]
 
-def get_audio_voice_options( tts: TTS ) -> List[ str ]:
+def get_audio_voice_options( tts: TTS, model: str = None ) -> List[ str ]:
 	"""Get audio voice options.
-    
-        Purpose:
-            Returns the audio voice options value used by the Gipity interface. The helper
-            centralizes option lookup and fallback behavior for callers.
-    
-        Args:
-            tts (TTS): Value supplied to the helper.
-    
-        Returns:
-            Value produced by the get_audio_voice_options helper according to its function
-            annotation and return statements.
-    """
-	options = getattr( tts, 'voice_options', [ ] )
-	if isinstance( options, list ) and len( options ) > 0:
+
+	Purpose:
+		Returns the text-to-speech voices supported by the selected OpenAI speech model. The
+		function prevents voices available only to GPT-4o Mini TTS from being submitted to the
+		legacy TTS models.
+
+	Args:
+		tts (TTS): Text-to-speech wrapper exposing the complete voice option collection.
+		model (str): Selected OpenAI text-to-speech model identifier.
+
+	Returns:
+		List[ str ]: Model-compatible voice options with an empty selector option.
+	"""
+	all_options = getattr( tts, 'voice_options', [ ] )
+
+	if not isinstance( all_options, list ) or len( all_options ) == 0:
+		return [ '' ]
+
+	model_name = model.strip( ) if isinstance( model, str ) else ''
+
+	if model_name in [ 'tts-1', 'tts-1-hd' ]:
+		supported = [
+				'alloy',
+				'ash',
+				'coral',
+				'echo',
+				'fable',
+				'onyx',
+				'nova',
+				'sage',
+				'shimmer',
+		]
+
+		options = [
+				voice for voice in all_options
+				if isinstance( voice, str ) and voice in supported
+		]
+
 		return [ '' ] + options
-	return [ '' ]
+
+	return [ '' ] + [
+			voice for voice in all_options
+			if isinstance( voice, str ) and voice.strip( )
+	]
 
 def get_audio_speed_options( tts: TTS ) -> List[ float ]:
 	"""Get audio speed options.
@@ -8956,13 +9128,17 @@ if mode == 'Text':
 				# ---------- Vector Stores ------------
 				store_c1, store_c2 = st.columns( [ 0.60, 0.40 ], border=True )
 				with store_c1:
-					set_text_vector_store_ids = st.text_input( label='Vector Store IDs',
-						key='text_vector_store_ids',
-						value=st.session_state.get( 'text_vector_store_ids', '' ),
-						help='Required when the file_search tool is selected. Enter one or more vector '
-						     'store IDs separated by commas.',
-						width='stretch', placeholder='vs_...' )
-					text_vector_store_ids = st.session_state.get( 'text_vector_store_ids', '' )
+					vector_store_names = get_configured_vector_store_names( )
+					set_text_vector_store_names = st.multiselect( label='Vector Stores',
+						options=vector_store_names, key='text_vector_store_names',
+						help='Required when the file_search tool is selected. Select one or more '
+						     'configured OpenAI Vector Stores.', width='stretch',
+						placeholder='Select Vector Stores' )
+
+					text_vector_store_ids = get_vector_store_ids(
+						st.session_state.get( 'text_vector_store_names', [ ] ) )
+
+					st.session_state[ 'text_vector_store_ids' ] = text_vector_store_ids
 				
 				# ---------- Allowed Domains ------------
 				with store_c2:
@@ -9050,8 +9226,7 @@ if mode == 'Text':
 					on_click=reset_text_response_controls, icon='🔄' )
 			
 			# ---------- Structured Output ------------
-			with st.expander( label='Structured Output', icon='🧾', expanded=False,
-					width='stretch' ):
+			with st.expander( label='Structured Output', icon='🧾', expanded=False, width='stretch' ):
 				
 				# --------- Name ------------------
 				struct1_c1, struct1_c2, struct1_c3 = st.columns( [ 0.30, 0.50, 0.20  ], border=True,
@@ -9637,6 +9812,7 @@ elif mode == 'Audio':
 	with center:
 		st.subheader( '🎧 Audio API', help=getattr( cfg, 'AUDIO_API',
 			'OpenAI audio transcription, translation, and text-to-speech workflows.' ) )
+		
 		st.divider( )
 		
 		# ------------------------------------------------------------------
@@ -9654,28 +9830,40 @@ elif mode == 'Audio':
 					audio_task = st.selectbox( label='Task', options=get_audio_task_options( ),
 						key='audio_task', help='Select the Audio API workflow to run.', index=None,
 						placeholder='Options' )
+					
 					audio_task = st.session_state.get( 'audio_task', '' )
+				
 				model_options = get_audio_model_options( audio_task, transcriber, translator, tts )
+				
 				if st.session_state.get( 'audio_model' ) not in model_options:
 					st.session_state[ 'audio_model' ] = ''
+				
 				format_options = get_audio_response_format_options( audio_task,
 					st.session_state.get( 'audio_model' ), transcriber, translator, tts )
+				
 				if st.session_state.get( 'audio_response_format' ) not in format_options:
 					st.session_state[ 'audio_response_format' ] = ''
+				
 				include_options = get_audio_include_options( audio_task,
 					st.session_state.get( 'audio_model' ), transcriber )
+				
 				if len( include_options ) == 0:
 					st.session_state[ 'audio_include' ] = [ ]
 				else:
 					st.session_state[ 'audio_include' ] = [ value for value in
 					                                        st.session_state.get( 'audio_include',
 						                                        [ ] ) if value in include_options ]
+				
 				language_options = get_audio_language_options( transcriber )
 				if st.session_state.get( 'audio_language' ) not in language_options:
 					st.session_state[ 'audio_language' ] = ''
-				voice_options = get_audio_voice_options( tts )
+					
+				voice_options = get_audio_voice_options( tts=tts,
+					model=st.session_state.get( 'audio_model' ), )
+				
 				if st.session_state.get( 'audio_voice' ) not in voice_options:
 					st.session_state[ 'audio_voice' ] = ''
+					
 				speed_options = get_audio_speed_options( tts )
 				if st.session_state.get( 'audio_speed' ) not in speed_options:
 					st.session_state[ 'audio_speed' ] = 1.0
@@ -9685,12 +9873,17 @@ elif mode == 'Audio':
 					audio_model = st.selectbox( label='Model', options=model_options,
 						key='audio_model', help='Task-aware OpenAI Audio API model.', index=None,
 						placeholder='Options' )
+					
 					audio_model = st.session_state.get( 'audio_model', '' )
+					
 				format_options = get_audio_response_format_options( audio_task, audio_model,
 					transcriber, translator, tts )
+				
 				if st.session_state.get( 'audio_response_format' ) not in format_options:
 					st.session_state[ 'audio_response_format' ] = ''
+					
 				include_options = get_audio_include_options( audio_task, audio_model, transcriber )
+				
 				if len( include_options ) == 0:
 					st.session_state[ 'audio_include' ] = [ ]
 				else:
@@ -9723,8 +9916,7 @@ elif mode == 'Audio':
 					on_click=reset_audio_task_controls, icon='🔄' )
 			
 			# ----- Inference Options -----
-			with st.expander( label='Inference Options', icon='🎛️', expanded=False,
-					width='stretch' ):
+			with st.expander( label='Inference Options', icon='🎛️', expanded=False, width='stretch' ):
 				inf_c1, inf_c2, inf_c3, inf_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
 					border=True, gap='xxsmall' )
 				
@@ -10728,305 +10920,397 @@ elif mode == 'Embeddings':
 		if isinstance( usage, dict ) and len( usage ) > 0:
 			with st.expander( label='Embedding Usage', icon='📊', expanded=False, width='stretch' ):
 				st.json( usage )
-				
+
 # ==============================================================================
 # FILES MODE
 # ==============================================================================
 elif mode == 'Files':
 	ensure_files_mode_state( )
 	files = Files( )
+	
 	if 'files_manual_id' not in st.session_state:
 		st.session_state[ 'files_manual_id' ] = ''
-		
+	
 	if 'files_selected_label' not in st.session_state:
 		st.session_state[ 'files_selected_label' ] = ''
-		
+	
 	if not isinstance( st.session_state.get( 'files_table' ), list ):
 		st.session_state[ 'files_table' ] = [ ]
-		
+	
 	if not isinstance( st.session_state.get( 'files_metadata' ), dict ):
 		st.session_state[ 'files_metadata' ] = { }
-		
+	
 	if not isinstance( st.session_state.get( 'files_delete_result' ), dict ):
 		st.session_state[ 'files_delete_result' ] = { }
-		
+	
 	if not isinstance( st.session_state.get( 'files_last_answer' ), str ):
 		st.session_state[ 'files_last_answer' ] = ''
-		
+	
 	if not isinstance( st.session_state.get( 'files_messages' ), list ):
 		st.session_state.files_messages = [ ]
-		
+	
 	if st.session_state.get( 'clear_instructions' ):
 		st.session_state[ 'files_system_instructions' ] = ''
 		st.session_state[ 'clear_instructions' ] = False
 	
+	def _reset_files_mode_controls( ) -> None:
+		"""Reset Files mode controls.
+
+		Purpose:
+			Restores the visible Files mode controls to their established defaults without clearing
+			the current Files API table, retrieved outputs, analysis history, or persisted current
+			file identifier.
+
+		Returns:
+			None: This function updates Files mode widget state.
+		"""
+		st.session_state[ 'files_purpose' ] = 'user_data'
+		st.session_state[ 'files_filter_purpose' ] = ''
+		st.session_state[ 'files_selected_label' ] = ''
+		st.session_state[ 'files_manual_id' ] = ''
+		st.session_state[ 'files_model' ] = ''
+	
+	def _clear_files_current_file( ) -> None:
+		"""Clear current Files API file.
+
+		Purpose:
+			Clears all listed, manual, and persisted file-selection values without clearing file
+			list results, retrieved outputs, messages, or remote OpenAI files.
+
+		Returns:
+			None: This function updates current-file selection state.
+		"""
+		st.session_state[ 'files_selected_label' ] = ''
+		st.session_state[ 'files_manual_id' ] = ''
+		st.session_state[ 'files_id' ] = ''
+	
 	# ------------------------------------------------------------------
-	# Main Chat UI
+	# Main Files Mode UI
 	# ------------------------------------------------------------------
 	left, center, right = st.columns( [ 0.05, 0.9, 0.05 ] )
+	
 	with center:
 		st.subheader( '📁 Files API', help=getattr( cfg, 'FILES_API',
-			'Upload, list, retrieve, inspect, and delete OpenAI Files API files.' ) )
+			'Upload, list, retrieve, inspect, analyze, and delete OpenAI Files API files.' ) )
+		
 		st.divider( )
 		
 		# ------------------------------------------------------------------
-		# Expander - Mind Controls
+		# Mind Controls
 		# ------------------------------------------------------------------
 		with st.expander( label='Mind Controls', icon='🧠', expanded=False, width='stretch' ):
+			# --------------------------------------------------------------
+			# Row 1 — Upload, Browse, and List
+			# --------------------------------------------------------------
+			management_c1, management_c2, management_c3 = st.columns( [ 0.38, 0.38, 0.24 ],
+				border=True, gap='xxsmall' )
 			
-			# ----- File Management -----
-			with st.expander( label='File Management', icon='📂', expanded=False, width='stretch' ):
-				mgmt_c1, mgmt_c2, mgmt_c3, mgmt_c4, mgmt_c5 = st.columns(
-					[ 0.20, 0.20, 0.250, 0.20, 0.20 ], border=True, gap='xxsmall' )
+			with management_c1:
+				upload_purposes = get_files_upload_purpose_options( files )
 				
-				# ------ Upload ------
-				with mgmt_c1:
-					upload_purposes = get_files_upload_purpose_options( files )
-					if st.session_state.get( 'files_purpose' ) not in upload_purposes:
-						st.session_state[ 'files_purpose' ] = 'user_data'
-					
-					files_purpose = st.selectbox( label='Upload Purpose', options=upload_purposes,
-						key='files_purpose', help='Required OpenAI Files API upload purpose.',
-						index=upload_purposes.index( st.session_state.get( 'files_purpose',
-							'user_data' ) ) if st.session_state.get(
-							'files_purpose' ) in upload_purposes else None, placeholder='Options' )
+				if st.session_state.get( 'files_purpose' ) not in upload_purposes:
+					st.session_state[ 'files_purpose' ] = 'user_data'
 				
-				# ------ Purpose ------
-				with mgmt_c2:
-					filter_purposes = get_files_filter_purpose_options( files )
-					if st.session_state.get( 'files_filter_purpose' ) not in filter_purposes:
-						st.session_state[ 'files_filter_purpose' ] = ''
-					
-					files_filter_purpose = st.selectbox( label='List Purpose Filter',
-						options=filter_purposes, key='files_filter_purpose',
-						help='Optional purpose filter used when listing files.',
-						index=filter_purposes.index( st.session_state.get( 'files_filter_purpose',
-							'' ) ) if st.session_state.get(
-							'files_filter_purpose' ) in filter_purposes else None,
-						placeholder='Options' )
-				
-				# ------ Model ------
-				with mgmt_c3:
-					model_options = get_files_model_options( files )
-					if st.session_state.get( 'files_model' ) not in model_options:
-						st.session_state[ 'files_model' ] = ''
-					
-					files_model = st.selectbox( label='Analysis Model', options=model_options,
-						key='files_model', help='Optional model used for selected-file analysis.',
-						index=None, placeholder='Options' )
-				
-				# ------ File Type ------
-				with mgmt_c4:
-					files_type = st.selectbox( label='File Type',
-						options=[ '', 'metadata', 'content', 'analysis' ], key='files_type',
-						help='Optional local UI classification for the selected file workflow.',
-						index=None, placeholder='Options' )
-				
-				# ------ Manual ID ------
-				with mgmt_c5:
-					st.text_input( label='Manual File ID', key='files_manual_id',
-						value=st.session_state.get( 'files_manual_id', '' ),
-						help='Optional direct OpenAI file ID. Use this if the file is not in the current table.',
-						width='stretch', placeholder='file-...' )
-				
-				# ------ Reset Controls ------
-				st.button( label='Reset Controls', key='reset_files_controls', width='stretch',
-					on_click=reset_files_controls, icon='🔄' )
+				st.selectbox( label='Upload Purpose', options=upload_purposes, key='files_purpose',
+					help='OpenAI Files API purpose assigned when uploading a file.',
+					index=upload_purposes.index( st.session_state.get( 'files_purpose',
+						'user_data' ) ) if st.session_state.get(
+						'files_purpose' ) in upload_purposes else None, placeholder='Options' )
 			
-			# ----- Current File -----
-			with st.expander( label='Current File', icon='🧾', expanded=False, width='stretch' ):
-				cur_c1, cur_c2 = st.columns( [ 0.5, 0.5 ], border=True )
-				with cur_c1:
-					file_rows = st.session_state.get( 'files_table', [ ] )
-					selection_options = build_file_selection_options( file_rows )
-					selection_labels = [ '' ] + list( selection_options.keys( ) )
-					
-					if st.session_state.get( 'files_selected_label' ) not in selection_labels:
-						st.session_state[ 'files_selected_label' ] = ''
-					
-					selected_label = st.selectbox( label='Selected File', options=selection_labels,
-						key='files_selected_label', help='Select a file from the current list.',
-						index=selection_labels.index( st.session_state.get( 'files_selected_label',
-							'' ) ) if st.session_state.get(
-							'files_selected_label' ) in selection_labels else None,
-						placeholder='Options' )
+			with management_c2:
+				filter_purposes = get_files_filter_purpose_options( files )
 				
-				with cur_c2:
-					selected_from_table = get_selected_file_id( selected_label=selected_label,
-						options=selection_options )
-					
-					manual_id = st.session_state.get( 'files_manual_id', '' )
-					selected_file_id = selected_from_table or (
-						manual_id.strip( ) if isinstance( manual_id,
-							str ) and manual_id.strip( ) else st.session_state.get( 'files_id', '' ))
-					if selected_file_id:
-						st.caption( f'Selected File ID: `{selected_file_id}`' )
-					
-					st.text_input( label='Selected File ID', value=selected_file_id or '',
-						disabled=True, help='Resolved file ID', key='files_selected_id_display',
-						width='stretch' )
+				if st.session_state.get( 'files_filter_purpose' ) not in filter_purposes:
+					st.session_state[ 'files_filter_purpose' ] = ''
+				
+				st.selectbox( label='List Purpose Filter', options=filter_purposes,
+					key='files_filter_purpose',
+					help='Optional OpenAI file-purpose filter used when listing files.',
+					index=filter_purposes.index( st.session_state.get( 'files_filter_purpose',
+						'' ) ) if st.session_state.get(
+						'files_filter_purpose' ) in filter_purposes else None,
+					placeholder='Options' )
 			
-			# ----- File Actions -----
-			with st.expander( label='File Actions', icon='⚙️', expanded=False, width='stretch' ):
-				action_c1, action_c2, action_c3, action_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
-					border=True, gap='xxsmall' )
+			with management_c3:
+				st.markdown( '<div style="height: 28px;"></div>', unsafe_allow_html=True )
 				
-				# ------ List ------
-				with action_c1:
-					if st.button( 'List Files', key='list_openai_files', width='stretch' ):
-						with st.spinner( 'Listing files…' ):
-							try:
-								filter_value = st.session_state.get( 'files_filter_purpose', '' )
-								rows = run_files_list( files=files,
-									purpose=filter_value if filter_value else None )
-								if len( rows ) > 0:
-									st.success( f'Listed {len( rows )} file(s).' )
-								else:
-									st.info( 'No files were returned.' )
-							except Exception as exc:
-								exception = Error( exc )
-								exception.module = 'app'
-								exception.cause = 'module'
-								exception.method = 'module'
-								Logger( ).write( exception )
-								st.error( f'List files failed: {exc}' )
+				if st.button( label='List Files', key='list_openai_files', width='stretch',
+						icon='📋' ):
+					with st.spinner( 'Listing files…' ):
+						try:
+							filter_value = st.session_state.get( 'files_filter_purpose', '' )
+							
+							rows = run_files_list( files=files,
+								purpose=filter_value if filter_value else None )
+							
+							if len( rows ) > 0:
+								st.success( f'Listed {len( rows )} file(s).' )
+							else:
+								st.info( 'No files were returned.' )
+						
+						except Exception as exc:
+							exception = Error( exc )
+							exception.module = 'app'
+							exception.cause = 'Files mode'
+							exception.method = ("elif mode == 'Files': List Files")
+							Logger( ).write( exception )
+							st.error( f'List files failed: {exc}' )
+			
+			# --------------------------------------------------------------
+			# Row 2 — Current File
+			# --------------------------------------------------------------
+			current_c1, current_c2, current_c3 = st.columns( [ 0.46, 0.34, 0.20 ], border=True,
+				gap='xxsmall' )
+			
+			file_rows = st.session_state.get( 'files_table', [ ] )
+			selection_options = build_file_selection_options( file_rows )
+			selection_labels = [ '' ] + list( selection_options.keys( ) )
+			
+			if st.session_state.get( 'files_selected_label' ) not in selection_labels:
+				st.session_state[ 'files_selected_label' ] = ''
+			
+			with current_c1:
+				st.selectbox( label='Selected File', options=selection_labels,
+					key='files_selected_label',
+					help='Select a file returned by the most recent Files API list operation.',
+					index=selection_labels.index( st.session_state.get( 'files_selected_label',
+						'' ) ) if st.session_state.get(
+						'files_selected_label' ) in selection_labels else None,
+					placeholder='Options' )
+			
+			with current_c2:
+				st.text_input( label='Manual File ID', key='files_manual_id',
+					help='Optional OpenAI file ID used when the file is not present in the current '
+					     'list.',
+					width='stretch', placeholder='file-...' )
+			
+			with current_c3:
+				st.markdown( '<div style="height: 28px;"></div>', unsafe_allow_html=True )
 				
-				# ------ Metadata ------
-				with action_c2:
-					if st.button( 'Retrieve Metadata', key='retrieve_openai_file',
-							width='stretch' ):
-						with st.spinner( 'Retrieving file metadata…' ):
-							try:
-								metadata = run_files_retrieve( files=files,
-									file_id=selected_file_id )
-								if metadata:
-									st.success( 'File metadata retrieved.' )
-							except Exception as exc:
-								exception = Error( exc )
-								exception.module = 'app'
-								exception.cause = 'module'
-								exception.method = 'module'
-								Logger( ).write( exception )
-								st.error( f'Retrieve metadata failed: {exc}' )
-				
-				# ------ Content ------
-				with action_c3:
-					if st.button( 'Retrieve Content', key='retrieve_openai_file_content',
-							width='stretch' ):
-						with st.spinner( 'Retrieving file content…' ):
-							try:
-								content = run_files_extract( files=files, file_id=selected_file_id )
-								if content is not None:
-									st.success( 'File content retrieved.' )
-							except Exception as exc:
-								exception = Error( exc )
-								exception.module = 'app'
-								exception.cause = 'module'
-								exception.method = 'module'
-								Logger( ).write( exception )
-								st.error( f'Retrieve content failed: {exc}' )
-				
-				# ------ Delete ------
-				with action_c4:
-					if st.button( 'Delete File', key='delete_openai_file', width='stretch' ):
-						with st.spinner( 'Deleting file…' ):
-							try:
-								result = run_files_delete( files=files, file_id=selected_file_id )
-								if result.get( 'deleted' ) is True:
-									st.success( 'File deleted.' )
-									try:
-										rows = run_files_list( files=files,
-											purpose=st.session_state.get(
-												'files_filter_purpose' ) or None )
-										st.session_state[ 'files_table' ] = rows
-									except Exception as e:
-										exception = Error( e )
-										exception.module = 'app'
-										exception.cause = 'module'
-										exception.method = 'module'
-										Logger( ).write( exception )
-										pass
-							except Exception as exc:
-								exception = Error( exc )
-								exception.module = 'app'
-								exception.cause = 'module'
-								exception.method = 'module'
-								Logger( ).write( exception )
-								st.error( f'Delete file failed: {exc}' )
-				
-				# ----- Clear -----
+				st.button( label='Clear Current File', key='clear_files_current_file',
+					width='stretch', on_click=_clear_files_current_file, icon='🧹' )
+			
+			selected_file_id = resolve_files_current_id( )
+			
+			if selected_file_id:
+				st.caption( f'Current File ID: `{selected_file_id}`' )
+			else:
+				st.caption( 'Current File ID: none selected' )
+			
+			# --------------------------------------------------------------
+			# Row 3 — File Actions
+			# --------------------------------------------------------------
+			action_c1, action_c2, action_c3, action_c4 = st.columns( [ 0.25, 0.25, 0.25, 0.25 ],
+				border=True, gap='xxsmall' )
+			
+			with action_c1:
+				if st.button( label='Retrieve Metadata', key='retrieve_openai_file',
+						width='stretch' ):
+					with st.spinner( 'Retrieving file metadata…' ):
+						try:
+							metadata = run_files_retrieve( files=files,
+								file_id=resolve_files_current_id( ) )
+							
+							if metadata:
+								st.success( 'File metadata retrieved.' )
+						
+						except Exception as exc:
+							exception = Error( exc )
+							exception.module = 'app'
+							exception.cause = 'Files mode'
+							exception.method = ("elif mode == 'Files': Retrieve Metadata")
+							Logger( ).write( exception )
+							st.error( f'Retrieve metadata failed: {exc}' )
+			
+			with action_c2:
+				if st.button( label='Retrieve Content', key='retrieve_openai_file_content',
+						width='stretch' ):
+					with st.spinner( 'Retrieving file content…' ):
+						try:
+							content = run_files_extract( files=files,
+								file_id=resolve_files_current_id( ) )
+							
+							if content is not None:
+								st.success( 'File content retrieved.' )
+						
+						except Exception as exc:
+							exception = Error( exc )
+							exception.module = 'app'
+							exception.cause = 'Files mode'
+							exception.method = ("elif mode == 'Files': Retrieve Content")
+							Logger( ).write( exception )
+							st.error( f'Retrieve content failed: {exc}' )
+			
+			with action_c3:
+				if st.button( label='Delete File', key='delete_openai_file', width='stretch' ):
+					with st.spinner( 'Deleting file…' ):
+						try:
+							result = run_files_delete( files=files,
+								file_id=resolve_files_current_id( ) )
+							
+							if result.get( 'deleted' ) is True:
+								st.session_state[ 'files_selected_label' ] = ''
+								st.session_state[ 'files_manual_id' ] = ''
+								st.success( 'File deleted.' )
+								
+								try:
+									rows = run_files_list( files=files,
+										purpose=st.session_state.get(
+											'files_filter_purpose' ) or None )
+									
+									st.session_state[ 'files_table' ] = rows
+								
+								except Exception as e:
+									exception = Error( e )
+									exception.module = 'app'
+									exception.cause = 'Files mode'
+									exception.method = (
+										"elif mode == 'Files': Refresh After Delete")
+									Logger( ).write( exception )
+						
+						except Exception as exc:
+							exception = Error( exc )
+							exception.module = 'app'
+							exception.cause = 'Files mode'
+							exception.method = ("elif mode == 'Files': Delete File")
+							Logger( ).write( exception )
+							st.error( f'Delete file failed: {exc}' )
+			
+			with action_c4:
 				st.button( label='Clear Outputs', key='clear_files_outputs', width='stretch',
-					on_click=clear_files_outputs, icon='🔄' )
-
+					on_click=clear_files_outputs, icon='🧹' )
+			
+			# --------------------------------------------------------------
+			# Reset Controls
+			# --------------------------------------------------------------
+			st.button( label='Reset Controls', key='reset_files_controls_flat', width='stretch',
+				on_click=_reset_files_mode_controls, icon='🔄' )
+		
 		# ------------------------------------------------------------------
-		# Expander - System Instructions
+		# System Instructions
 		# ------------------------------------------------------------------
 		render_system_prompt_expander( state_prefix='files',
-			instruction_key='files_system_instructions', allowed_categories=FILES_PROMPT_CATEGORIES,
+			instruction_key='files_system_instructions',
+			allowed_categories=FILES_PROMPT_CATEGORIES,
 			label='System Instructions', height=135 )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
 		
-		# ------ Upload ------
-		upload_c1, upload_c2, upload_c3 = st.columns( [ 0.3, 0.4, 0.3 ], border=True, gap='small' )
+		# ------------------------------------------------------------------
+		# Upload, Files Table, and Selected File Details
+		# ------------------------------------------------------------------
+		upload_c1, upload_c2, upload_c3 = st.columns( [ 0.30, 0.40, 0.30 ], border=True,
+			gap='small' )
+		
 		with upload_c1:
 			st.markdown( '##### Upload File' )
+			
 			uploaded_file = st.file_uploader( label='Select File', accept_multiple_files=False,
 				key='files_upload_file', help='Select a local file to upload.' )
+			
 			if uploaded_file is not None:
 				st.caption( f"Selected: {getattr( uploaded_file, 'name', 'uploaded file' )}" )
+				
 				st.caption( f"Size: {getattr( uploaded_file, 'size', 0 )} bytes" )
 			
-			if st.button( 'Upload File', key='upload_openai_file', width='stretch', icon='📤' ):
+			if st.button( label='Upload File', key='upload_openai_file', width='stretch',
+					icon='📤' ):
 				with st.spinner( 'Uploading file…' ):
 					try:
 						metadata = run_files_upload( files=files, uploaded_file=uploaded_file,
 							purpose=st.session_state.get( 'files_purpose', 'user_data' ) )
+						
 						if metadata.get( 'id' ):
 							st.success( f"Uploaded file: {metadata.get( 'id' )}" )
+							
 							try:
 								rows = run_files_list( files=files,
-									purpose=st.session_state.get( 'files_filter_purpose' ) or None )
+									purpose=st.session_state.get( 'files_filter_purpose' ) or
+									        None )
+								
 								st.session_state[ 'files_table' ] = rows
+							
 							except Exception as e:
 								exception = Error( e )
 								exception.module = 'app'
+								exception.cause = 'Files mode'
+								exception.method = ("elif mode == 'Files': Refresh After Upload")
 								Logger( ).write( exception )
-								pass
+					
 					except Exception as exc:
 						exception = Error( exc )
 						exception.module = 'app'
+						exception.cause = 'Files mode'
+						exception.method = ("elif mode == 'Files': Upload File")
 						Logger( ).write( exception )
 						st.error( f'Upload failed: {exc}' )
 		
-		# ------  Table ------
 		with upload_c2:
 			st.markdown( '##### Files' )
+			
 			rows = st.session_state.get( 'files_table', [ ] )
 			render_files_table( rows )
 		
-		# ------ Details ------
 		with upload_c3:
 			st.markdown( '##### Selected File Details' )
+			
 			metadata = st.session_state.get( 'files_metadata', { } )
+			
 			if isinstance( metadata, dict ) and len( metadata ) > 0:
 				render_file_metadata( metadata )
 			else:
 				st.info( 'Retrieve metadata to inspect a selected file.' )
+			
 			delete_result = st.session_state.get( 'files_delete_result', { } )
+			
 			if isinstance( delete_result, dict ) and len( delete_result ) > 0:
 				render_file_delete_result( delete_result )
+		
+		# ------------------------------------------------------------------
+		# Retrieved File Content
+		# ------------------------------------------------------------------
 		content_value = st.session_state.get( 'files_content', '' )
 		content_bytes = st.session_state.get( 'files_content_bytes', None )
+		
 		if isinstance( content_bytes, bytes ) and len( content_bytes ) > 0:
 			with st.expander( label='File Content', icon='📄', expanded=False, width='stretch' ):
 				render_file_content( content_bytes )
-				
+		
 		elif isinstance( content_value, str ) and content_value.strip( ):
 			with st.expander( label='File Content', icon='📄', expanded=False, width='stretch' ):
 				render_file_content( content_value )
 		
 		st.markdown( cfg.BLUE_DIVIDER, unsafe_allow_html=True )
+		
+		# ------------------------------------------------------------------
+		# File Analysis
+		# ------------------------------------------------------------------
+		st.markdown( '##### Analyze Current File' )
+		
+		model_options = get_files_model_options( files )
+		
+		if st.session_state.get( 'files_model' ) not in model_options:
+			st.session_state[ 'files_model' ] = ''
+		
+		analysis_model_c1, analysis_model_c2 = st.columns( [ 0.80, 0.20 ], border=True,
+			gap='xxsmall' )
+		
+		with analysis_model_c1:
+			st.selectbox( label='Analysis Model', options=model_options, key='files_model',
+				help='Model used to answer questions about the current OpenAI file.',
+				index=model_options.index(
+					st.session_state.get( 'files_model', '' ) ) if st.session_state.get(
+					'files_model' ) in model_options else None, placeholder='Options' )
+		
+		with analysis_model_c2:
+			current_analysis_file_id = resolve_files_current_id( )
+			
+			if current_analysis_file_id:
+				st.caption( 'Current analysis file' )
+				st.code( current_analysis_file_id, language=None )
+			else:
+				st.caption( 'Current analysis file' )
+				st.info( 'No file selected.' )
 		
 		# ------------------------------------------------------------------
 		# Messages
@@ -11035,87 +11319,100 @@ elif mode == 'Files':
 			for msg in st.session_state.files_messages:
 				if not isinstance( msg, dict ):
 					continue
-				self_avatar = cfg.GIPITY if msg.get( 'role' ) == 'assistant' else ''
+				
+				self_avatar = (cfg.GIPITY if msg.get( 'role' ) == 'assistant' else '')
+				
 				with st.chat_message( msg.get( 'role', 'assistant' ), avatar=self_avatar ):
 					st.markdown( msg.get( 'content', '' ) )
-				
+		
 		prompt = st.chat_input( 'Ask a question about the selected file …' )
+		
 		if prompt is not None and str( prompt ).strip( ):
 			prompt = str( prompt ).strip( )
-			st.session_state.files_messages.append( { 'role': 'user', 'content': prompt } )
+			
+			st.session_state.files_messages.append( { 'role': 'user', 'content': prompt, } )
 			
 			with st.chat_message( 'assistant', avatar=cfg.GIPITY ):
 				with st.spinner( 'Analyzing selected file…' ):
 					try:
-						current_rows = st.session_state.get( 'files_table', [ ] )
-						current_options = build_file_selection_options( current_rows )
-						current_label = st.session_state.get( 'files_selected_label', '' )
-						current_selected = get_selected_file_id( selected_label=current_label,
-							options=current_options )
-						current_manual = st.session_state.get( 'files_manual_id', '' )
-						current_file_id = current_selected or (
-							current_manual.strip( ) if isinstance( current_manual,
-								str ) and current_manual.strip( ) else st.session_state.get(
-								'files_id', '' ))
+						current_file_id = resolve_files_current_id( )
+						
 						instruction_text = st.session_state.get( 'files_system_instructions', '' )
+						
 						if isinstance( instruction_text, str ) and instruction_text.strip( ):
-							analysis_prompt = f'{instruction_text.strip( )}\n\nUser Question: {prompt}'
+							analysis_prompt = (f'{instruction_text.strip( )}\n\n'
+							                   f'User Question: {prompt}')
 						else:
 							analysis_prompt = prompt
+						
 						answer = run_files_analysis( files=files, file_id=current_file_id,
 							prompt=analysis_prompt,
 							model=st.session_state.get( 'files_model' ) or 'gpt-4o-mini' )
+						
 						if isinstance( answer, str ) and answer.strip( ):
 							st.markdown( answer )
+							
 							st.session_state.files_messages.append(
-								{ 'role': 'assistant', 'content': answer.strip( ) } )
-							st.session_state[ 'files_last_answer' ] = answer.strip( )
+								{ 'role': 'assistant', 'content': answer.strip( ), } )
+							
+							st.session_state[ 'files_last_answer' ] = (answer.strip( ))
+							
 							try:
 								update_token_counters( getattr( files, 'response', None ) )
+							
 							except Exception as e:
 								exception = Error( e )
 								exception.module = 'app'
-								exception.cause = 'module'
-								exception.method = 'module'
+								exception.cause = 'Files mode'
+								exception.method = ("elif mode == 'Files': Update Usage")
 								Logger( ).write( exception )
-								pass
+						
 						else:
-							message = 'No file analysis response was returned.'
+							message = ('No file analysis response was returned.')
+							
 							st.warning( message )
+							
 							st.session_state.files_messages.append(
-								{ 'role': 'assistant', 'content': message } )
+								{ 'role': 'assistant', 'content': message, } )
+					
 					except Exception as exc:
 						exception = Error( exc )
 						exception.module = 'app'
-						exception.cause = 'module'
-						exception.method = 'module'
+						exception.cause = 'Files mode'
+						exception.method = ("elif mode == 'Files': Analyze File")
 						Logger( ).write( exception )
 						st.error( f'File analysis failed: {exc}' )
+		
+		# ------------------------------------------------------------------
+		# Last File Analysis
+		# ------------------------------------------------------------------
 		last_answer = st.session_state.get( 'files_last_answer', '' )
+		
 		if isinstance( last_answer, str ) and last_answer.strip( ):
 			with st.expander( label='Last File Analysis', icon='🧠', expanded=False,
 					width='stretch' ):
 				st.markdown( last_answer )
 		
-		# ------ Clear Messages ------
+		# ------------------------------------------------------------------
+		# Bottom Clear and Reset Actions
+		# ------------------------------------------------------------------
 		reset_c1, reset_c2, reset_c3 = st.columns( [ 0.34, 0.33, 0.33 ] )
+		
 		with reset_c1:
-			if st.button( 'Clear Messages', key='clear_files_messages', width='stretch',
+			if st.button( label='Clear Messages', key='clear_files_messages', width='stretch',
 					on_click=clear_files_messages, icon='🧹' ):
 				st.rerun( )
 		
-		# ------ Clear Outputs ------
 		with reset_c2:
-			if st.button( 'Clear Outputs', key='clear_files_mode_outputs', width='stretch',
+			if st.button( label='Clear Outputs', key='clear_files_mode_outputs', width='stretch',
 					on_click=clear_files_outputs, icon='↪️' ):
 				st.rerun( )
 		
-		# ------ Reset All ------
 		with reset_c3:
-			if st.button( 'Reset All', key='reset_files_all', width='stretch',
+			if st.button( label='Reset All', key='reset_files_all', width='stretch',
 					on_click=reset_files_all, icon='🔄' ):
 				st.rerun( )
-
+				
 # ==============================================================================
 # VECTOR STORE MODE
 # ==============================================================================
