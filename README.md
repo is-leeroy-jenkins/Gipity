@@ -366,22 +366,7 @@ Version pins should follow the repository `requirements.txt` when present.
 | Regex                 | `regex`                        | Enhanced regular expression support.                                         | Text utilities.                                                |
 | Python Dotenv         | `python-dotenv`                | Optional `.env`-based configuration.                                         | Local development.                                             |
 
-## 🔧 Configuration
 
-| Configuration Area       | Description                                                                       |
-| ------------------------ | --------------------------------------------------------------------------------- |
-| `cfg.FAVICON`            | Streamlit page icon.                                                              |
-| `cfg.APP_SUBTITLE`       | Subtitle/caption rendered at startup.                                             |
-| `cfg.LOGO_PATH`          | Sidebar logo path.                                                                |
-| `cfg.GPT_MODES`          | Mode list used by the sidebar AI Mode selector.                                   |
-| `cfg.DB_PATH`            | SQLite database path.                                                             |
-| `cfg.OPENAI_API_KEY`     | Default OpenAI key loaded into session state and environment.                     |
-| `cfg.GOOGLE_API_KEY`     | Default Google API key loaded into session state and environment.                 |
-| `cfg.GOOGLE_CSE_ID`      | Default Google Custom Search Engine ID loaded into session state and environment. |
-| `cfg.GOOGLEMAPS_API_KEY` | Default Google Maps API key loaded into session state and environment.            |
-| `cfg.GEOCODING_API_KEY`  | Default geocoding key loaded into session state and environment.                  |
-| `cfg.SAMPLE_RATES`       | Audio sample-rate defaults.                                                       |
-| `cfg.XML_BLOCK_PATTERN`  | XML-like prompt delimiter conversion pattern.                                     |
 
 ## 🔒 Privacy and Deployment Notes
 
