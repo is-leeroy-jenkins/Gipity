@@ -2,7 +2,7 @@
 
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity_project.gif)
 
-<p align="center">
+<p align="left">
   <a href="#-key-features">Features</a> ·
   <a href="#-application-modes">Modes</a> ·
   <a href="#-architecture">Architecture</a> ·
@@ -10,7 +10,7 @@
   <a href="#-installation--setup">Install</a> ·
   <a href="#-running-gipity">Running</a> ·
   <a href="#-api-key-setup">Keys</a> ·
-  <a href="#-mode-details">LLM</a> ·
+  <a href="#-mode-details">Local LLM</a> ·
   <a href="#-document-and-retrieval-workflows">Workflows</a> ·
   <a href="#-data-management">Data</a> ·
   <a href="#-requirements">Requirements</a> ·
