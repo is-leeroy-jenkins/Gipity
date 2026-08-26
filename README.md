@@ -48,7 +48,7 @@ local data operations.
 </tr>
 </table>
 
-Rather than being a chat-only interface, Gipity combines:
+Gipity combines:
 
 * Cloud-hosted OpenAI workflows for text, images, audio, embeddings, files, and vector stores.
 * Local document ingestion and retrieval for Document Q&A.
@@ -58,6 +58,8 @@ Rather than being a chat-only interface, Gipity combines:
 * Data export and local data-management utilities for operational workflows.
 
 ## Custom LLM
+
+Gipity uses a local LLM based on ChatGPT 5.x
 
 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
 
