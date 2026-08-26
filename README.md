@@ -10,7 +10,7 @@
   <a href="#-installation--setup">Install</a> ·
   <a href="#-running-gipity">Running</a> ·
   <a href="#-api-key-setup">Keys</a> ·
-  <a href="#-mode-details">LLM</a> ·
+  <a href="#custom-llm">LLM</a> ·
   <a href="#-document-and-retrieval-workflows">Workflows</a> ·
   <a href="#-data-management">Data</a> ·
   <a href="#-requirements">Requirements</a> ·
