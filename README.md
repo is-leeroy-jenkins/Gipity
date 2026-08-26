@@ -27,8 +27,7 @@ and vision, audio transcription and speech generation, embeddings, document-grou
 answering, OpenAI Files, OpenAI Vector Stores, prompt templates, export workflows, and structured
 local data operations.
 
-
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Site-222222?logo=githubpages&logoColor=white)](https://is-leeroy-jenkins.github.io/Gipity/)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-0078FC?style=for-the-badge&logo=github)](https://is-leeroy-jenkins.github.io/Gipity/)
 
 
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
