@@ -66,6 +66,15 @@ Gipity uses a local LLM available on Hugging Face based on OpenAI's ChatGPT 5.x
 
 -  Fine-tuned
 -  Post-trained
+  
+### 📥 Local Model Setup
+
+The README and configuration reference a local GGUF fallback model path. Place the GGUF model file
+under the project `models` directory when local fallback support is enabled.
+
+```text
+models/gipity-3-270m-it-Q4_K_M.gguf
+```
 
 ## ✨ Key Features
 
@@ -331,14 +340,6 @@ through the Data Management mode.
 | Embeddings table | Stores chunk/vector records for local workflows.                                 |
 | sqlite-vec       | Enables vector search where the extension is available.                          |
 
-## 📥 Local Model Setup
-
-The README and configuration reference a local GGUF fallback model path. Place the GGUF model file
-under the project `models` directory when local fallback support is enabled.
-
-```text
-models/gipity-3-270m-it-Q4_K_M.gguf
-```
 
 ## 📦 Requirements
 
