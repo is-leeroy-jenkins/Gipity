@@ -28,8 +28,8 @@ answering, OpenAI Files, OpenAI Vector Stores, prompt templates, export workflow
 local data operations.
 
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Site-222222?logo=githubpages&logoColor=white)](https://is-leeroy-jenkins.github.io/Gipity/)
 
-[![MkDocs](https://img.shields.io/badge/MkDocs-Material-526CFE?logo=materialformkdocs&logoColor=white)](https://is-leeroy-jenkins.github.io/Gipity/)
 
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
 
