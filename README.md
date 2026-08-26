@@ -27,9 +27,30 @@ and vision, audio transcription and speech generation, embeddings, document-grou
 answering, OpenAI Files, OpenAI Vector Stores, prompt templates, export workflows, and structured
 local data operations.
 
-## 🎥 Demo
+## 🎥 Cloud Demos
 
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
+
+
+### 🧊 Azure
+
+- Container Demo
+
+[![Containerized](https://img.shields.io/badge/Docker-App-2496ED?logo=docker&logoColor=white)](https://gipity.lemonglacier-5339eed8.eastus.azurecontainerapps.io)
+
+### 🕸️ Streamlit (Web)
+
+[![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
+
+- Web Demo
+
+### 🧱 Databricks
+
+[![Gipity](https://img.shields.io/badge/Databricks-Gipity-FF3621?logo=databricks&logoColor=white)](https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152440239?o=7474645703081351)
+
+- A data engineering, analytics, and artificial intelligence collaborative workspace
+- Codebase
+
 
 Rather than being a chat-only interface, Gipity combines:
 
@@ -39,17 +60,6 @@ Rather than being a chat-only interface, Gipity combines:
 * Sentence-transformers support for semantic retrieval workflows.
 * Prompt engineering tools backed by local prompt-template storage.
 * Data export and local data-management utilities for operational workflows.
-
-## 🕸️ Streamlit (Web)
-
-[![Streamlit App](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit\&logoColor=white)](https://gipity-py.streamlit.app/)
-
-- A Python framework to build dynamic, interactive web applications.
-
-## 🧱 Databricks
-[![Gipity](https://img.shields.io/badge/Databricks-Gipity-FF3621?logo=databricks&logoColor=white)](https://dbc-a0c21f80-7bb3.cloud.databricks.com/browse/folders/3169291152440239?o=7474645703081351)
-- A data engineering, analytics, and artificial intelligence collaborative workspace
-- Codebase
 
 ## Custom LLM
 
