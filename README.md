@@ -398,8 +398,8 @@ Vector Stores, audio processing, and managed embeddings.
 Gipity is published under the MIT license for open-source use:
 
 
-![License: Public Domain](https://img.shields.io/badge/license-public%20domain-brightgreen.svg)
-[MIT License](https://github.com/is-leeroy-jenkins/Gipity/blob/main/LICENSE.txt)
+![License: Public Domain](https://img.shields.io/badge/license-public%20domain-brightgreen.svg)(https://github.com/is-leeroy-jenkins/Gipity/blob/main/LICENSE.txt)
+
 
 ## 🙌 Acknowledgements
 
