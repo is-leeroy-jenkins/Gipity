@@ -59,7 +59,7 @@ Gipity combines:
 
 ## Custom LLM
 
-Gipity uses a local LLM based on ChatGPT 5.x
+Gipity uses a local LLM available on Hugging Face based on OpenAI's ChatGPT 5.x
 
 [![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity)
 
