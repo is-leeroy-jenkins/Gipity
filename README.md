@@ -29,7 +29,7 @@ local data operations.
 
 
 
-[![Documentation](https://img.shields.io/badge/Docs-GitHub%20Pages-222222?logo=githubpages&logoColor=white)](https://is-leeroy-jenkins.github.io/Gipity/)\
+[![Documentation](https://img.shields.io/badge/Docs-GitHub%20Pages-222222?logo=githubpages&logoColor=white)](https://is-leeroy-jenkins.github.io/Gipity/)
 
 ![](https://github.com/is-leeroy-jenkins/Gipity/blob/main/resources/images/gipity-demo.gif)
 
