@@ -4,13 +4,14 @@
 
 <p align="center">
   <a href="#-key-features">Features</a> ·
+  <a href="#-cloud-demos">Demo</a> ·
   <a href="#-application-modes">Modes</a> ·
   <a href="#-architecture">Architecture</a> ·
   <a href="#-repository-structure">Structure</a> ·
   <a href="#-installation--setup">Install</a> ·
+  <a href="#custom-llm">LLM</a> ·
   <a href="#-running-gipity">Running</a> ·
   <a href="#-api-key-setup">Keys</a> ·
-  <a href="#custom-llm">LLM</a> ·
   <a href="#-document-and-retrieval-workflows">Workflows</a> ·
   <a href="#-data-management">Data</a> ·
   <a href="#-requirements">Requirements</a> ·
@@ -61,7 +62,7 @@ Gipity combines:
 
 Gipity uses a local LLM available on Hugging Face based on OpenAI's ChatGPT 5.x
 
-[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity) <-- here
+[![HuggingFace](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm.svg)](https://huggingface.co/leeroy-jankins/gipity) 
 
 -  Fine-tuned
 -  Post-trained
