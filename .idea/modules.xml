@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Gipity.iml" filepath="$PROJECT_DIR$/.idea/Gipity.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/gipity.iml" filepath="$PROJECT_DIR$/.idea/gipity.iml" />
     </modules>
   </component>
 </project>
